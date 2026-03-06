@@ -60,6 +60,10 @@ Custom games can be added via text input.
 - Responsive design (mobile hamburger menu, scrollable day selectors)
 - Signed-in users see their gamertag as a profile link in the navbar; signup/join buttons hidden
 
+## Repository
+
+Hosted on GitHub: [carsonxdd/gamenight](https://github.com/carsonxdd/gamenight)
+
 ## Getting Started
 
 ### Prerequisites
