@@ -17,6 +17,8 @@ export interface MemberData {
   twitch: string | null;
   youtube: string | null;
   customLink: string | null;
+  isModerator: boolean;
+  isOwner: boolean;
 }
 
 interface MembersGridProps {

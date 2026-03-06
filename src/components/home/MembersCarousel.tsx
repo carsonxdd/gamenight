@@ -8,6 +8,8 @@ interface MemberData {
   avatar: string | null;
   games: string[];
   topRank: { gameName: string; rank: string; color: string } | null;
+  isModerator: boolean;
+  isOwner: boolean;
 }
 
 function InitialsAvatar({ name }: { name: string }) {
@@ -19,8 +21,14 @@ function InitialsAvatar({ name }: { name: string }) {
 }
 
 function MemberCardComponent({ member }: { member: MemberData }) {
+  const borderClass = member.isOwner
+    ? "border-yellow-500/60 shadow-[0_0_15px_rgba(234,179,8,0.3)] hover:shadow-[0_0_20px_rgba(234,179,8,0.45)] hover:border-yellow-500/80"
+    : member.isModerator
+      ? "border-red-900/60 shadow-[0_0_15px_rgba(153,27,27,0.3)] hover:shadow-[0_0_20px_rgba(153,27,27,0.45)] hover:border-red-900/80"
+      : "border-border hover:border-neon/30";
+
   return (
-    <div className="flex-shrink-0 w-72 rounded-xl border border-border bg-surface p-5 transition hover:border-neon/30">
+    <div className={`flex-shrink-0 w-72 rounded-xl border bg-surface p-5 transition ${borderClass}`}>
       <div className="flex items-center gap-3">
         {member.avatar ? (
           <img
@@ -31,7 +39,15 @@ function MemberCardComponent({ member }: { member: MemberData }) {
         ) : (
           <InitialsAvatar name={member.name} />
         )}
-        <p className="truncate font-semibold text-foreground">{member.name}</p>
+        <div className="flex items-center gap-2 min-w-0">
+          <p className="truncate font-semibold text-foreground">{member.name}</p>
+          {member.isOwner && (
+            <span className="shrink-0 rounded-full bg-yellow-500/15 px-1.5 py-0.5 text-[9px] font-bold uppercase text-yellow-500">Owner</span>
+          )}
+          {member.isModerator && !member.isOwner && (
+            <span className="shrink-0 rounded-full bg-red-900/15 px-1.5 py-0.5 text-[9px] font-bold uppercase text-red-400">Mod</span>
+          )}
+        </div>
       </div>
       <div className="mt-3 flex flex-wrap gap-1.5">
         {member.games.slice(0, 3).map((game) => (

@@ -40,7 +40,7 @@ export default function Navbar() {
               </Link>
             </>
           )}
-          {session?.user?.isAdmin && (
+          {(session?.user?.isAdmin || session?.user?.isModerator) && (
             <Link href="/admin" className={navLinkClass}>
               Admin
             </Link>

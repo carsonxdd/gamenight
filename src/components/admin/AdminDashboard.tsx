@@ -44,6 +44,8 @@ interface PlayerData {
   gamertag: string | null;
   avatar: string | null;
   isAdmin: boolean;
+  isModerator: boolean;
+  isOwner: boolean;
   willingToModerate: boolean;
   games: string[];
   availabilityDays: number[];
@@ -61,6 +63,7 @@ interface Props {
   gameNights: GameNightData[];
   players: PlayerData[];
   currentUserId: string;
+  isCurrentUserAdmin: boolean;
 }
 
 type Tab = "games" | "availability" | "rsvps" | "roster";
@@ -79,6 +82,7 @@ export default function AdminDashboard({
   gameNights,
   players,
   currentUserId,
+  isCurrentUserAdmin,
 }: Props) {
   const [activeTab, setActiveTab] = useState<Tab>("games");
 
@@ -128,7 +132,7 @@ export default function AdminDashboard({
       )}
       {activeTab === "rsvps" && <RSVPOverview gameNights={gameNights} />}
       {activeTab === "roster" && (
-        <PlayerRoster players={players} currentUserId={currentUserId} />
+        <PlayerRoster players={players} currentUserId={currentUserId} isCurrentUserAdmin={isCurrentUserAdmin} />
       )}
     </div>
   );

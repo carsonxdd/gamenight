@@ -42,6 +42,8 @@ export const authOptions: NextAuthOptions = {
           token.userId = dbUser.id;
           token.gamertag = dbUser.gamertag;
           token.isAdmin = dbUser.isAdmin;
+          token.isModerator = dbUser.isModerator;
+          token.isOwner = dbUser.isOwner;
           token.willingToModerate = dbUser.willingToModerate;
         }
       }
@@ -52,6 +54,8 @@ export const authOptions: NextAuthOptions = {
       session.user.discordId = token.discordId as string;
       session.user.gamertag = token.gamertag as string | null;
       session.user.isAdmin = token.isAdmin as boolean;
+      session.user.isModerator = token.isModerator as boolean;
+      session.user.isOwner = token.isOwner as boolean;
       session.user.willingToModerate = token.willingToModerate as boolean;
       return session;
     },

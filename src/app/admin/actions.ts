@@ -29,6 +29,27 @@ export async function toggleAdmin(userId: string) {
   }
 }
 
+export async function toggleModerator(userId: string) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.isAdmin) {
+    return { error: "Admin only" };
+  }
+
+  try {
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user) return { error: "User not found" };
+
+    await prisma.user.update({
+      where: { id: userId },
+      data: { isModerator: !user.isModerator },
+    });
+    revalidatePath("/admin");
+    return { success: true };
+  } catch {
+    return { error: "Failed to update moderator status" };
+  }
+}
+
 export async function removeUser(userId: string) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.isAdmin) {

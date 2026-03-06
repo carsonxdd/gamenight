@@ -6,7 +6,7 @@ import AdminDashboard from "@/components/admin/AdminDashboard";
 
 export default async function AdminPage() {
   const session = await getServerSession(authOptions);
-  if (!session?.user?.isAdmin) {
+  if (!session?.user?.isAdmin && !session?.user?.isModerator) {
     redirect("/");
   }
 
@@ -91,6 +91,8 @@ export default async function AdminPage() {
     gamertag: u.gamertag,
     avatar: u.avatar,
     isAdmin: u.isAdmin,
+    isModerator: u.isModerator,
+    isOwner: u.isOwner,
     games: u.games.map((g) => {
       const modes = g.modes ? (JSON.parse(g.modes) as string[]) : undefined;
       return modes && modes.length > 0
@@ -114,6 +116,7 @@ export default async function AdminPage() {
         gameNights={serializedGameNights}
         players={players}
         currentUserId={session.user.id}
+        isCurrentUserAdmin={session.user.isAdmin}
       />
     </div>
   );

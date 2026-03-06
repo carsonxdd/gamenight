@@ -15,8 +15,8 @@ export async function createGameNight(data: {
   recurDay?: number;
 }) {
   const session = await getServerSession(authOptions);
-  if (!session?.user?.isAdmin) {
-    return { error: "Admin only" };
+  if (!session?.user?.isAdmin && !session?.user?.isModerator) {
+    return { error: "Admin or moderator only" };
   }
 
   try {
@@ -97,8 +97,8 @@ export async function updateGameNight(
   }
 ) {
   const session = await getServerSession(authOptions);
-  if (!session?.user?.isAdmin) {
-    return { error: "Admin only" };
+  if (!session?.user?.isAdmin && !session?.user?.isModerator) {
+    return { error: "Admin or moderator only" };
   }
 
   try {
@@ -124,8 +124,8 @@ export async function updateGameNight(
 
 export async function cancelGameNight(id: string) {
   const session = await getServerSession(authOptions);
-  if (!session?.user?.isAdmin) {
-    return { error: "Admin only" };
+  if (!session?.user?.isAdmin && !session?.user?.isModerator) {
+    return { error: "Admin or moderator only" };
   }
 
   try {
@@ -142,8 +142,8 @@ export async function cancelGameNight(id: string) {
 
 export async function deleteGameNight(id: string) {
   const session = await getServerSession(authOptions);
-  if (!session?.user?.isAdmin) {
-    return { error: "Admin only" };
+  if (!session?.user?.isAdmin && !session?.user?.isModerator) {
+    return { error: "Admin or moderator only" };
   }
 
   try {

@@ -10,6 +10,8 @@ declare module "next-auth" {
       image?: string | null;
       gamertag: string | null;
       isAdmin: boolean;
+      isModerator: boolean;
+      isOwner: boolean;
       willingToModerate: boolean;
     };
   }
@@ -21,6 +23,8 @@ declare module "next-auth/jwt" {
     discordId?: string;
     gamertag?: string | null;
     isAdmin?: boolean;
+    isModerator?: boolean;
+    isOwner?: boolean;
     willingToModerate?: boolean;
   }
 }

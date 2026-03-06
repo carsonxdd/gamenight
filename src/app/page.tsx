@@ -12,7 +12,11 @@ export default async function Home() {
   const [dbUsers, memberCount, eventsHosted] = await Promise.all([
     prisma.user.findMany({
       where: { games: { some: {} } },
-      include: { games: true, ranks: true },
+      select: {
+        id: true, name: true, gamertag: true, avatar: true, favoriteGames: true,
+        isModerator: true, isOwner: true,
+        games: true, ranks: true,
+      },
       take: 20,
     }),
     prisma.user.count(),
@@ -51,6 +55,8 @@ export default async function Home() {
       avatar: user.avatar,
       games: displayGames,
       topRank,
+      isModerator: user.isModerator,
+      isOwner: user.isOwner,
     };
   });
 

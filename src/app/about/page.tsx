@@ -73,6 +73,26 @@ export default function AboutPage() {
           </div>
         </motion.section>
 
+        {/* Privacy & Security */}
+        <motion.section variants={staggerItem}>
+          <h2 className="mb-4 text-xl font-bold text-foreground">Privacy &amp; Security</h2>
+          <div className="rounded-xl border border-border bg-surface p-6 text-foreground/70 leading-relaxed space-y-3">
+            <p>
+              We use <span className="text-foreground">Discord OAuth2</span> to sign you in. This means
+              Discord handles your login directly — your password never touches our site.
+            </p>
+            <p>
+              The only info we receive from Discord is your <span className="text-foreground">username</span> and{" "}
+              <span className="text-foreground">profile picture</span>. We <span className="text-foreground">cannot</span> see
+              your email, password, DMs, friends list, servers, or any other account details.
+            </p>
+            <p>
+              Everything else on your profile (gamertag, games, availability, social links) is info you
+              choose to fill in yourself. Nothing is pulled from Discord beyond the basics above.
+            </p>
+          </div>
+        </motion.section>
+
         {/* Links */}
         <motion.section variants={staggerItem}>
           <h2 className="mb-4 text-xl font-bold text-foreground">Links</h2>

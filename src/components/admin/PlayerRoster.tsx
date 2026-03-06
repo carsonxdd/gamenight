@@ -8,7 +8,7 @@ import Card from "@/components/ui/Card";
 import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
 import Modal from "@/components/ui/Modal";
-import { toggleAdmin, removeUser } from "@/app/admin/actions";
+import { toggleAdmin, toggleModerator, removeUser } from "@/app/admin/actions";
 
 interface PlayerData {
   id: string;
@@ -16,6 +16,8 @@ interface PlayerData {
   gamertag: string | null;
   avatar: string | null;
   isAdmin: boolean;
+  isModerator: boolean;
+  isOwner: boolean;
   willingToModerate: boolean;
   games: string[];
   availabilityDays: number[];
@@ -24,11 +26,12 @@ interface PlayerData {
 interface Props {
   players: PlayerData[];
   currentUserId: string;
+  isCurrentUserAdmin: boolean;
 }
 
 const dayAbbrevs = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
 
-export default function PlayerRoster({ players, currentUserId }: Props) {
+export default function PlayerRoster({ players, currentUserId, isCurrentUserAdmin }: Props) {
   const [search, setSearch] = useState("");
   const [confirmRemove, setConfirmRemove] = useState<PlayerData | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -45,6 +48,13 @@ export default function PlayerRoster({ players, currentUserId }: Props) {
   function handleToggleAdmin(userId: string) {
     startTransition(async () => {
       const result = await toggleAdmin(userId);
+      if (result.error) alert(result.error);
+    });
+  }
+
+  function handleToggleModerator(userId: string) {
+    startTransition(async () => {
+      const result = await toggleModerator(userId);
       if (result.error) alert(result.error);
     });
   }
@@ -168,18 +178,24 @@ export default function PlayerRoster({ players, currentUserId }: Props) {
                     {/* Role */}
                     <td className="py-3 pr-3">
                       <div className="flex flex-wrap gap-1">
-                        <Badge variant={player.isAdmin ? "neon" : "neutral"}>
-                          {player.isAdmin ? "Admin" : "Member"}
-                        </Badge>
-                        {player.willingToModerate && (
-                          <Badge variant="neon">Mod</Badge>
+                        {player.isOwner && (
+                          <Badge variant="neon">Owner</Badge>
+                        )}
+                        {player.isAdmin && !player.isOwner && (
+                          <Badge variant="neon">Admin</Badge>
+                        )}
+                        {player.isModerator && (
+                          <Badge variant="danger">Mod</Badge>
+                        )}
+                        {!player.isAdmin && !player.isModerator && !player.isOwner && (
+                          <Badge variant="neutral">Member</Badge>
                         )}
                       </div>
                     </td>
 
                     {/* Actions */}
                     <td className="py-3">
-                      {!isSelf && (
+                      {!isSelf && isCurrentUserAdmin && (
                         <div className="flex gap-2 opacity-0 transition group-hover:opacity-100">
                           <Button
                             size="sm"
@@ -188,6 +204,14 @@ export default function PlayerRoster({ players, currentUserId }: Props) {
                             onClick={() => handleToggleAdmin(player.id)}
                           >
                             {player.isAdmin ? "Demote" : "Promote"}
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            disabled={isPending}
+                            onClick={() => handleToggleModerator(player.id)}
+                          >
+                            {player.isModerator ? "Unmod" : "Mod"}
                           </Button>
                           <Button
                             size="sm"

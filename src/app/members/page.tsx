@@ -7,7 +7,12 @@ export const dynamic = "force-dynamic";
 export default async function MembersPage() {
   const dbUsers = await prisma.user.findMany({
     where: { gamertag: { not: null } },
-    include: { games: true, ranks: true },
+    select: {
+      id: true, name: true, gamertag: true, avatar: true, favoriteGames: true,
+      twitter: true, twitch: true, youtube: true, customLink: true,
+      isModerator: true, isOwner: true, createdAt: true,
+      games: true, ranks: true,
+    },
     orderBy: { createdAt: "desc" },
   });
 
@@ -45,6 +50,8 @@ export default async function MembersPage() {
       twitch: user.twitch,
       youtube: user.youtube,
       customLink: user.customLink,
+      isModerator: user.isModerator,
+      isOwner: user.isOwner,
     };
   });
 

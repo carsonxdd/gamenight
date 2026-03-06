@@ -9,8 +9,8 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(signInUrl);
   }
 
-  // Admin routes require isAdmin
-  if (request.nextUrl.pathname.startsWith("/admin") && !token.isAdmin) {
+  // Admin routes require isAdmin or isModerator
+  if (request.nextUrl.pathname.startsWith("/admin") && !token.isAdmin && !token.isModerator) {
     return NextResponse.redirect(new URL("/", request.url));
   }
 

@@ -1,5 +1,7 @@
 # Caplan's Game Night
 
+**v1.2.0**
+
 A web app for organizing weekly gaming events with the boys. Sign up with Discord, pick your games, set your availability, and RSVP to game nights.
 
 ## Tech Stack
@@ -15,8 +17,9 @@ A web app for organizing weekly gaming events with the boys. Sign up with Discor
 
 ### Authentication
 - Discord OAuth sign-in
-- JWT sessions with admin/member roles
+- JWT sessions with owner/admin/moderator/member roles
 - Gamertag autofills from Discord username during onboarding
+- **Privacy notice** on signup page — reassures users that only their Discord username and avatar are accessed (no email, password, DMs, friends, or servers)
 
 ### Player Profiles (`/profile`)
 - Custom gamertag
@@ -46,26 +49,35 @@ Custom games can be added via text input.
 ### Scheduling
 - Two-week calendar view with navigation (14 days across two stacked grids)
 - Event list view with tab navigation
-- Admin-only game night creation with optional title, date, time, game, and recurring option
+- Admin and moderator game night creation with optional title, date, time, game, and recurring option
 - **Recurring events** — checking "Recurring weekly" creates the initial event plus 3 more weeks (4 total) automatically
-- **Admin inline editing** — admins can click any event in the calendar or list view to open an edit modal. Update title, date, time, game, status (scheduled/cancelled), and recurring flag. Includes delete with two-click confirmation.
+- **Admin/mod inline editing** — admins and moderators can click any event in the calendar or list view to open an edit modal. Update title, date, time, game, status (scheduled/cancelled), and recurring flag. Includes delete with two-click confirmation.
+- **Info banner** — tells members to reach out to moderators to suggest events or ask about upcoming game nights
 - RSVP system (confirmed / maybe / declined)
+
+### Roles & Permissions
+- **Owner** (CarsonXD) — full access, gold glowing border on member cards
+- **Admin** — full access including user management (promote/demote, assign moderators, remove users)
+- **Moderator** — access to admin panel (read-only roster), can create/edit/delete game nights. Dark red glowing border on member cards
+- **Member** — default role, can RSVP and manage own profile
+- Role badges displayed on member cards in both the members page and home page carousel
 
 ### Admin Panel (`/admin`)
 - **Game Popularity** — ranked by player count with expandable player lists
 - **Availability Heatmap** — aggregated grid showing player overlap with click-to-reveal names
 - **RSVP Overview** — game night cards with status badge counts
-- **Player Roster** — searchable table with promote/demote, moderator badges, and remove with confirmation
-- Route-level protection via middleware
+- **Player Roster** — searchable table with promote/demote, moderator toggle, owner/admin/mod badges, and remove with confirmation. User management actions restricted to admins only; moderators can view the roster.
+- Route-level protection via middleware (admins and moderators)
 
 ### About Page (`/about`, authenticated)
 - **The Story** — short origin story of how game nights started in the friend group and why this site exists
 - **About the Organizer** — personal section with Discord avatar pulled from session and a casual bio
+- **Privacy & Security** — explains Discord OAuth2 flow, what data is and isn't accessed, and that all profile info is voluntarily entered
 - **Links** — Discord invite (prominent), GitHub profile (subtle), carsoncaplan.com (commented out, ready to uncomment when live)
 
 ### Members Page (`/members`, authenticated)
 - **Searchable card grid** — responsive layout (3 columns desktop, 2 tablet, 1 mobile) showing all community members
-- **Full member cards** — large Discord avatar (or initials fallback), gamertag, game tags (up to 6 with "+X more"), all rank badges with game-accurate tier colors
+- **Full member cards** — large Discord avatar (or initials fallback), gamertag, game tags (up to 6 with "+X more"), all rank badges with game-accurate tier colors. Owner cards have a glowing gold border; moderator cards have a dark red glowing border with role badges.
 - **Social links** — Discord (copies username to clipboard with checkmark feedback), Twitter/X, Twitch, YouTube, and custom link icons. Only rendered for socials the user has linked.
 - **Filtering** — search by name and filter by game via dropdown
 
@@ -73,7 +85,7 @@ Custom games can be added via text input.
 - **Hero section** — animated grid background with neon glow orb, staggered text/button entrance
 - **Introduction** — short casual description with spacing to keep it off the hero
 - **Social proof stats** — real-time member count, events hosted, and games available pulled from the database
-- **Members carousel** — infinite-scrolling marquee of member cards built from real user data. Cards show Discord avatar (or initials fallback), gamertag, up to 3 favorite games, and highest-tier rank badge with color. Pauses on hover. Duplicates cards to fill the viewport for seamless looping even with a single member. "View All Members" link to the full members page.
+- **Members carousel** — infinite-scrolling marquee of member cards built from real user data. Cards show Discord avatar (or initials fallback), gamertag, up to 3 favorite games, and highest-tier rank badge with color. Owner/moderator cards display glowing borders and role badges. Pauses on hover. Duplicates cards to fill the viewport for seamless looping even with a single member. "View All Members" link to the full members page.
 - **Highlight cards** — feature callouts for the app
 
 ### UI/UX
@@ -123,11 +135,14 @@ Hosted on GitHub: [carsonxdd/gamenight](https://github.com/carsonxdd/gamenight)
 
 ### First Admin
 
-There's no seed script. To make yourself an admin, open Prisma Studio and set `isAdmin` to `true` on your user:
+There's no seed script. To set up roles, open Prisma Studio and update your user record:
 
 ```bash
 npx prisma studio
 ```
+
+- Set `isAdmin` and `isOwner` to `true` for the site owner
+- Set `isModerator` to `true` for moderators (or use the Admin panel's Roster tab to toggle mod status)
 
 ## Project Structure
 
@@ -163,7 +178,7 @@ src/
 ## Database Schema
 
 ### Core Models
-- **User** — gamertag, timezone, Discord ID, avatar, admin/moderator flags, buy-in/LAN interest, favorite games (JSON), social links (Twitter, Twitch, YouTube, custom), profile banner dismissal
+- **User** — gamertag, timezone, Discord ID, avatar, role flags (isAdmin, isModerator, isOwner), willingToModerate preference, buy-in/LAN interest, favorite games (JSON), social links (Twitter, Twitch, YouTube, custom), profile banner dismissal
 - **UserGame** — games a user plays, with optional mode selections (JSON)
 - **UserGameRank** — competitive rank per game per user
 - **UserAvailability** — 30-min time slot preferences per day of week
@@ -172,11 +187,77 @@ src/
 
 ## Future Ideas
 
-- **Discord bot** — auto-create server/channels/roles, sync game roles from profiles, post game nights to #schedule, RSVP-based @mentions for reminders, reaction-based RSVP from Discord
-- **Teams** — team pages, team tags in front of gamertag, team-based matchmaking
-- In-app notifications via Discord webhooks
-- Attendance tracking and player stats
-- Team balancing based on preferences and ranks
-- Calendar sync (Google Calendar / iCal export)
-- Waitlist with auto-promote on cancellation
-- Player achievements and streaks
+Discord Bot
+
+Event announcements and RSVP pings
+Admin controls to trigger announcements from the site
+
+Moderation & Admin
+
+Community event proposals with voting and admin approval
+
+Teams
+
+Team pages with rosters
+Team tags on gamertags
+Be on multiple teams
+
+Competitive
+
+Leaderboards and win/loss tracking
+Auto-generated tournament brackets from RSVPs
+Seasons with standings and playoffs
+
+Community
+
+Game night recaps with highlights and clips
+Shoutout wall / kudos after events
+Looking-for-group status for pickup games
+
+Scheduling
+
+Auto-suggest best times from availability overlap
+Game rotation suggestions based on recent history
+Waitlist with auto-promote on cancellation
+Calendar sync (Google Calendar / iCal)
+
+Engagement
+
+Weekly digest via email or Discord DM
+Badges and streaks
+In-app polls and quick votes
+
+Quality of Life
+
+Dark/light theme toggle
+Event templates for recurring game nights
+Spectator RSVP option
+
+## Version History
+
+### v1.2.0 — 2026-03-06
+- **Moderator role** — moderators can access the admin panel and create/edit/delete game nights
+- **Owner role** — dedicated role for the site owner with gold glowing border on member cards
+- **Visual role indicators** — dark red glowing border and "Mod" badge for moderators, gold glowing border and "Owner" badge for owner, visible on both member cards and home page carousel
+- **Moderator management** — admins can toggle moderator status from the Player Roster
+- **Schedule info banner** — tells members to reach out to moderators to suggest events
+- **Privacy notice** — reassurance on the signup page and a full Privacy & Security section on the About page explaining Discord OAuth2 scope
+
+### v1.1.0 — 2026-03-06
+- **Members page** — searchable card grid with Discord avatars, game tags, rank badges, and social link icons
+- **Social links** — Twitter/X, Twitch, YouTube, and custom link fields on profiles and member cards
+- **Event titles** — optional custom titles for game nights
+- **Admin event editing** — click any event in calendar or list view to edit title, time, game, status, or delete
+- **Recurring events** — "Recurring weekly" option auto-creates 4 weeks of events
+
+### v1.0.0 — 2026-03-05
+- **Discord OAuth** authentication with JWT sessions
+- **Player profiles** — gamertag, interactive US timezone map, categorized game selection with sub-modes, drag-select availability grid
+- **Extended profiles** — favorite games, visual rank selector with tier colors, social links, tournament/LAN interest
+- **Scheduling** — two-week calendar view, event list view, RSVP system (confirmed/maybe/declined)
+- **Admin panel** — game popularity, availability heatmap, RSVP overview, player roster with promote/demote/remove
+- **Landing page** — hero section, social proof stats, members carousel, highlight cards
+- **About page** — origin story, organizer bio, Discord/GitHub links
+
+### v0.1.0 — 2026-03-04
+- Initial Next.js scaffold from Create Next App
