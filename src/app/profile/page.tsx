@@ -37,6 +37,10 @@ export default async function ProfilePage() {
     rank: r.rank,
   }));
 
+  const favoriteGames: string[] = user.favoriteGames
+    ? JSON.parse(user.favoriteGames)
+    : [];
+
   return (
     <ProfilePageClient
       defaultName={user.gamertag}
@@ -47,6 +51,11 @@ export default async function ProfilePage() {
       initialRanks={ranks}
       initialBuyIn={user.interestedInBuyIn}
       initialLAN={user.interestedInLAN}
+      initialFavoriteGames={favoriteGames}
+      initialTwitter={user.twitter || undefined}
+      initialTwitch={user.twitch || undefined}
+      initialYoutube={user.youtube || undefined}
+      initialCustomLink={user.customLink || undefined}
     />
   );
 }

@@ -9,6 +9,9 @@ export default function Navbar() {
   const { data: session } = useSession();
   const [mobileOpen, setMobileOpen] = useState(false);
 
+  const navLinkClass =
+    "text-sm text-foreground/70 transition hover:text-neon";
+
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 border-b border-border bg-background/80 backdrop-blur-md">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4">
@@ -18,31 +21,27 @@ export default function Navbar() {
 
         {/* Desktop nav */}
         <div className="hidden items-center gap-6 md:flex">
-          <Link
-            href="/"
-            className="text-sm text-foreground/70 transition hover:text-neon"
-          >
+          <Link href="/" className={navLinkClass}>
             Home
           </Link>
-          {!session && (
-            <Link
-              href="/signup"
-              className="text-sm text-foreground/70 transition hover:text-neon"
-            >
-              Sign Up
-            </Link>
-          )}
-          <Link
-            href="/schedule"
-            className="text-sm text-foreground/70 transition hover:text-neon"
-          >
+          <Link href="/schedule" className={navLinkClass}>
             Schedule
           </Link>
+          <Link href="/highlights" className={navLinkClass}>
+            Highlights
+          </Link>
+          {session && (
+            <>
+              <Link href="/members" className={navLinkClass}>
+                Members
+              </Link>
+              <Link href="/about" className={navLinkClass}>
+                About
+              </Link>
+            </>
+          )}
           {session?.user?.isAdmin && (
-            <Link
-              href="/admin"
-              className="text-sm text-foreground/70 transition hover:text-neon"
-            >
+            <Link href="/admin" className={navLinkClass}>
               Admin
             </Link>
           )}
@@ -108,15 +107,6 @@ export default function Navbar() {
               >
                 Home
               </Link>
-              {!session && (
-                <Link
-                  href="/signup"
-                  onClick={() => setMobileOpen(false)}
-                  className="text-foreground/70 transition hover:text-neon"
-                >
-                  Sign Up
-                </Link>
-              )}
               <Link
                 href="/schedule"
                 onClick={() => setMobileOpen(false)}
@@ -124,6 +114,31 @@ export default function Navbar() {
               >
                 Schedule
               </Link>
+              <Link
+                href="/highlights"
+                onClick={() => setMobileOpen(false)}
+                className="text-foreground/70 transition hover:text-neon"
+              >
+                Highlights
+              </Link>
+              {session && (
+                <>
+                  <Link
+                    href="/members"
+                    onClick={() => setMobileOpen(false)}
+                    className="text-foreground/70 transition hover:text-neon"
+                  >
+                    Members
+                  </Link>
+                  <Link
+                    href="/about"
+                    onClick={() => setMobileOpen(false)}
+                    className="text-foreground/70 transition hover:text-neon"
+                  >
+                    About
+                  </Link>
+                </>
+              )}
               {session?.user?.isAdmin && (
                 <Link
                   href="/admin"
@@ -149,7 +164,15 @@ export default function Navbar() {
                     Sign Out
                   </button>
                 </>
-              ) : null}
+              ) : (
+                <Link
+                  href="/signup"
+                  onClick={() => setMobileOpen(false)}
+                  className="text-foreground/70 transition hover:text-neon"
+                >
+                  Join
+                </Link>
+              )}
             </div>
           </motion.div>
         )}

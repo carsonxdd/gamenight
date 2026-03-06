@@ -24,6 +24,11 @@ interface ProfilePageClientProps {
   initialRanks: RankData[];
   initialBuyIn: boolean;
   initialLAN: boolean;
+  initialFavoriteGames?: string[];
+  initialTwitter?: string;
+  initialTwitch?: string;
+  initialYoutube?: string;
+  initialCustomLink?: string;
 }
 
 export default function ProfilePageClient({
@@ -35,6 +40,11 @@ export default function ProfilePageClient({
   initialRanks,
   initialBuyIn,
   initialLAN,
+  initialFavoriteGames,
+  initialTwitter,
+  initialTwitch,
+  initialYoutube,
+  initialCustomLink,
 }: ProfilePageClientProps) {
   const profileRef = useRef<ProfileFormHandle>(null);
   const extendedRef = useRef<ExtendedProfileFormHandle>(null);
@@ -130,6 +140,11 @@ export default function ProfilePageClient({
               initialBuyIn={initialBuyIn}
               initialLAN={initialLAN}
               initialModerate={initialModerate}
+              initialFavoriteGames={initialFavoriteGames}
+              initialTwitter={initialTwitter}
+              initialTwitch={initialTwitch}
+              initialYoutube={initialYoutube}
+              initialCustomLink={initialCustomLink}
               hideSubmit
             />
           </Card>

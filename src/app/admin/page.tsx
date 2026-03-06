@@ -30,13 +30,16 @@ export default async function AdminPage() {
     }),
   ]);
 
-  // Summary stats
-  const allGames = new Set(users.flatMap((u) => u.games.map((g) => g.gameName)));
+  // Summary stats — unique games across all user profiles
+  const uniqueGameCount = await prisma.userGame.findMany({
+    select: { gameName: true },
+    distinct: ["gameName"],
+  });
   const totalRSVPs = gameNights.reduce((sum, gn) => sum + gn.attendees.length, 0);
 
   const stats = {
     playerCount: users.length,
-    uniqueGames: allGames.size,
+    uniqueGames: uniqueGameCount.length,
     gameNightCount: gameNights.length,
     totalRSVPs,
   };
@@ -69,6 +72,7 @@ export default async function AdminPage() {
   // Game nights serialized
   const serializedGameNights = gameNights.map((gn) => ({
     id: gn.id,
+    title: gn.title,
     date: gn.date.toISOString(),
     startTime: gn.startTime,
     endTime: gn.endTime,

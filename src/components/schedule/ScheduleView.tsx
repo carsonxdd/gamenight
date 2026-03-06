@@ -4,10 +4,12 @@ import { useState } from "react";
 import WeeklyCalendar from "./WeeklyCalendar";
 import EventList from "./EventList";
 import CreateGameNightModal from "./CreateGameNightModal";
+import EditGameNightModal from "./EditGameNightModal";
 import Button from "@/components/ui/Button";
 
 export interface GameNightWithAttendees {
   id: string;
+  title: string | null;
   date: string;
   startTime: string;
   endTime: string;
@@ -31,6 +33,7 @@ interface Props {
 export default function ScheduleView({ gameNights, userId, isAdmin }: Props) {
   const [view, setView] = useState<"calendar" | "list">("calendar");
   const [showCreate, setShowCreate] = useState(false);
+  const [editingEvent, setEditingEvent] = useState<GameNightWithAttendees | null>(null);
 
   return (
     <div>
@@ -66,15 +69,33 @@ export default function ScheduleView({ gameNights, userId, isAdmin }: Props) {
       </div>
 
       {view === "calendar" ? (
-        <WeeklyCalendar gameNights={gameNights} userId={userId} />
+        <WeeklyCalendar
+          gameNights={gameNights}
+          userId={userId}
+          isAdmin={isAdmin}
+          onEditEvent={setEditingEvent}
+        />
       ) : (
-        <EventList gameNights={gameNights} userId={userId} />
+        <EventList
+          gameNights={gameNights}
+          userId={userId}
+          isAdmin={isAdmin}
+          onEditEvent={setEditingEvent}
+        />
       )}
 
       {isAdmin && (
         <CreateGameNightModal
           open={showCreate}
           onClose={() => setShowCreate(false)}
+        />
+      )}
+
+      {editingEvent && (
+        <EditGameNightModal
+          open
+          onClose={() => setEditingEvent(null)}
+          gameNight={editingEvent}
         />
       )}
     </div>

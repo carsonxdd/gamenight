@@ -4,23 +4,30 @@ import { useState } from "react";
 import Modal from "@/components/ui/Modal";
 import Button from "@/components/ui/Button";
 import { GAMES, TIME_SLOTS, formatTime, DAYS_OF_WEEK } from "@/lib/constants";
-import { createGameNight } from "@/app/schedule/actions";
+import { updateGameNight, deleteGameNight } from "@/app/schedule/actions";
+import { GameNightWithAttendees } from "./ScheduleView";
 
 interface Props {
   open: boolean;
   onClose: () => void;
+  gameNight: GameNightWithAttendees;
 }
 
-export default function CreateGameNightModal({ open, onClose }: Props) {
-  const [title, setTitle] = useState("");
-  const [date, setDate] = useState("");
-  const [startTime, setStartTime] = useState("19:00");
-  const [endTime, setEndTime] = useState("23:00");
-  const [game, setGame] = useState<string>(GAMES[0]);
-  const [isRecurring, setIsRecurring] = useState(false);
-  const [recurDay, setRecurDay] = useState(5); // Friday
+export default function EditGameNightModal({ open, onClose, gameNight }: Props) {
+  const gnDate = new Date(gameNight.date);
+  const dateStr = `${gnDate.getFullYear()}-${String(gnDate.getMonth() + 1).padStart(2, "0")}-${String(gnDate.getDate()).padStart(2, "0")}`;
+
+  const [title, setTitle] = useState(gameNight.title || "");
+  const [date, setDate] = useState(dateStr);
+  const [startTime, setStartTime] = useState(gameNight.startTime);
+  const [endTime, setEndTime] = useState(gameNight.endTime);
+  const [game, setGame] = useState(gameNight.game);
+  const [status, setStatus] = useState(gameNight.status);
+  const [isRecurring, setIsRecurring] = useState(gameNight.isRecurring);
+  const [recurDay, setRecurDay] = useState(gnDate.getDay());
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [confirmDelete, setConfirmDelete] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -30,12 +37,13 @@ export default function CreateGameNightModal({ open, onClose }: Props) {
     }
     setLoading(true);
     setError("");
-    const result = await createGameNight({
+    const result = await updateGameNight(gameNight.id, {
       title: title.trim() || undefined,
       date,
       startTime,
       endTime,
       game,
+      status,
       isRecurring,
       recurDay: isRecurring ? recurDay : undefined,
     });
@@ -44,13 +52,26 @@ export default function CreateGameNightModal({ open, onClose }: Props) {
       setError(result.error);
     } else {
       onClose();
-      setTitle("");
-      setDate("");
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!confirmDelete) {
+      setConfirmDelete(true);
+      return;
+    }
+    setLoading(true);
+    const result = await deleteGameNight(gameNight.id);
+    setLoading(false);
+    if (result?.error) {
+      setError(result.error);
+    } else {
+      onClose();
     }
   };
 
   return (
-    <Modal open={open} onClose={onClose} title="Create Game Night">
+    <Modal open={open} onClose={onClose} title="Edit Game Night">
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <label className="mb-1 block text-sm text-foreground/70">Title (optional)</label>
@@ -113,6 +134,18 @@ export default function CreateGameNightModal({ open, onClose }: Props) {
           </select>
         </div>
 
+        <div>
+          <label className="mb-1 block text-sm text-foreground/70">Status</label>
+          <select
+            value={status}
+            onChange={(e) => setStatus(e.target.value)}
+            className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-foreground focus:border-neon focus:outline-none"
+          >
+            <option value="scheduled">Scheduled</option>
+            <option value="cancelled">Cancelled</option>
+          </select>
+        </div>
+
         <div className="flex items-center gap-3">
           <label className="flex items-center gap-2 text-sm text-foreground/70">
             <input
@@ -138,9 +171,23 @@ export default function CreateGameNightModal({ open, onClose }: Props) {
 
         {error && <p className="text-sm text-danger">{error}</p>}
 
-        <Button type="submit" disabled={loading} className="w-full">
-          {loading ? "Creating..." : "Create Game Night"}
-        </Button>
+        <div className="flex gap-3">
+          <Button type="submit" disabled={loading} className="flex-1">
+            {loading ? "Saving..." : "Save Changes"}
+          </Button>
+          <button
+            type="button"
+            onClick={handleDelete}
+            disabled={loading}
+            className={`rounded-lg px-4 py-2 text-sm font-medium transition ${
+              confirmDelete
+                ? "bg-danger text-white hover:bg-danger/80"
+                : "border border-danger/30 text-danger hover:bg-danger/10"
+            }`}
+          >
+            {confirmDelete ? "Confirm Delete" : "Delete"}
+          </button>
+        </div>
       </form>
     </Modal>
   );

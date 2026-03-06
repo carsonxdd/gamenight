@@ -14,6 +14,7 @@ interface Attendee {
 
 interface GameNightData {
   id: string;
+  title?: string | null;
   date: string;
   startTime: string;
   endTime: string;
@@ -76,8 +77,11 @@ export default function RSVPOverview({ gameNights }: Props) {
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div>
                     <span className="text-sm font-semibold text-foreground">
-                      {gn.game}
+                      {gn.title || gn.game}
                     </span>
+                    {gn.title && (
+                      <span className="ml-1 text-xs text-foreground/40">{gn.game}</span>
+                    )}
                     {gn.status === "cancelled" && (
                       <Badge variant="danger">Cancelled</Badge>
                     )}

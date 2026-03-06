@@ -9,6 +9,8 @@ import { GameNightWithAttendees } from "./ScheduleView";
 interface Props {
   gameNights: GameNightWithAttendees[];
   userId?: string;
+  isAdmin?: boolean;
+  onEditEvent?: (gn: GameNightWithAttendees) => void;
 }
 
 function getWeekStart(date: Date): Date {
@@ -37,7 +39,7 @@ function formatRange(start: Date, end: Date): string {
   return `${start.toLocaleDateString("en-US", { month: "short", day: "numeric" })} - ${end.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}`;
 }
 
-export default function WeeklyCalendar({ gameNights, userId }: Props) {
+export default function WeeklyCalendar({ gameNights, userId, isAdmin, onEditEvent }: Props) {
   const [weekStart, setWeekStart] = useState(() => getWeekStart(new Date()));
   const [mobileDay, setMobileDay] = useState(0);
   const today = new Date();
@@ -113,7 +115,7 @@ export default function WeeklyCalendar({ gameNights, userId }: Props) {
           return events.length > 0 ? (
             <div className="space-y-3">
               {events.map((gn) => (
-                <DayEvent key={gn.id} gn={gn} userId={userId} />
+                <DayEvent key={gn.id} gn={gn} userId={userId} isAdmin={isAdmin} onEdit={onEditEvent} />
               ))}
             </div>
           ) : (
@@ -132,6 +134,8 @@ export default function WeeklyCalendar({ gameNights, userId }: Props) {
           today={today}
           getEventsForDay={getEventsForDay}
           userId={userId}
+          isAdmin={isAdmin}
+          onEditEvent={onEditEvent}
         />
         <WeekGrid
           days={week2}
@@ -139,6 +143,8 @@ export default function WeeklyCalendar({ gameNights, userId }: Props) {
           today={today}
           getEventsForDay={getEventsForDay}
           userId={userId}
+          isAdmin={isAdmin}
+          onEditEvent={onEditEvent}
         />
       </div>
     </div>
@@ -151,12 +157,16 @@ function WeekGrid({
   today,
   getEventsForDay,
   userId,
+  isAdmin,
+  onEditEvent,
 }: {
   days: Date[];
   label: string;
   today: Date;
   getEventsForDay: (date: Date) => GameNightWithAttendees[];
   userId?: string;
+  isAdmin?: boolean;
+  onEditEvent?: (gn: GameNightWithAttendees) => void;
 }) {
   return (
     <div>
@@ -183,7 +193,7 @@ function WeekGrid({
               </div>
               <div className="space-y-1">
                 {events.map((gn) => (
-                  <DayEvent key={gn.id} gn={gn} userId={userId} compact />
+                  <DayEvent key={gn.id} gn={gn} userId={userId} compact isAdmin={isAdmin} onEdit={onEditEvent} />
                 ))}
               </div>
             </div>
@@ -198,10 +208,14 @@ function DayEvent({
   gn,
   userId,
   compact,
+  isAdmin,
+  onEdit,
 }: {
   gn: GameNightWithAttendees;
   userId?: string;
   compact?: boolean;
+  isAdmin?: boolean;
+  onEdit?: (gn: GameNightWithAttendees) => void;
 }) {
   const myRsvp = userId
     ? gn.attendees.find((a) => a.userId === userId)?.status
@@ -211,13 +225,17 @@ function DayEvent({
   if (compact) {
     return (
       <div
+        onClick={isAdmin ? () => onEdit?.(gn) : undefined}
         className={`rounded-md border p-1.5 text-xs ${
           gn.status === "cancelled"
             ? "border-danger/30 bg-danger/5 text-danger/70 line-through"
             : "border-neon/30 bg-neon/5"
-        }`}
+        } ${isAdmin ? "cursor-pointer hover:border-neon/60" : ""}`}
       >
-        <div className="font-medium text-neon">{gn.game}</div>
+        {gn.title && (
+          <div className="font-medium text-foreground truncate">{gn.title}</div>
+        )}
+        <div className={`font-medium ${gn.title ? "text-foreground/50" : "text-neon"}`}>{gn.game}</div>
         <div className="text-foreground/50">
           {formatTime(gn.startTime)}
         </div>
@@ -232,11 +250,20 @@ function DayEvent({
 
   return (
     <div className="rounded-xl border border-border bg-surface p-4">
-      <div className="mb-2 flex items-center justify-between">
+      <div
+        className={`mb-2 flex items-center justify-between ${isAdmin ? "cursor-pointer" : ""}`}
+        onClick={isAdmin ? () => onEdit?.(gn) : undefined}
+      >
         <div className="flex items-center gap-2">
-          <h4 className="font-bold text-foreground">{gn.game}</h4>
+          <h4 className="font-bold text-foreground">{gn.title || gn.game}</h4>
+          {gn.title && (
+            <span className="text-sm text-foreground/50">{gn.game}</span>
+          )}
           {gn.status === "cancelled" && <Badge variant="danger">Cancelled</Badge>}
         </div>
+        {isAdmin && (
+          <span className="text-xs text-foreground/30">Edit</span>
+        )}
       </div>
       <p className="mb-2 text-sm text-foreground/50">
         {formatTime(gn.startTime)} - {formatTime(gn.endTime)}

@@ -29,6 +29,7 @@ interface Attendee {
 
 interface GameNightData {
   id: string;
+  title?: string | null;
   date: string;
   startTime: string;
   endTime: string;

@@ -17,6 +17,11 @@ export interface ExtendedProfileFormData {
   interestedInBuyIn: boolean;
   interestedInLAN: boolean;
   willingToModerate: boolean;
+  favoriteGames: string[];
+  twitter: string;
+  twitch: string;
+  youtube: string;
+  customLink: string;
 }
 
 export interface ExtendedProfileFormHandle {
@@ -29,6 +34,11 @@ interface ExtendedProfileFormProps {
   initialBuyIn?: boolean;
   initialLAN?: boolean;
   initialModerate?: boolean;
+  initialFavoriteGames?: string[];
+  initialTwitter?: string;
+  initialTwitch?: string;
+  initialYoutube?: string;
+  initialCustomLink?: string;
   hideSubmit?: boolean;
 }
 
@@ -38,6 +48,11 @@ const ExtendedProfileForm = forwardRef<ExtendedProfileFormHandle, ExtendedProfil
   initialBuyIn,
   initialLAN,
   initialModerate,
+  initialFavoriteGames,
+  initialTwitter,
+  initialTwitch,
+  initialYoutube,
+  initialCustomLink,
   hideSubmit,
 }, ref) {
   const rankedUserGames = useMemo(
@@ -65,6 +80,30 @@ const ExtendedProfileForm = forwardRef<ExtendedProfileFormHandle, ExtendedProfil
     });
   }, [rankedUserGames, initialRanks]);
 
+  const [favoriteGames, setFavoriteGames] = useState<string[]>(
+    () => (initialFavoriteGames || []).filter((g) => userGames.includes(g))
+  );
+
+  // Remove favorites that are no longer in the user's game list
+  useEffect(() => {
+    setFavoriteGames((prev) => prev.filter((g) => userGames.includes(g)));
+  }, [userGames]);
+
+  const toggleFavorite = (gameName: string) => {
+    setFavoriteGames((prev) => {
+      if (prev.includes(gameName)) {
+        return prev.filter((g) => g !== gameName);
+      }
+      if (prev.length >= 3) return prev;
+      return [...prev, gameName];
+    });
+  };
+
+  const [twitter, setTwitter] = useState(initialTwitter || "");
+  const [twitch, setTwitch] = useState(initialTwitch || "");
+  const [youtube, setYoutube] = useState(initialYoutube || "");
+  const [customLink, setCustomLink] = useState(initialCustomLink || "");
+
   const [expandedGame, setExpandedGame] = useState<string | null>(null);
   const [interestedInBuyIn, setInterestedInBuyIn] = useState(initialBuyIn || false);
   const [interestedInLAN, setInterestedInLAN] = useState(initialLAN || false);
@@ -82,6 +121,11 @@ const ExtendedProfileForm = forwardRef<ExtendedProfileFormHandle, ExtendedProfil
       interestedInBuyIn,
       interestedInLAN,
       willingToModerate,
+      favoriteGames,
+      twitter: twitter.trim(),
+      twitch: twitch.trim(),
+      youtube: youtube.trim(),
+      customLink: customLink.trim(),
     }),
   }));
 
@@ -100,6 +144,11 @@ const ExtendedProfileForm = forwardRef<ExtendedProfileFormHandle, ExtendedProfil
         interestedInBuyIn,
         interestedInLAN,
         willingToModerate,
+        favoriteGames,
+        twitter: twitter.trim(),
+        twitch: twitch.trim(),
+        youtube: youtube.trim(),
+        customLink: customLink.trim(),
       });
 
       if (result?.error) {
@@ -117,6 +166,40 @@ const ExtendedProfileForm = forwardRef<ExtendedProfileFormHandle, ExtendedProfil
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
+      {userGames.length > 0 && (
+        <div>
+          <h3 className="mb-1 text-sm font-medium text-foreground">
+            Favorite Games
+          </h3>
+          <p className="mb-3 text-xs text-foreground/40">
+            Pick up to 3 games to show on your card. {favoriteGames.length}/3 selected.
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {userGames.map((game) => {
+              const isFav = favoriteGames.includes(game);
+              const disabled = !isFav && favoriteGames.length >= 3;
+              return (
+                <button
+                  key={game}
+                  type="button"
+                  onClick={() => toggleFavorite(game)}
+                  disabled={disabled}
+                  className={`rounded-full px-3 py-1.5 text-xs font-medium transition ${
+                    isFav
+                      ? "border border-neon bg-neon/10 text-neon"
+                      : disabled
+                        ? "border border-border/50 bg-surface text-foreground/20 cursor-not-allowed"
+                        : "border border-border bg-surface text-foreground/60 hover:border-border-light"
+                  }`}
+                >
+                  {game}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {rankedUserGames.length > 0 && (
         <div>
           <h3 className="mb-1 text-sm font-medium text-foreground">
@@ -219,6 +302,57 @@ const ExtendedProfileForm = forwardRef<ExtendedProfileFormHandle, ExtendedProfil
           </div>
         </div>
       )}
+
+      <div>
+        <h3 className="mb-1 text-sm font-medium text-foreground">
+          Social Links
+        </h3>
+        <p className="mb-3 text-xs text-foreground/40">
+          Optional — shown on your member card.
+        </p>
+        <div className="space-y-3">
+          <div>
+            <label className="mb-1 block text-xs text-foreground/50">Twitter / X</label>
+            <input
+              type="text"
+              value={twitter}
+              onChange={(e) => setTwitter(e.target.value)}
+              placeholder="@username"
+              className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground placeholder:text-foreground/30 focus:border-neon/50 focus:outline-none"
+            />
+          </div>
+          <div>
+            <label className="mb-1 block text-xs text-foreground/50">Twitch</label>
+            <input
+              type="text"
+              value={twitch}
+              onChange={(e) => setTwitch(e.target.value)}
+              placeholder="username"
+              className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground placeholder:text-foreground/30 focus:border-neon/50 focus:outline-none"
+            />
+          </div>
+          <div>
+            <label className="mb-1 block text-xs text-foreground/50">YouTube</label>
+            <input
+              type="text"
+              value={youtube}
+              onChange={(e) => setYoutube(e.target.value)}
+              placeholder="channel name or URL"
+              className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground placeholder:text-foreground/30 focus:border-neon/50 focus:outline-none"
+            />
+          </div>
+          <div>
+            <label className="mb-1 block text-xs text-foreground/50">Custom Link</label>
+            <input
+              type="text"
+              value={customLink}
+              onChange={(e) => setCustomLink(e.target.value)}
+              placeholder="https://..."
+              className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground placeholder:text-foreground/30 focus:border-neon/50 focus:outline-none"
+            />
+          </div>
+        </div>
+      </div>
 
       <div className="space-y-3">
         <h3 className="text-sm font-medium text-foreground">

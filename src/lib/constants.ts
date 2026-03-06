@@ -54,6 +54,10 @@ export const GAME_CATEGORIES: GameCategory[] = [
         name: "Rocket League",
         modes: ["1v1 Tournament", "2v2", "3v3"],
       },
+      {
+        name: "World of Warcraft",
+        modes: ["PvP (10v10)", "Raid (15+)"],
+      },
     ],
   },
   {
@@ -159,6 +163,30 @@ export const GAME_RANK_TIERS: Record<string, RankTier[]> = {
     { name: "Intermediate", color: "#C0C0C0", ranks: ["1000-1200", "1200-1400"] },
     { name: "Advanced", color: "#FFD700", ranks: ["1400-1600", "1600-1800"] },
     { name: "Expert", color: "#A855F7", ranks: ["1800-2000", "2000+"] },
+  ],
+  "Halo": [
+    { name: "Bronze", color: "#CD7F32", ranks: ["Bronze 1", "Bronze 2", "Bronze 3", "Bronze 4", "Bronze 5", "Bronze 6"] },
+    { name: "Silver", color: "#C0C0C0", ranks: ["Silver 1", "Silver 2", "Silver 3", "Silver 4", "Silver 5", "Silver 6"] },
+    { name: "Gold", color: "#FFD700", ranks: ["Gold 1", "Gold 2", "Gold 3", "Gold 4", "Gold 5", "Gold 6"] },
+    { name: "Platinum", color: "#00CED1", ranks: ["Platinum 1", "Platinum 2", "Platinum 3", "Platinum 4", "Platinum 5", "Platinum 6"] },
+    { name: "Diamond", color: "#B9F2FF", ranks: ["Diamond 1", "Diamond 2", "Diamond 3", "Diamond 4", "Diamond 5", "Diamond 6"] },
+    { name: "Onyx", color: "#A855F7", ranks: ["Onyx"] },
+  ],
+  "World of Warcraft": [
+    { name: "Combatant", color: "#6B6B6B", ranks: ["Combatant I", "Combatant II"] },
+    { name: "Challenger", color: "#C0C0C0", ranks: ["Challenger I", "Challenger II"] },
+    { name: "Rival", color: "#FFD700", ranks: ["Rival I", "Rival II"] },
+    { name: "Duelist", color: "#00CED1", ranks: ["Duelist"] },
+    { name: "Elite", color: "#A855F7", ranks: ["Elite"] },
+    { name: "Gladiator", color: "#EF4444", ranks: ["Gladiator"] },
+  ],
+  "Brawlhalla": [
+    { name: "Tin", color: "#8C8C8C", ranks: ["Tin"] },
+    { name: "Bronze", color: "#CD7F32", ranks: ["Bronze"] },
+    { name: "Silver", color: "#C0C0C0", ranks: ["Silver"] },
+    { name: "Gold", color: "#FFD700", ranks: ["Gold"] },
+    { name: "Platinum", color: "#00CED1", ranks: ["Platinum"] },
+    { name: "Diamond", color: "#B9F2FF", ranks: ["Diamond"] },
   ],
 };
 

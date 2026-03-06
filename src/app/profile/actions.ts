@@ -27,6 +27,11 @@ interface ExtendedProfileData {
   interestedInBuyIn: boolean;
   interestedInLAN: boolean;
   willingToModerate: boolean;
+  favoriteGames: string[];
+  twitter: string;
+  twitch: string;
+  youtube: string;
+  customLink: string;
 }
 
 function parseSlot(key: string) {
@@ -108,6 +113,13 @@ export async function updateExtendedProfile(data: ExtendedProfileData) {
           interestedInBuyIn: data.interestedInBuyIn,
           interestedInLAN: data.interestedInLAN,
           willingToModerate: data.willingToModerate,
+          favoriteGames: data.favoriteGames.length > 0
+            ? JSON.stringify(data.favoriteGames.slice(0, 3))
+            : null,
+          twitter: data.twitter || null,
+          twitch: data.twitch || null,
+          youtube: data.youtube || null,
+          customLink: data.customLink || null,
         },
       });
 

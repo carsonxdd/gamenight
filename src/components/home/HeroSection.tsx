@@ -42,7 +42,7 @@ export default function HeroSection() {
           className="mx-auto mb-8 max-w-md text-lg text-foreground/60"
           variants={staggerItem}
         >
-          Weekly PC gaming sessions with the squad. Sign up, pick your games,
+          Weekly gaming events with the boys. Sign up, pick your games,
           and lock in your nights.
         </motion.p>
         <motion.div
