@@ -1,0 +1,87 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                     String              @id @default(cuid())
+  discordId              String              @unique
+  name                   String
+  gamertag               String?
+  avatar                 String?
+  timezone               String?
+  isAdmin                Boolean             @default(false)
+  willingToModerate      Boolean             @default(false)
+  interestedInBuyIn      Boolean             @default(false)
+  interestedInLAN        Boolean             @default(false)
+  dismissedProfileBanner Boolean             @default(false)
+  createdAt              DateTime            @default(now())
+  updatedAt              DateTime            @updatedAt
+  games                  UserGame[]
+  ranks                  UserGameRank[]
+  availability           UserAvailability[]
+  createdNights          GameNight[]         @relation("CreatedBy")
+  attendances            GameNightAttendee[]
+}
+
+model UserGameRank {
+  id       String @id @default(cuid())
+  userId   String
+  gameName String // "CS2", "Valorant", "League of Legends", etc.
+  rank     String // e.g. "Gold Nova 3", "Diamond 2", "1200"
+  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, gameName])
+}
+
+model UserGame {
+  id       String  @id @default(cuid())
+  userId   String
+  gameName String
+  modes    String? // JSON array of selected modes, e.g. '["ARAM","Draft"]'
+  user     User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, gameName])
+}
+
+model UserAvailability {
+  id        String @id @default(cuid())
+  userId    String
+  dayOfWeek Int    // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
+  startTime String // "HH:mm" format
+  endTime   String // "HH:mm" format
+  user      User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, dayOfWeek, startTime])
+}
+
+model GameNight {
+  id          String              @id @default(cuid())
+  date        DateTime
+  startTime   String              // "HH:mm"
+  endTime     String              // "HH:mm"
+  game        String
+  status      String              @default("scheduled") // scheduled, cancelled
+  isRecurring Boolean             @default(false)
+  recurDay    Int?                // 0-6 day of week
+  createdById String
+  createdBy   User                @relation("CreatedBy", fields: [createdById], references: [id])
+  attendees   GameNightAttendee[]
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+}
+
+model GameNightAttendee {
+  id          String    @id @default(cuid())
+  gameNightId String
+  userId      String
+  status      String    @default("confirmed") // confirmed, maybe, declined
+  gameNight   GameNight @relation(fields: [gameNightId], references: [id], onDelete: Cascade)
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([gameNightId, userId])
+}
