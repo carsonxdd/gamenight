@@ -1,6 +1,6 @@
 # Caplan's Game Night
 
-**v1.2.0**
+**v1.6.0**
 
 A web app for organizing weekly gaming events with the boys. Sign up with Discord, pick your games, set your availability, and RSVP to game nights.
 
@@ -49,24 +49,41 @@ Custom games can be added via text input.
 ### Scheduling
 - Two-week calendar view with navigation (14 days across two stacked grids)
 - Event list view with tab navigation
-- Admin and moderator game night creation with optional title, date, time, game, and recurring option
-- **Recurring events** — checking "Recurring weekly" creates the initial event plus 3 more weeks (4 total) automatically
-- **Admin/mod inline editing** — admins and moderators can click any event in the calendar or list view to open an edit modal. Update title, date, time, game, status (scheduled/cancelled), and recurring flag. Includes delete with two-click confirmation.
-- **Info banner** — tells members to reach out to moderators to suggest events or ask about upcoming game nights
-- RSVP system (confirmed / maybe / declined)
+- **User-created events with approval** — any logged-in user can create a game night event. Regular user events are set to "pending" and require moderator/admin approval before appearing publicly. Admin/mod events are auto-approved. Users can see their own pending/rejected events; other users cannot.
+- **Event approval workflow** — admins and moderators see pending events with "Approve" and "Reject" buttons in both calendar and list views. Pending events styled with dashed warning borders; rejected events styled with danger borders. Status badges shown on all non-scheduled events.
+- **Invite-only events** — users can create private events visible only to the creator and invited members. Invite-only events skip mod approval (auto-scheduled). Creators can edit their own invite-only events (title, description, date, times, game, invitees) and delete/cancel them. "Invite-Only" badge shown on event cards.
+- **Member picker** — searchable checkbox list for selecting invitees when creating or editing invite-only events. Shows avatars, gamertags, and real names. Quick-select group buttons toggle entire groups at once. Counter shows "X/10 selected".
+- **Invite guardrails** — non-admin users limited to 50-char titles, 200-char descriptions, no past dates, max 10 invitees per event, max 5 invite-only events per rolling 7 days, no self-invites. Admins bypass all limits.
+- **Quick-select groups** — save named groups of friends on the profile page for fast event invites. Full CRUD with independent save (not tied to the sticky save bar). Max 10 groups, 10 members each, 30-char names.
+- **Visibility-aware filtering** — unauthenticated users see only public scheduled/cancelled events. Regular users additionally see their own pending/rejected events and invite-only events where they are creator or invitee. Admins/mods see everything.
+- **Recurring events** (admin/mod only) — checking "Recurring weekly" creates events for a configurable number of weeks (2–12). The recurring day is derived from the selected date automatically. All events in a series share a group ID for easy bulk management.
+- **Delete recurring series** — edit modal shows a "Delete All in Series" button for recurring events, allowing admins/mods to remove an entire series at once with two-click confirmation.
+- **Event descriptions** — admins and moderators can add an optional description when creating or editing events. Shown to all users in the calendar and event list views so everyone knows what's planned.
+- **Admin/mod inline editing** — admins and moderators can click any event in the calendar or list view to open an edit modal. Update title, description, date, time, game, status (pending/scheduled/cancelled/rejected), and recurring flag. Includes delete with two-click confirmation.
+- **Info banner** — directs logged-in users to create events or invite-only sessions; unauthenticated users told to sign in
+- RSVP system (confirmed / maybe / declined) — only shown for scheduled events (hidden for pending/rejected/cancelled)
+
+### Polls (`/polls`, authenticated)
+- **Create polls** — any logged-in user can create a poll with a question, optional description, optional game tag from the catalog, and 2–10 options. Toggle between single-select and multi-select.
+- **Vote** — click options and submit. Animated result bars show vote counts and percentages after voting. Users can change their vote while the poll is active.
+- **Comments** — small comment thread under each poll for clarifications (e.g. "I'd do Ender Dragon if we have 6+"). Shows 3 comments by default with "show more" expand. Max 300 chars per comment. Authors and admins can delete comments.
+- **Poll management** — creators, admins, and moderators can close or delete polls. Two-click delete confirmation.
+- **Pinning** — admins/mods can pin polls to the top of the list (neon glow border on pinned polls).
+- **Filtering** — tab toggle between All, Active, and Closed polls.
+- **Rate limiting** — regular users limited to 5 polls per rolling 7 days. Admins bypass all limits.
 
 ### Roles & Permissions
 - **Owner** (CarsonXD) — full access, gold glowing border on member cards
-- **Admin** — full access including user management (promote/demote, assign moderators, remove users)
-- **Moderator** — access to admin panel (read-only roster), can create/edit/delete game nights. Dark red glowing border on member cards
+- **Admin** — full access including user management (role ladder promote/demote, remove users)
+- **Moderator** — access to admin panel (view-only roster, no user management), can create/edit/delete game nights. Dark red glowing border on member cards
 - **Member** — default role, can RSVP and manage own profile
 - Role badges displayed on member cards in both the members page and home page carousel
 
 ### Admin Panel (`/admin`)
 - **Game Popularity** — ranked by player count with expandable player lists
-- **Availability Heatmap** — aggregated grid showing player overlap with click-to-reveal names
+- **Availability Heatmap** — aggregated grid showing player overlap with click-to-reveal names; filterable by game to see who's available for a specific title
 - **RSVP Overview** — game night cards with status badge counts
-- **Player Roster** — searchable table with promote/demote, moderator toggle, owner/admin/mod badges, and remove with confirmation. User management actions restricted to admins only; moderators can view the roster.
+- **Player Roster** — searchable table with role ladder promote/demote (Member → Moderator → Admin), owner/admin/mod badges, and remove with confirmation. User management actions restricted to admins only; moderators can view the roster but cannot promote, demote, or remove anyone.
 - Route-level protection via middleware (admins and moderators)
 
 ### About Page (`/about`, authenticated)
@@ -92,7 +109,8 @@ Custom games can be added via text input.
 - Dark cyberpunk theme with neon green accents
 - Smooth page transitions and animated sub-option panels
 - Responsive design (mobile hamburger menu, scrollable day selectors)
-- Signed-in users see their gamertag as a profile link in the navbar; signup/join buttons hidden
+- **Active nav highlighting** — current page link turns neon green with bold text in both desktop and mobile nav. Uses pathname matching (exact for Home, prefix for all other routes).
+- Signed-in users see their **bold** gamertag as a profile link in the navbar; signup/join buttons hidden
 
 ## Repository
 
@@ -152,6 +170,7 @@ src/
 │   ├── about/              # About page (story, organizer, links)
 │   ├── admin/              # Admin panel + server actions
 │   ├── members/            # Members directory
+│   ├── polls/              # Polls + server actions
 │   ├── profile/            # Profile editing + server actions
 │   ├── schedule/           # Calendar/event views + server actions
 │   ├── signup/             # Discord auth + onboarding
@@ -161,7 +180,10 @@ src/
 │   ├── home/               # Landing page (hero, intro, social proof,
 │   │                       # members carousel, highlight cards)
 │   ├── members/            # Members page (card grid, member card)
-│   ├── schedule/           # Calendar, event list, RSVP, create/edit modals
+│   ├── polls/              # Poll list, poll card, create modal, comments
+│   ├── profile/            # Invite group manager
+│   ├── schedule/           # Calendar, event list, RSVP, create/edit modals,
+│   │                       # member picker for invite-only events
 │   ├── signup/             # Profile form, game selector, availability grid,
 │   │                       # rank selector, extended profile form,
 │   │                       # unified profile page client wrapper
@@ -182,8 +204,15 @@ src/
 - **UserGame** — games a user plays, with optional mode selections (JSON)
 - **UserGameRank** — competitive rank per game per user
 - **UserAvailability** — 30-min time slot preferences per day of week
-- **GameNight** — scheduled events with optional title, date, time, game, status, recurring options
+- **GameNight** — scheduled events with optional title, optional description, date, time, game, status (pending/scheduled/cancelled/rejected), visibility (public/invite_only), recurring options, recurGroupId for series linking
 - **GameNightAttendee** — RSVP status per user per game night
+- **GameNightInvite** — invite records linking users to invite-only game nights (cascade delete)
+- **InviteGroup** — named quick-select groups owned by a user
+- **InviteGroupMember** — members of an invite group (cascade delete on group or user deletion)
+- **Poll** — community polls with title, optional description, optional game tag, single/multi-select, status (active/closed), pinned flag, creator reference
+- **PollOption** — individual options within a poll
+- **PollVote** — user votes on poll options (unique per poll+option+user, cascade delete)
+- **PollComment** — short comment thread per poll (max 300 chars, cascade delete)
 
 ## Future Ideas
 
@@ -194,7 +223,8 @@ Admin controls to trigger announcements from the site
 
 Moderation & Admin
 
-Community event proposals with voting and admin approval
+~~Community event proposals with voting and admin approval~~ *(shipped in v1.3.0 — user-created events with mod approval)*
+~~Invite-only / private events~~ *(shipped in v1.4.0 — invite-only events with quick-select groups)*
 
 Teams
 
@@ -225,7 +255,7 @@ Engagement
 
 Weekly digest via email or Discord DM
 Badges and streaks
-In-app polls and quick votes
+~~In-app polls and quick votes~~ *(shipped in v1.6.0 — polls with voting, comments, and pinning)*
 
 Quality of Life
 
@@ -234,6 +264,39 @@ Event templates for recurring game nights
 Spectator RSVP option
 
 ## Version History
+
+### v1.6.0 — 2026-03-06
+- **Polls** — new `/polls` page where any authenticated user can create polls to gauge interest in plans (e.g. "Should we kill the Ender Dragon?" or "Which WoW raid this weekend?"). Single-select or multi-select voting with animated result bars. Optional game tag from the catalog. Comment thread under each poll (3 preview, expandable) for clarifications. Creators/admins can close or delete polls. Admins/mods can pin polls to the top. Rate limited to 5 polls per week for regular users.
+- **Active nav highlighting** — the current page link in the navbar now turns neon green with bold text, so you always know which tab you're on. Works on both desktop and mobile menus.
+- **Bold profile name** — the gamertag/username in the navbar is now bold for better visibility
+
+### v1.5.0 — 2026-03-06
+- **Role ladder** — replaced separate Promote/Mod buttons with a single role ladder system (Member → Moderator → Admin). Promote steps up one level, Demote steps down. Owners are protected from role changes.
+- **Moderator restrictions** — moderators can view the admin panel but can no longer promote, demote, or remove users. All user management actions are admin-only (enforced in both UI and server actions).
+- **Availability game filter** — the availability heatmap now has a game dropdown filter. Select a game to see only the availability of players who play that game. Useful for finding the best time to schedule a specific title.
+- **Test user availability** — seed script now includes availability slots (17:00–23:00 range) for all 5 test users
+
+### v1.4.0 — 2026-03-06
+- **Invite-only events** — new visibility toggle (Public / Invite-Only) in the create event modal. Invite-only events auto-schedule without mod approval and are only visible to the creator and invitees. Creators can edit and delete their own invite-only events.
+- **Member picker component** — searchable checkbox list with avatar, gamertag, and real name. Used in both event creation/editing and group management. Quick-select group buttons toggle all group members at once.
+- **Invite guardrails** — rate limiting and input validation for non-admin users: 50-char title, 200-char description, no past dates, max 10 invitees, max 5 invite-only events per rolling 7 days, no self-invites. Admins bypass all limits.
+- **Quick-select groups** — new "Quick-Select Groups" section on the profile page. Create, edit, and delete named groups of friends (max 10 groups, 10 members each). Groups appear as toggle buttons in the member picker for fast invites. Independent CRUD with per-group save buttons.
+- **Visibility-aware query filtering** — schedule page queries now respect event visibility. Unauthenticated users only see public events. Regular users see public events plus invite-only events where they are creator or invitee. Admins/mods see everything.
+- **Invite-Only badge** — shown on event cards in both calendar and list views
+- **Creator editing** — creators of invite-only events can click their events to edit (not just admin/mod). Edit modal shows member picker for updating invitees. Status and recurring controls remain admin-only.
+- **Invited members display** — invite-only events show the invited members list on event cards
+- **Test seed script** — `prisma/seed-test-users.ts` creates 5 realistic test users with games, competitive ranks, availability slots, favorite games, and social links for development/testing
+
+### v1.3.0 — 2026-03-06
+- **User-created events** — any logged-in user can now create game night events. Regular user events require moderator/admin approval (status: "pending") before appearing publicly. Admin/mod events are auto-approved.
+- **Approval workflow** — admins and moderators see pending events with Approve/Reject buttons. Pending events have dashed warning borders and badges; rejected events have danger styling. "Submitted by [name]" shown on pending events.
+- **Recurring events improvements** — recurring is now admin/mod only. Configurable week count (2–12 weeks) replaces the old fixed 4-week limit. Day-of-week derived from selected date instead of a separate dropdown. All events in a recurring series linked by a shared group ID.
+- **Delete recurring series** — "Delete All in Series" button in the edit modal lets admins/mods remove an entire recurring series at once.
+- **Date bug fix** — events now land on the correct day regardless of timezone. Previously, selecting Wednesday could create events on Tuesday due to UTC midnight parsing.
+- **Event status expansion** — status field now supports pending, scheduled, cancelled, and rejected. Edit modal dropdown updated to include all four. RSVP buttons only shown for scheduled events.
+
+### v1.2.1 — 2026-03-06
+- **Event descriptions** — admins and moderators can add an optional description when creating or editing game nights. Displayed to all users in both the calendar and event list views.
 
 ### v1.2.0 — 2026-03-06
 - **Moderator role** — moderators can access the admin panel and create/edit/delete game nights

@@ -33,6 +33,12 @@ model User {
   availability           UserAvailability[]
   createdNights          GameNight[]         @relation("CreatedBy")
   attendances            GameNightAttendee[]
+  invitedToNights        GameNightInvite[]   @relation("InvitedTo")
+  ownedGroups            InviteGroup[]       @relation("OwnedGroups")
+  groupMemberships       InviteGroupMember[] @relation("InGroupMemberships")
+  createdPolls           Poll[]              @relation("PollCreator")
+  pollVotes              PollVote[]
+  pollComments           PollComment[]
 }
 
 model UserGameRank {
@@ -69,16 +75,20 @@ model UserAvailability {
 model GameNight {
   id          String              @id @default(cuid())
   title       String?
+  description String?
   date        DateTime
   startTime   String              // "HH:mm"
   endTime     String              // "HH:mm"
   game        String
-  status      String              @default("scheduled") // scheduled, cancelled
-  isRecurring Boolean             @default(false)
-  recurDay    Int?                // 0-6 day of week
+  status      String              @default("scheduled") // pending, scheduled, cancelled, rejected
+  visibility  String              @default("public")    // "public" | "invite_only"
+  isRecurring  Boolean             @default(false)
+  recurDay     Int?                // 0-6 day of week
+  recurGroupId String?             // shared ID linking recurring event instances
   createdById String
   createdBy   User                @relation("CreatedBy", fields: [createdById], references: [id])
   attendees   GameNightAttendee[]
+  invites     GameNightInvite[]
   createdAt   DateTime            @default(now())
   updatedAt   DateTime            @updatedAt
 }
@@ -92,4 +102,82 @@ model GameNightAttendee {
   user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([gameNightId, userId])
+}
+
+model GameNightInvite {
+  id          String    @id @default(cuid())
+  gameNightId String
+  userId      String
+  gameNight   GameNight @relation(fields: [gameNightId], references: [id], onDelete: Cascade)
+  user        User      @relation("InvitedTo", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([gameNightId, userId])
+}
+
+model InviteGroup {
+  id        String              @id @default(cuid())
+  name      String
+  ownerId   String
+  owner     User                @relation("OwnedGroups", fields: [ownerId], references: [id], onDelete: Cascade)
+  members   InviteGroupMember[]
+  createdAt DateTime            @default(now())
+  updatedAt DateTime            @updatedAt
+}
+
+model InviteGroupMember {
+  id      String      @id @default(cuid())
+  groupId String
+  userId  String
+  group   InviteGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  user    User        @relation("InGroupMemberships", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([groupId, userId])
+}
+
+model Poll {
+  id          String       @id @default(cuid())
+  title       String
+  description String?
+  game        String?
+  multiSelect Boolean      @default(false)
+  status      String       @default("active") // active, closed
+  pinned      Boolean      @default(false)
+  createdById String
+  createdBy   User         @relation("PollCreator", fields: [createdById], references: [id], onDelete: Cascade)
+  options     PollOption[]
+  votes       PollVote[]
+  comments    PollComment[]
+  createdAt   DateTime     @default(now())
+  closedAt    DateTime?
+  updatedAt   DateTime     @updatedAt
+}
+
+model PollOption {
+  id     String     @id @default(cuid())
+  pollId String
+  label  String
+  poll   Poll       @relation(fields: [pollId], references: [id], onDelete: Cascade)
+  votes  PollVote[]
+}
+
+model PollVote {
+  id       String     @id @default(cuid())
+  pollId   String
+  optionId String
+  userId   String
+  poll     Poll       @relation(fields: [pollId], references: [id], onDelete: Cascade)
+  option   PollOption @relation(fields: [optionId], references: [id], onDelete: Cascade)
+  user     User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([pollId, optionId, userId])
+}
+
+model PollComment {
+  id        String   @id @default(cuid())
+  pollId    String
+  userId    String
+  text      String
+  poll      Poll     @relation(fields: [pollId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
 }

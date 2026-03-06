@@ -10,14 +10,29 @@ export default async function ProfilePage() {
     redirect("/signup");
   }
 
-  const user = await prisma.user.findUnique({
-    where: { id: session.user.id },
-    include: {
-      games: true,
-      ranks: true,
-      availability: true,
-    },
-  });
+  const [user, allMembers, userGroups] = await Promise.all([
+    prisma.user.findUnique({
+      where: { id: session.user.id },
+      include: {
+        games: true,
+        ranks: true,
+        availability: true,
+      },
+    }),
+    prisma.user.findMany({
+      where: {
+        gamertag: { not: null },
+        id: { not: session.user.id },
+      },
+      select: { id: true, name: true, gamertag: true, avatar: true },
+      orderBy: { gamertag: "asc" },
+    }),
+    prisma.inviteGroup.findMany({
+      where: { ownerId: session.user.id },
+      include: { members: { select: { userId: true } } },
+      orderBy: { name: "asc" },
+    }),
+  ]);
 
   if (!user?.gamertag) {
     redirect("/signup");
@@ -41,6 +56,12 @@ export default async function ProfilePage() {
     ? JSON.parse(user.favoriteGames)
     : [];
 
+  const groups = userGroups.map((g) => ({
+    id: g.id,
+    name: g.name,
+    memberIds: g.members.map((m) => m.userId),
+  }));
+
   return (
     <ProfilePageClient
       defaultName={user.gamertag}
@@ -56,6 +77,8 @@ export default async function ProfilePage() {
       initialTwitch={user.twitch || undefined}
       initialYoutube={user.youtube || undefined}
       initialCustomLink={user.customLink || undefined}
+      groups={groups}
+      members={allMembers}
     />
   );
 }

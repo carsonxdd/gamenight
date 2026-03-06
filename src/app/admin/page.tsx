@@ -59,15 +59,17 @@ export default async function AdminPage() {
     .map(([gameName, data]) => ({ gameName, ...data }))
     .sort((a, b) => b.count - a.count);
 
-  // Availability entries
-  const availability = users.flatMap((user) =>
-    user.availability.map((a) => ({
+  // Availability entries (include user's games for filtering)
+  const availability = users.flatMap((user) => {
+    const userGames = user.games.map((g) => g.gameName);
+    return user.availability.map((a) => ({
       dayOfWeek: a.dayOfWeek,
       startTime: a.startTime,
       endTime: a.endTime,
       userName: user.gamertag || user.name,
-    }))
-  );
+      games: userGames,
+    }));
+  });
 
   // Game nights serialized
   const serializedGameNights = gameNights.map((gn) => ({

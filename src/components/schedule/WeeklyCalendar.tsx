@@ -4,6 +4,7 @@ import { useState, useMemo } from "react";
 import { DAYS_OF_WEEK, formatTime } from "@/lib/constants";
 import Badge from "@/components/ui/Badge";
 import RSVPButton from "./RSVPButton";
+import { approveGameNight, rejectGameNight } from "@/app/schedule/actions";
 import { GameNightWithAttendees } from "./ScheduleView";
 
 interface Props {
@@ -74,10 +75,13 @@ export default function WeeklyCalendar({ gameNights, userId, isAdmin, onEditEven
         <div className="text-center">
           <button
             onClick={goToday}
-            className="text-sm text-foreground/50 transition hover:text-neon"
+            className="mb-1 rounded-lg border border-border px-4 py-1.5 text-sm font-medium text-foreground/70 transition hover:border-neon hover:text-neon"
           >
-            {formatRange(allDays[0], allDays[13])}
+            Today
           </button>
+          <div className="text-sm text-foreground/50">
+            {formatRange(allDays[0], allDays[13])}
+          </div>
         </div>
         <button
           onClick={next}
@@ -222,23 +226,44 @@ function DayEvent({
     : undefined;
   const confirmed = gn.attendees.filter((a) => a.status === "confirmed");
 
+  const isPending = gn.status === "pending";
+  const isRejected = gn.status === "rejected";
+  const isInviteOnly = gn.visibility === "invite_only";
+  const isCreator = userId === gn.createdById;
+  const canEdit = isAdmin || (isCreator && isInviteOnly);
+
   if (compact) {
     return (
       <div
-        onClick={isAdmin ? () => onEdit?.(gn) : undefined}
+        onClick={canEdit ? () => onEdit?.(gn) : undefined}
         className={`rounded-md border p-1.5 text-xs ${
           gn.status === "cancelled"
             ? "border-danger/30 bg-danger/5 text-danger/70 line-through"
-            : "border-neon/30 bg-neon/5"
-        } ${isAdmin ? "cursor-pointer hover:border-neon/60" : ""}`}
+            : isPending
+              ? "border-dashed border-warning/40 bg-warning/5"
+              : isRejected
+                ? "border-danger/30 bg-danger/5"
+                : "border-neon/30 bg-neon/5"
+        } ${canEdit ? "cursor-pointer hover:border-neon/60" : ""}`}
       >
+        {(isPending || isRejected) && (
+          <div className={`font-medium ${isPending ? "text-warning" : "text-danger"} text-[10px] uppercase`}>
+            {isPending ? "Pending" : "Rejected"}
+          </div>
+        )}
+        {isInviteOnly && (
+          <div className="font-medium text-foreground/40 text-[10px] uppercase">Invite-Only</div>
+        )}
         {gn.title && (
           <div className="font-medium text-foreground truncate">{gn.title}</div>
         )}
-        <div className={`font-medium ${gn.title ? "text-foreground/50" : "text-neon"}`}>{gn.game}</div>
+        <div className={`font-medium ${gn.title ? "text-foreground/50" : isPending ? "text-warning" : "text-neon"}`}>{gn.game}</div>
         <div className="text-foreground/50">
           {formatTime(gn.startTime)}
         </div>
+        {gn.description && (
+          <div className="mt-0.5 text-foreground/40 truncate">{gn.description}</div>
+        )}
         {confirmed.length > 0 && (
           <div className="mt-0.5 text-foreground/40">
             {confirmed.length} going
@@ -248,11 +273,24 @@ function DayEvent({
     );
   }
 
+  const handleApprove = async () => {
+    await approveGameNight(gn.id);
+  };
+  const handleReject = async () => {
+    await rejectGameNight(gn.id);
+  };
+
   return (
-    <div className="rounded-xl border border-border bg-surface p-4">
+    <div className={`rounded-xl border p-4 ${
+      isPending
+        ? "border-dashed border-warning/40 bg-warning/5"
+        : isRejected
+          ? "border-danger/30 bg-danger/5"
+          : "border-border bg-surface"
+    }`}>
       <div
-        className={`mb-2 flex items-center justify-between ${isAdmin ? "cursor-pointer" : ""}`}
-        onClick={isAdmin ? () => onEdit?.(gn) : undefined}
+        className={`mb-2 flex items-center justify-between ${canEdit ? "cursor-pointer" : ""}`}
+        onClick={canEdit ? () => onEdit?.(gn) : undefined}
       >
         <div className="flex items-center gap-2">
           <h4 className="font-bold text-foreground">{gn.title || gn.game}</h4>
@@ -260,20 +298,52 @@ function DayEvent({
             <span className="text-sm text-foreground/50">{gn.game}</span>
           )}
           {gn.status === "cancelled" && <Badge variant="danger">Cancelled</Badge>}
+          {isPending && <Badge variant="warning">Pending</Badge>}
+          {isRejected && <Badge variant="danger">Rejected</Badge>}
+          {isInviteOnly && <Badge variant="neutral">Invite-Only</Badge>}
         </div>
-        {isAdmin && (
+        {canEdit && (
           <span className="text-xs text-foreground/30">Edit</span>
         )}
       </div>
       <p className="mb-2 text-sm text-foreground/50">
         {formatTime(gn.startTime)} - {formatTime(gn.endTime)}
       </p>
+      {gn.description && (
+        <p className="mb-2 text-sm text-foreground/60">{gn.description}</p>
+      )}
+      {isPending && gn.createdBy && (
+        <p className="mb-2 text-xs text-warning/70">
+          Submitted by {gn.createdBy.gamertag || gn.createdBy.name}
+        </p>
+      )}
       {confirmed.length > 0 && (
         <p className="mb-3 text-xs text-neon">
           {confirmed.map((a) => a.user.gamertag || a.user.name).join(", ")}
         </p>
       )}
-      {gn.status !== "cancelled" && userId && (
+      {isInviteOnly && gn.invites && gn.invites.length > 0 && (
+        <p className="mb-3 text-xs text-foreground/40">
+          Invited: {gn.invites.map((inv) => inv.user.gamertag || inv.user.name).join(", ")}
+        </p>
+      )}
+      {isPending && isAdmin && (
+        <div className="mb-3 flex gap-2">
+          <button
+            onClick={handleApprove}
+            className="rounded-lg bg-neon/10 px-3 py-1.5 text-xs font-medium text-neon transition hover:bg-neon/20"
+          >
+            Approve
+          </button>
+          <button
+            onClick={handleReject}
+            className="rounded-lg bg-danger/10 px-3 py-1.5 text-xs font-medium text-danger transition hover:bg-danger/20"
+          >
+            Reject
+          </button>
+        </div>
+      )}
+      {gn.status === "scheduled" && userId && (
         <RSVPButton gameNightId={gn.id} currentStatus={myRsvp} />
       )}
     </div>

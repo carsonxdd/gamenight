@@ -10,27 +10,50 @@ import Button from "@/components/ui/Button";
 export interface GameNightWithAttendees {
   id: string;
   title: string | null;
+  description: string | null;
   date: string;
   startTime: string;
   endTime: string;
   game: string;
   status: string;
+  visibility: string;
   isRecurring: boolean;
+  recurGroupId: string | null;
   createdById: string;
+  createdBy?: { name: string; gamertag: string | null };
   attendees: {
     userId: string;
     status: string;
     user: { name: string; gamertag: string | null };
   }[];
+  invites?: {
+    userId: string;
+    user: { name: string; gamertag: string | null };
+  }[];
+}
+
+export interface InvitableMember {
+  id: string;
+  name: string;
+  gamertag: string | null;
+  avatar: string | null;
+}
+
+export interface InviteGroupData {
+  id: string;
+  name: string;
+  memberIds: string[];
 }
 
 interface Props {
   gameNights: GameNightWithAttendees[];
   userId?: string;
   isAdmin?: boolean;
+  members?: InvitableMember[];
+  groups?: InviteGroupData[];
 }
 
-export default function ScheduleView({ gameNights, userId, isAdmin }: Props) {
+export default function ScheduleView({ gameNights, userId, isAdmin, members = [], groups = [] }: Props) {
   const [view, setView] = useState<"calendar" | "list">("calendar");
   const [showCreate, setShowCreate] = useState(false);
   const [editingEvent, setEditingEvent] = useState<GameNightWithAttendees | null>(null);
@@ -61,7 +84,7 @@ export default function ScheduleView({ gameNights, userId, isAdmin }: Props) {
           </button>
         </div>
 
-        {isAdmin && (
+        {userId && (
           <Button onClick={() => setShowCreate(true)} size="sm">
             + New Game Night
           </Button>
@@ -84,10 +107,14 @@ export default function ScheduleView({ gameNights, userId, isAdmin }: Props) {
         />
       )}
 
-      {isAdmin && (
+      {userId && (
         <CreateGameNightModal
           open={showCreate}
           onClose={() => setShowCreate(false)}
+          isAdmin={isAdmin}
+          userId={userId}
+          members={members}
+          groups={groups}
         />
       )}
 
@@ -96,6 +123,10 @@ export default function ScheduleView({ gameNights, userId, isAdmin }: Props) {
           open
           onClose={() => setEditingEvent(null)}
           gameNight={editingEvent}
+          userId={userId}
+          isAdmin={isAdmin}
+          members={members}
+          groups={groups}
         />
       )}
     </div>

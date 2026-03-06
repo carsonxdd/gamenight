@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { fadeIn } from "@/lib/animations";
 import { DAYS_OF_WEEK, TIME_SLOTS, formatTime } from "@/lib/constants";
@@ -11,6 +11,7 @@ interface AvailabilityEntry {
   startTime: string;
   endTime: string;
   userName: string;
+  games: string[];
 }
 
 interface Props {
@@ -35,6 +36,21 @@ export default function AvailabilityHeatmap({ availability }: Props) {
     day: number;
     slot: string;
   } | null>(null);
+  const [gameFilter, setGameFilter] = useState("");
+
+  // Collect all unique games for the dropdown
+  const allGames = useMemo(() => {
+    const set = new Set<string>();
+    for (const entry of availability) {
+      for (const g of entry.games) set.add(g);
+    }
+    return [...set].sort();
+  }, [availability]);
+
+  // Filter availability by selected game
+  const filtered = gameFilter
+    ? availability.filter((e) => e.games.includes(gameFilter))
+    : availability;
 
   // Build counts and player lists for each cell
   const cellData: Record<string, { count: number; players: string[] }> = {};
@@ -43,7 +59,7 @@ export default function AvailabilityHeatmap({ availability }: Props) {
     for (const slot of TIME_SLOTS) {
       const key = `${day}-${slot}`;
       const players: string[] = [];
-      for (const entry of availability) {
+      for (const entry of filtered) {
         if (entry.dayOfWeek === day && slotCovered(slot, entry.startTime, entry.endTime)) {
           players.push(entry.userName);
         }
@@ -62,6 +78,20 @@ export default function AvailabilityHeatmap({ availability }: Props) {
   return (
     <motion.div {...fadeIn}>
       <Card>
+        {/* Game filter */}
+        <div className="mb-4">
+          <select
+            value={gameFilter}
+            onChange={(e) => { setGameFilter(e.target.value); setSelected(null); }}
+            className="rounded-lg border border-border bg-surface px-3 py-1.5 text-sm text-foreground focus:border-neon/50 focus:outline-none focus:ring-1 focus:ring-neon/50"
+          >
+            <option value="">All Games</option>
+            {allGames.map((g) => (
+              <option key={g} value={g}>{g}</option>
+            ))}
+          </select>
+        </div>
+
         <div className="overflow-x-auto">
           <table className="w-full border-collapse">
             <thead>

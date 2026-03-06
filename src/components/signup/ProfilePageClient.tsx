@@ -9,6 +9,8 @@ import Card from "@/components/ui/Card";
 import Button from "@/components/ui/Button";
 import { updateProfile } from "@/app/profile/actions";
 import { updateExtendedProfile } from "@/app/profile/actions";
+import InviteGroupManager from "@/components/profile/InviteGroupManager";
+import { InvitableMember } from "@/components/schedule/ScheduleView";
 
 interface RankData {
   gameName: string;
@@ -29,6 +31,8 @@ interface ProfilePageClientProps {
   initialTwitch?: string;
   initialYoutube?: string;
   initialCustomLink?: string;
+  groups?: { id: string; name: string; memberIds: string[] }[];
+  members?: InvitableMember[];
 }
 
 export default function ProfilePageClient({
@@ -45,6 +49,8 @@ export default function ProfilePageClient({
   initialTwitch,
   initialYoutube,
   initialCustomLink,
+  groups = [],
+  members = [],
 }: ProfilePageClientProps) {
   const profileRef = useRef<ProfileFormHandle>(null);
   const extendedRef = useRef<ExtendedProfileFormHandle>(null);
@@ -147,6 +153,19 @@ export default function ProfilePageClient({
               initialCustomLink={initialCustomLink}
               hideSubmit
             />
+          </Card>
+        </div>
+
+        <div>
+          <h2 className="mb-2 text-center text-2xl font-bold text-foreground">
+            Quick-Select Groups
+          </h2>
+          <p className="mb-4 text-center text-foreground/50">
+            Save groups of friends for quick event invites
+          </p>
+
+          <Card className="p-6 sm:p-8">
+            <InviteGroupManager groups={groups} members={members} />
           </Card>
         </div>
       </div>

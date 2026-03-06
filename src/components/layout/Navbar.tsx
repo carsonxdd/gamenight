@@ -1,16 +1,25 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
 export default function Navbar() {
   const { data: session } = useSession();
+  const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  const navLinkClass =
-    "text-sm text-foreground/70 transition hover:text-neon";
+  const navLink = (href: string) => {
+    const isActive = href === "/" ? pathname === "/" : pathname.startsWith(href);
+    return `text-sm transition hover:text-neon ${isActive ? "text-neon font-semibold" : "text-foreground/70"}`;
+  };
+
+  const mobileNavLink = (href: string) => {
+    const isActive = href === "/" ? pathname === "/" : pathname.startsWith(href);
+    return `transition hover:text-neon ${isActive ? "text-neon font-semibold" : "text-foreground/70"}`;
+  };
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 border-b border-border bg-background/80 backdrop-blur-md">
@@ -21,27 +30,30 @@ export default function Navbar() {
 
         {/* Desktop nav */}
         <div className="hidden items-center gap-6 md:flex">
-          <Link href="/" className={navLinkClass}>
+          <Link href="/" className={navLink("/")}>
             Home
           </Link>
-          <Link href="/schedule" className={navLinkClass}>
+          <Link href="/schedule" className={navLink("/schedule")}>
             Schedule
           </Link>
-          <Link href="/highlights" className={navLinkClass}>
+          <Link href="/polls" className={navLink("/polls")}>
+            Polls
+          </Link>
+          <Link href="/highlights" className={navLink("/highlights")}>
             Highlights
           </Link>
           {session && (
             <>
-              <Link href="/members" className={navLinkClass}>
+              <Link href="/members" className={navLink("/members")}>
                 Members
               </Link>
-              <Link href="/about" className={navLinkClass}>
+              <Link href="/about" className={navLink("/about")}>
                 About
               </Link>
             </>
           )}
           {(session?.user?.isAdmin || session?.user?.isModerator) && (
-            <Link href="/admin" className={navLinkClass}>
+            <Link href="/admin" className={navLink("/admin")}>
               Admin
             </Link>
           )}
@@ -50,7 +62,7 @@ export default function Navbar() {
             <div className="flex items-center gap-3">
               <Link
                 href="/profile"
-                className="text-sm text-neon transition hover:text-neon-dim"
+                className="text-sm font-bold text-neon transition hover:text-neon-dim"
               >
                 {session.user.gamertag || session.user.name}
               </Link>
@@ -103,21 +115,28 @@ export default function Navbar() {
               <Link
                 href="/"
                 onClick={() => setMobileOpen(false)}
-                className="text-foreground/70 transition hover:text-neon"
+                className={mobileNavLink("/")}
               >
                 Home
               </Link>
               <Link
                 href="/schedule"
                 onClick={() => setMobileOpen(false)}
-                className="text-foreground/70 transition hover:text-neon"
+                className={mobileNavLink("/schedule")}
               >
                 Schedule
               </Link>
               <Link
+                href="/polls"
+                onClick={() => setMobileOpen(false)}
+                className={mobileNavLink("/polls")}
+              >
+                Polls
+              </Link>
+              <Link
                 href="/highlights"
                 onClick={() => setMobileOpen(false)}
-                className="text-foreground/70 transition hover:text-neon"
+                className={mobileNavLink("/highlights")}
               >
                 Highlights
               </Link>
@@ -126,14 +145,14 @@ export default function Navbar() {
                   <Link
                     href="/members"
                     onClick={() => setMobileOpen(false)}
-                    className="text-foreground/70 transition hover:text-neon"
+                    className={mobileNavLink("/members")}
                   >
                     Members
                   </Link>
                   <Link
                     href="/about"
                     onClick={() => setMobileOpen(false)}
-                    className="text-foreground/70 transition hover:text-neon"
+                    className={mobileNavLink("/about")}
                   >
                     About
                   </Link>
@@ -143,7 +162,7 @@ export default function Navbar() {
                 <Link
                   href="/admin"
                   onClick={() => setMobileOpen(false)}
-                  className="text-foreground/70 transition hover:text-neon"
+                  className={mobileNavLink("/admin")}
                 >
                   Admin
                 </Link>
@@ -153,7 +172,7 @@ export default function Navbar() {
                   <Link
                     href="/profile"
                     onClick={() => setMobileOpen(false)}
-                    className="text-neon transition hover:text-neon-dim"
+                    className="font-bold text-neon transition hover:text-neon-dim"
                   >
                     {session.user.gamertag || session.user.name}
                   </Link>

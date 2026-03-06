@@ -198,6 +198,25 @@ export const RANKED_GAMES: Record<string, string[]> = Object.fromEntries(
   ])
 );
 
+export const POLL_LIMITS = {
+  TITLE_MAX: 100,
+  DESCRIPTION_MAX: 300,
+  OPTION_MAX: 80,
+  MIN_OPTIONS: 2,
+  MAX_OPTIONS: 10,
+  COMMENT_MAX: 300,
+  MAX_POLLS_PER_WEEK: 5,
+} as const;
+
+export const INVITE_LIMITS = {
+  MAX_EVENTS_PER_WEEK: 5,
+  MAX_INVITEES: 10,
+  TITLE_MAX: 50,
+  DESCRIPTION_MAX: 200,
+  MAX_GROUPS: 10,
+  GROUP_NAME_MAX: 30,
+} as const;
+
 export const US_TIMEZONES = [
   { value: "America/New_York", label: "Eastern (ET)" },
   { value: "America/Chicago", label: "Central (CT)" },

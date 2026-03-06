@@ -28,12 +28,48 @@ export default async function SchedulePage() {
     }
   }
 
+  const isAdminOrMod = session?.user?.isAdmin || session?.user?.isModerator;
+  const dateFilter = { gte: new Date(new Date().setDate(new Date().getDate() - 7)) };
+
+  let whereClause;
+  if (isAdminOrMod) {
+    // Admins/mods see everything
+    whereClause = { date: dateFilter };
+  } else if (session?.user?.id) {
+    // Regular users: public scheduled/cancelled + own public pending/rejected + invite-only where creator or invited
+    whereClause = {
+      date: dateFilter,
+      OR: [
+        { visibility: "public", status: { in: ["scheduled", "cancelled"] } },
+        { visibility: "public", status: { in: ["pending", "rejected"] }, createdById: session.user.id },
+        {
+          visibility: "invite_only",
+          OR: [
+            { createdById: session.user.id },
+            { invites: { some: { userId: session.user.id } } },
+          ],
+        },
+      ],
+    };
+  } else {
+    // Unauthenticated: public scheduled/cancelled only
+    whereClause = {
+      date: dateFilter,
+      visibility: "public",
+      status: { in: ["scheduled", "cancelled"] },
+    };
+  }
+
   const gameNights = await prisma.gameNight.findMany({
-    where: {
-      date: { gte: new Date(new Date().setDate(new Date().getDate() - 7)) },
-    },
+    where: whereClause,
     include: {
+      createdBy: { select: { name: true, gamertag: true } },
       attendees: {
+        include: {
+          user: { select: { name: true, gamertag: true } },
+        },
+      },
+      invites: {
         include: {
           user: { select: { name: true, gamertag: true } },
         },
@@ -45,9 +81,38 @@ export default async function SchedulePage() {
   const serialized = gameNights.map((gn) => ({
     ...gn,
     date: gn.date.toISOString(),
+    createdBy: gn.createdBy,
     createdAt: undefined,
     updatedAt: undefined,
   }));
+
+  // Fetch members + groups for authenticated users (for invite picker)
+  let members: { id: string; name: string; gamertag: string | null; avatar: string | null }[] = [];
+  let groups: { id: string; name: string; memberIds: string[] }[] = [];
+
+  if (session?.user?.id) {
+    const [fetchedMembers, fetchedGroups] = await Promise.all([
+      prisma.user.findMany({
+        where: {
+          gamertag: { not: null },
+          id: { not: session.user.id },
+        },
+        select: { id: true, name: true, gamertag: true, avatar: true },
+        orderBy: { gamertag: "asc" },
+      }),
+      prisma.inviteGroup.findMany({
+        where: { ownerId: session.user.id },
+        include: { members: { select: { userId: true } } },
+        orderBy: { name: "asc" },
+      }),
+    ]);
+    members = fetchedMembers;
+    groups = fetchedGroups.map((g) => ({
+      id: g.id,
+      name: g.name,
+      memberIds: g.members.map((m) => m.userId),
+    }));
+  }
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-12">
@@ -66,9 +131,12 @@ export default async function SchedulePage() {
             </svg>
           </div>
           <div>
-            <p className="font-semibold text-foreground">Want to suggest an event?</p>
+            <p className="font-semibold text-foreground">Want to create an event?</p>
             <p className="mt-1 text-sm text-foreground/60">
-              Reach out to a <span className="font-medium text-red-400">moderator</span> if you have questions about upcoming events or want to suggest a new game night. Mods can create and manage events for the community.
+              {session?.user?.id
+                ? <>Use the &quot;+ New Game Night&quot; button to submit a public event for moderator approval, or create an invite-only event for your friends. Reach out to a <span className="font-medium text-red-400">moderator</span> with questions.</>
+                : <>Sign in to create your own event for approval, or reach out to a <span className="font-medium text-red-400">moderator</span> if you have questions about upcoming events.</>
+              }
             </p>
           </div>
         </div>
@@ -77,6 +145,8 @@ export default async function SchedulePage() {
         gameNights={serialized}
         userId={session?.user?.id}
         isAdmin={session?.user?.isAdmin || session?.user?.isModerator}
+        members={members}
+        groups={groups}
       />
     </div>
   );

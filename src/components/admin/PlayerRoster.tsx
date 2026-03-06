@@ -8,7 +8,7 @@ import Card from "@/components/ui/Card";
 import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
 import Modal from "@/components/ui/Modal";
-import { toggleAdmin, toggleModerator, removeUser } from "@/app/admin/actions";
+import { cycleRole, removeUser } from "@/app/admin/actions";
 
 interface PlayerData {
   id: string;
@@ -45,16 +45,9 @@ export default function PlayerRoster({ players, currentUserId, isCurrentUserAdmi
     );
   });
 
-  function handleToggleAdmin(userId: string) {
+  function handleCycleRole(userId: string, direction: "promote" | "demote") {
     startTransition(async () => {
-      const result = await toggleAdmin(userId);
-      if (result.error) alert(result.error);
-    });
-  }
-
-  function handleToggleModerator(userId: string) {
-    startTransition(async () => {
-      const result = await toggleModerator(userId);
+      const result = await cycleRole(userId, direction);
       if (result.error) alert(result.error);
     });
   }
@@ -195,24 +188,28 @@ export default function PlayerRoster({ players, currentUserId, isCurrentUserAdmi
 
                     {/* Actions */}
                     <td className="py-3">
-                      {!isSelf && isCurrentUserAdmin && (
+                      {!isSelf && !player.isOwner && isCurrentUserAdmin && (
                         <div className="flex gap-2 opacity-0 transition group-hover:opacity-100">
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            disabled={isPending}
-                            onClick={() => handleToggleAdmin(player.id)}
-                          >
-                            {player.isAdmin ? "Demote" : "Promote"}
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            disabled={isPending}
-                            onClick={() => handleToggleModerator(player.id)}
-                          >
-                            {player.isModerator ? "Unmod" : "Mod"}
-                          </Button>
+                          {!player.isAdmin && (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              disabled={isPending}
+                              onClick={() => handleCycleRole(player.id, "promote")}
+                            >
+                              Promote
+                            </Button>
+                          )}
+                          {(player.isAdmin || player.isModerator) && (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              disabled={isPending}
+                              onClick={() => handleCycleRole(player.id, "demote")}
+                            >
+                              Demote
+                            </Button>
+                          )}
                           <Button
                             size="sm"
                             variant="danger"

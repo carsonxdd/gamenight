@@ -20,6 +20,7 @@ interface AvailabilityEntry {
   startTime: string;
   endTime: string;
   userName: string;
+  games: string[];
 }
 
 interface Attendee {

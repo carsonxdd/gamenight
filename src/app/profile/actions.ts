@@ -143,6 +143,105 @@ export async function updateExtendedProfile(data: ExtendedProfileData) {
   }
 }
 
+export async function createInviteGroup(data: { name: string; memberIds: string[] }) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.id) {
+    return { error: "Not authenticated" };
+  }
+
+  const name = data.name.trim();
+  if (!name) return { error: "Group name is required" };
+  if (name.length > 30) return { error: "Group name must be 30 characters or less" };
+  if (data.memberIds.length === 0) return { error: "Add at least one member" };
+  if (data.memberIds.length > 10) return { error: "Maximum 10 members per group" };
+  if (data.memberIds.includes(session.user.id)) return { error: "You cannot add yourself" };
+
+  const groupCount = await prisma.inviteGroup.count({
+    where: { ownerId: session.user.id },
+  });
+  if (groupCount >= 10) return { error: "Maximum 10 groups allowed" };
+
+  try {
+    await prisma.$transaction(async (tx) => {
+      const group = await tx.inviteGroup.create({
+        data: { name, ownerId: session.user.id },
+      });
+      await tx.inviteGroupMember.createMany({
+        data: data.memberIds.map((userId) => ({
+          groupId: group.id,
+          userId,
+        })),
+      });
+    });
+    const { revalidatePath } = await import("next/cache");
+    revalidatePath("/profile");
+    return { success: true };
+  } catch {
+    return { error: "Failed to create group" };
+  }
+}
+
+export async function updateInviteGroup(groupId: string, data: { name: string; memberIds: string[] }) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.id) {
+    return { error: "Not authenticated" };
+  }
+
+  const group = await prisma.inviteGroup.findUnique({ where: { id: groupId } });
+  if (!group || group.ownerId !== session.user.id) {
+    return { error: "Group not found" };
+  }
+
+  const name = data.name.trim();
+  if (!name) return { error: "Group name is required" };
+  if (name.length > 30) return { error: "Group name must be 30 characters or less" };
+  if (data.memberIds.length === 0) return { error: "Add at least one member" };
+  if (data.memberIds.length > 10) return { error: "Maximum 10 members per group" };
+  if (data.memberIds.includes(session.user.id)) return { error: "You cannot add yourself" };
+
+  try {
+    await prisma.$transaction(async (tx) => {
+      await tx.inviteGroup.update({
+        where: { id: groupId },
+        data: { name },
+      });
+      await tx.inviteGroupMember.deleteMany({ where: { groupId } });
+      await tx.inviteGroupMember.createMany({
+        data: data.memberIds.map((userId) => ({
+          groupId,
+          userId,
+        })),
+      });
+    });
+    const { revalidatePath } = await import("next/cache");
+    revalidatePath("/profile");
+    return { success: true };
+  } catch {
+    return { error: "Failed to update group" };
+  }
+}
+
+export async function deleteInviteGroup(groupId: string) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.id) {
+    return { error: "Not authenticated" };
+  }
+
+  const group = await prisma.inviteGroup.findUnique({ where: { id: groupId } });
+  if (!group || group.ownerId !== session.user.id) {
+    return { error: "Group not found" };
+  }
+
+  try {
+    await prisma.inviteGroup.delete({ where: { id: groupId } });
+    const { revalidatePath } = await import("next/cache");
+    revalidatePath("/profile");
+    return { success: true };
+  } catch {
+    return { error: "Failed to delete group" };
+  }
+}
+
 export async function dismissProfileBanner() {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) {
