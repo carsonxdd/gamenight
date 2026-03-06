@@ -118,7 +118,8 @@ src/
 │   ├── home/               # Landing page (hero, gallery, CTA)
 │   ├── schedule/           # Calendar, event list, RSVP, create modal
 │   ├── signup/             # Profile form, game selector, availability grid,
-│   │                       # rank selector, extended profile form
+│   │                       # rank selector, extended profile form,
+│   │                       # unified profile page client wrapper
 │   ├── layout/             # Navbar, Footer
 │   ├── providers/          # SessionProvider, PageTransition
 │   └── ui/                 # Button, Card, Badge, Modal, LoadingSpinner,
