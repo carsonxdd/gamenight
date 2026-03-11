@@ -52,6 +52,21 @@ export default function MemberCard({ member }: { member: MemberData }) {
         </div>
       </div>
 
+      {/* Team Tags */}
+      {member.teamTags.length > 0 && (
+        <div className="mt-2 flex flex-wrap gap-1.5">
+          {member.teamTags.map((t) => (
+            <a
+              key={t.teamId}
+              href={`/teams/${t.teamId}`}
+              className="inline-flex items-center gap-1 rounded-full border border-neon/20 bg-neon/5 px-2 py-0.5 text-xs font-mono text-neon/80 transition hover:border-neon/40 hover:bg-neon/10"
+            >
+              [{t.tag}] <span className="font-sans text-foreground/40">{t.game}</span>
+            </a>
+          ))}
+        </div>
+      )}
+
       {/* Games */}
       {member.displayGames.length > 0 && (
         <div className="mt-3 flex flex-wrap gap-1.5">

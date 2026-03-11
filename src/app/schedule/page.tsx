@@ -3,8 +3,16 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import ScheduleView from "@/components/schedule/ScheduleView";
 import ProfileBanner from "@/components/ui/ProfileBanner";
+import InfoBubble from "@/components/schedule/InfoBubble";
+import type { TeamTagMap } from "@/lib/team-utils";
+import { DEFAULT_TIMEZONE } from "@/lib/timezone-utils";
 
-export default async function SchedulePage() {
+export default async function SchedulePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ tournament?: string }>;
+}) {
+  const params = await searchParams;
   const session = await getServerSession(authOptions);
 
   // Check if the user should see the "finish profile" banner
@@ -28,7 +36,7 @@ export default async function SchedulePage() {
     }
   }
 
-  const isAdminOrMod = session?.user?.isAdmin || session?.user?.isModerator;
+  const isAdminOrMod = session?.user?.isAdmin || session?.user?.isModerator || session?.user?.isOwner;
   const dateFilter = { gte: new Date(new Date().setDate(new Date().getDate() - 7)) };
 
   let whereClause;
@@ -64,6 +72,7 @@ export default async function SchedulePage() {
     where: whereClause,
     include: {
       createdBy: { select: { name: true, gamertag: true } },
+      host: { select: { name: true, gamertag: true } },
       attendees: {
         include: {
           user: { select: { name: true, gamertag: true } },
@@ -81,9 +90,83 @@ export default async function SchedulePage() {
   const serialized = gameNights.map((gn) => ({
     ...gn,
     date: gn.date.toISOString(),
+    timezone: gn.timezone || DEFAULT_TIMEZONE,
     createdBy: gn.createdBy,
     createdAt: undefined,
     updatedAt: undefined,
+  }));
+
+  // Fetch tournaments
+  const tournaments = await prisma.tournament.findMany({
+    include: {
+      createdBy: { select: { name: true, gamertag: true } },
+      entrants: {
+        select: {
+          id: true,
+          type: true,
+          userId: true,
+          teamId: true,
+          displayName: true,
+          seed: true,
+        },
+      },
+      teams: {
+        include: {
+          captain: { select: { name: true, gamertag: true } },
+          members: {
+            include: {
+              user: { select: { name: true, gamertag: true } },
+            },
+          },
+        },
+      },
+      matches: {
+        include: {
+          entrant1: { select: { id: true, displayName: true, seed: true } },
+          entrant2: { select: { id: true, displayName: true, seed: true } },
+          winner: { select: { id: true, displayName: true } },
+        },
+        orderBy: [{ round: "asc" }, { matchNumber: "asc" }],
+      },
+      sessions: {
+        orderBy: { orderIndex: "asc" },
+      },
+      predictions: {
+        select: {
+          id: true,
+          matchId: true,
+          userId: true,
+          predictedWinnerId: true,
+          correct: true,
+        },
+      },
+      comments: {
+        include: {
+          user: { select: { name: true, gamertag: true } },
+        },
+        orderBy: { createdAt: "asc" },
+      },
+    },
+    orderBy: { createdAt: "desc" },
+  });
+
+  const serializedTournaments = tournaments.map((t) => ({
+    ...t,
+    createdAt: t.createdAt.toISOString(),
+    updatedAt: undefined as undefined,
+    sessions: t.sessions.map((s) => ({
+      ...s,
+      date: s.date.toISOString(),
+    })),
+    matches: t.matches.map((m) => ({
+      ...m,
+      createdAt: undefined as undefined,
+      updatedAt: undefined as undefined,
+    })),
+    comments: t.comments.map((c) => ({
+      ...c,
+      createdAt: c.createdAt.toISOString(),
+    })),
   }));
 
   // Fetch members + groups for authenticated users (for invite picker)
@@ -114,6 +197,26 @@ export default async function SchedulePage() {
     }));
   }
 
+  // Fetch team tags for displaying [TAG] next to player names
+  const teamMembers = await prisma.teamMember.findMany({
+    where: { team: { isActive: true } },
+    select: {
+      userId: true,
+      team: { select: { id: true, tag: true, game: true, name: true } },
+    },
+  });
+
+  const teamTagMap: TeamTagMap = {};
+  for (const tm of teamMembers) {
+    if (!teamTagMap[tm.userId]) teamTagMap[tm.userId] = [];
+    teamTagMap[tm.userId].push({
+      tag: tm.team.tag,
+      game: tm.team.game,
+      teamId: tm.team.id,
+      teamName: tm.team.name,
+    });
+  }
+
   return (
     <div className="mx-auto max-w-6xl px-4 py-12">
       {showProfileBanner && <ProfileBanner />}
@@ -122,31 +225,20 @@ export default async function SchedulePage() {
         Upcoming game nights and events
       </p>
 
-      {/* Info section */}
-      <div className="mb-8 rounded-xl border border-border bg-surface p-5">
-        <div className="flex items-start gap-3">
-          <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-neon/10 text-neon">
-            <svg className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-            </svg>
-          </div>
-          <div>
-            <p className="font-semibold text-foreground">Want to create an event?</p>
-            <p className="mt-1 text-sm text-foreground/60">
-              {session?.user?.id
-                ? <>Use the &quot;+ New Game Night&quot; button to submit a public event for moderator approval, or create an invite-only event for your friends. Reach out to a <span className="font-medium text-red-400">moderator</span> with questions.</>
-                : <>Sign in to create your own event for approval, or reach out to a <span className="font-medium text-red-400">moderator</span> if you have questions about upcoming events.</>
-              }
-            </p>
-          </div>
-        </div>
-      </div>
+      {session?.user?.id && <InfoBubble />}
+
       <ScheduleView
         gameNights={serialized}
+        tournaments={serializedTournaments}
         userId={session?.user?.id}
-        isAdmin={session?.user?.isAdmin || session?.user?.isModerator}
+        isAdmin={session?.user?.isAdmin}
+        isModerator={session?.user?.isModerator}
+        isOwner={session?.user?.isOwner}
         members={members}
         groups={groups}
+        initialTournamentId={params.tournament}
+        teamTagMap={teamTagMap}
+        userTimezone={session?.user?.timezone || DEFAULT_TIMEZONE}
       />
     </div>
   );

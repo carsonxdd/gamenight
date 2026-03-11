@@ -45,6 +45,7 @@ export const authOptions: NextAuthOptions = {
           token.isModerator = dbUser.isModerator;
           token.isOwner = dbUser.isOwner;
           token.willingToModerate = dbUser.willingToModerate;
+          token.timezone = dbUser.timezone;
         }
       }
       return token;
@@ -57,6 +58,7 @@ export const authOptions: NextAuthOptions = {
       session.user.isModerator = token.isModerator as boolean;
       session.user.isOwner = token.isOwner as boolean;
       session.user.willingToModerate = token.willingToModerate as boolean;
+      session.user.timezone = (token.timezone as string) || "America/Phoenix";
       return session;
     },
   },

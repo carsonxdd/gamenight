@@ -5,10 +5,16 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { INVITE_LIMITS } from "@/lib/constants";
+import { localDateTimeToUtc, DEFAULT_TIMEZONE } from "@/lib/timezone-utils";
 
 function parseLocalDate(dateStr: string): Date {
   const [year, month, day] = dateStr.split("-").map(Number);
   return new Date(year, month - 1, day);
+}
+
+function parseUtcDate(dateStr: string): Date {
+  const [year, month, day] = dateStr.split("-").map(Number);
+  return new Date(Date.UTC(year, month - 1, day));
 }
 
 export async function createGameNight(data: {
@@ -23,13 +29,14 @@ export async function createGameNight(data: {
   recurWeeks?: number;
   visibility?: string;
   inviteeIds?: string[];
+  hostId?: string;
 }) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) {
     return { error: "Not authenticated" };
   }
 
-  const isAdminOrMod = session.user.isAdmin || session.user.isModerator;
+  const isAdminOrMod = session.user.isAdmin || session.user.isModerator || session.user.isOwner;
   const visibility = data.visibility === "invite_only" ? "invite_only" : "public";
   const isInviteOnly = visibility === "invite_only";
 
@@ -86,13 +93,24 @@ export async function createGameNight(data: {
   }
 
   try {
-    const baseDate = parseLocalDate(data.date);
+    // Look up the host's timezone for conversion
+    const hostUser = await prisma.user.findUnique({
+      where: { id: data.hostId || session.user.id },
+      select: { timezone: true },
+    });
+    const eventTimezone = hostUser?.timezone || DEFAULT_TIMEZONE;
+
+    // Convert local times to UTC
+    const utcStart = localDateTimeToUtc(data.date, data.startTime, eventTimezone);
+    const utcEnd = localDateTimeToUtc(data.date, data.endTime, eventTimezone);
+
+    const baseDate = parseUtcDate(utcStart.utcDate);
     const recurGroupId = isRecurring ? crypto.randomUUID() : null;
     const sharedFields = {
       title: data.title?.trim() || null,
       description: data.description?.trim() || null,
-      startTime: data.startTime,
-      endTime: data.endTime,
+      startTime: utcStart.utcTime,
+      endTime: utcEnd.utcTime,
       game: data.game,
       status,
       visibility,
@@ -100,19 +118,28 @@ export async function createGameNight(data: {
       recurDay: isRecurring ? data.recurDay ?? null : null,
       recurGroupId,
       createdById: session.user.id,
+      hostId: data.hostId || session.user.id,
+      timezone: eventTimezone,
     };
 
     if (isRecurring) {
       const weeks = Math.min(Math.max(data.recurWeeks ?? 4, 2), 12);
-      const dates = [baseDate];
-      for (let i = 1; i < weeks; i++) {
-        const d = new Date(baseDate);
-        d.setDate(d.getDate() + 7 * i);
-        dates.push(d);
+      const events = [];
+      for (let i = 0; i < weeks; i++) {
+        // Compute each instance individually to handle DST correctly
+        const localDate = new Date(parseLocalDate(data.date));
+        localDate.setDate(localDate.getDate() + 7 * i);
+        const localDateStr = `${localDate.getFullYear()}-${(localDate.getMonth() + 1).toString().padStart(2, "0")}-${localDate.getDate().toString().padStart(2, "0")}`;
+        const utcS = localDateTimeToUtc(localDateStr, data.startTime, eventTimezone);
+        const utcE = localDateTimeToUtc(localDateStr, data.endTime, eventTimezone);
+        events.push({
+          ...sharedFields,
+          date: parseUtcDate(utcS.utcDate),
+          startTime: utcS.utcTime,
+          endTime: utcE.utcTime,
+        });
       }
-      await prisma.gameNight.createMany({
-        data: dates.map((date) => ({ ...sharedFields, date })),
-      });
+      await prisma.gameNight.createMany({ data: events });
     } else if (isInviteOnly && data.inviteeIds && data.inviteeIds.length > 0) {
       await prisma.$transaction(async (tx) => {
         const gameNight = await tx.gameNight.create({
@@ -179,6 +206,7 @@ export async function updateGameNight(
     isRecurring: boolean;
     recurDay?: number;
     inviteeIds?: string[];
+    hostId?: string;
   }
 ) {
   const session = await getServerSession(authOptions);
@@ -186,20 +214,24 @@ export async function updateGameNight(
     return { error: "Not authenticated" };
   }
 
-  const isAdminOrMod = session.user.isAdmin || session.user.isModerator;
+  const isAdminOrMod = session.user.isAdmin || session.user.isModerator || session.user.isOwner;
 
   // Fetch the event to check ownership and visibility
-  const existing = await prisma.gameNight.findUnique({ where: { id } });
+  const existing = await prisma.gameNight.findUnique({
+    where: { id },
+    select: { createdById: true, hostId: true, visibility: true, timezone: true },
+  });
   if (!existing) {
     return { error: "Event not found" };
   }
 
   const isCreator = existing.createdById === session.user.id;
+  const isHost = existing.hostId === session.user.id;
   const isInviteOnly = existing.visibility === "invite_only";
 
-  // Authorization: admin/mod can edit anything, creator can edit their own invite-only events
-  if (!isAdminOrMod && !(isCreator && isInviteOnly)) {
-    return { error: "Admin or moderator only" };
+  // Authorization: admin/mod/owner can edit anything, host can edit, creator can edit own invite-only
+  if (!isAdminOrMod && !isHost && !(isCreator && isInviteOnly)) {
+    return { error: "Not authorized to edit this event" };
   }
 
   // Guardrails for non-admin users editing invite-only events
@@ -234,12 +266,17 @@ export async function updateGameNight(
   }
 
   try {
+    // Convert local times to UTC using the event's timezone
+    const eventTimezone = existing.timezone || DEFAULT_TIMEZONE;
+    const utcStart = localDateTimeToUtc(data.date, data.startTime, eventTimezone);
+    const utcEnd = localDateTimeToUtc(data.date, data.endTime, eventTimezone);
+
     const updateData: Record<string, unknown> = {
       title: data.title?.trim() || null,
       description: data.description?.trim() || null,
-      date: parseLocalDate(data.date),
-      startTime: data.startTime,
-      endTime: data.endTime,
+      date: parseUtcDate(utcStart.utcDate),
+      startTime: utcStart.utcTime,
+      endTime: utcEnd.utcTime,
       game: data.game,
     };
 
@@ -248,6 +285,11 @@ export async function updateGameNight(
       updateData.status = data.status;
       updateData.isRecurring = data.isRecurring;
       updateData.recurDay = data.isRecurring ? data.recurDay : null;
+    }
+
+    // Host can be changed by admin/mod or creator
+    if (data.hostId !== undefined && (isAdminOrMod || isCreator)) {
+      updateData.hostId = data.hostId;
     }
 
     if (data.inviteeIds !== undefined && isInviteOnly) {
@@ -280,13 +322,16 @@ export async function cancelGameNight(id: string) {
     return { error: "Not authenticated" };
   }
 
-  const isAdminOrMod = session.user.isAdmin || session.user.isModerator;
+  const isAdminOrMod = session.user.isAdmin || session.user.isModerator || session.user.isOwner;
 
-  // Allow creator to cancel their own invite-only events
+  // Allow host or creator of invite-only events to cancel
   if (!isAdminOrMod) {
     const existing = await prisma.gameNight.findUnique({ where: { id } });
-    if (!existing || existing.createdById !== session.user.id || existing.visibility !== "invite_only") {
-      return { error: "Admin or moderator only" };
+    if (!existing) return { error: "Event not found" };
+    const isHost = existing.hostId === session.user.id;
+    const isCreator = existing.createdById === session.user.id;
+    if (!isHost && !(isCreator && existing.visibility === "invite_only")) {
+      return { error: "Not authorized to cancel this event" };
     }
   }
 
@@ -304,7 +349,7 @@ export async function cancelGameNight(id: string) {
 
 export async function approveGameNight(id: string) {
   const session = await getServerSession(authOptions);
-  if (!session?.user?.isAdmin && !session?.user?.isModerator) {
+  if (!session?.user?.isAdmin && !session?.user?.isModerator && !session?.user?.isOwner) {
     return { error: "Admin or moderator only" };
   }
 
@@ -322,7 +367,7 @@ export async function approveGameNight(id: string) {
 
 export async function rejectGameNight(id: string) {
   const session = await getServerSession(authOptions);
-  if (!session?.user?.isAdmin && !session?.user?.isModerator) {
+  if (!session?.user?.isAdmin && !session?.user?.isModerator && !session?.user?.isOwner) {
     return { error: "Admin or moderator only" };
   }
 
@@ -344,13 +389,16 @@ export async function deleteGameNight(id: string) {
     return { error: "Not authenticated" };
   }
 
-  const isAdminOrMod = session.user.isAdmin || session.user.isModerator;
+  const isAdminOrMod = session.user.isAdmin || session.user.isModerator || session.user.isOwner;
 
-  // Allow creator to delete their own invite-only events
+  // Allow host or creator of invite-only events to delete
   if (!isAdminOrMod) {
     const existing = await prisma.gameNight.findUnique({ where: { id } });
-    if (!existing || existing.createdById !== session.user.id || existing.visibility !== "invite_only") {
-      return { error: "Admin or moderator only" };
+    if (!existing) return { error: "Event not found" };
+    const isHost = existing.hostId === session.user.id;
+    const isCreator = existing.createdById === session.user.id;
+    if (!isHost && !(isCreator && existing.visibility === "invite_only")) {
+      return { error: "Not authorized to delete this event" };
     }
   }
 
@@ -365,7 +413,7 @@ export async function deleteGameNight(id: string) {
 
 export async function deleteRecurringGroup(recurGroupId: string) {
   const session = await getServerSession(authOptions);
-  if (!session?.user?.isAdmin && !session?.user?.isModerator) {
+  if (!session?.user?.isAdmin && !session?.user?.isModerator && !session?.user?.isOwner) {
     return { error: "Admin or moderator only" };
   }
 
@@ -401,4 +449,65 @@ export async function fetchInvitableMembers() {
   });
 
   return members;
+}
+
+export async function markAttendance(gameNightId: string, attendedUserIds: string[]) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.id) {
+    return { error: "Not authenticated" };
+  }
+
+  const isAdminOrMod = session.user.isAdmin || session.user.isModerator || session.user.isOwner;
+
+  const gameNight = await prisma.gameNight.findUnique({
+    where: { id: gameNightId },
+    select: { hostId: true, createdById: true, date: true, endTime: true, timezone: true },
+  });
+  if (!gameNight) return { error: "Event not found" };
+
+  // Only the host, creator, or admin/mod can mark attendance
+  const isHost = gameNight.hostId === session.user.id;
+  const isCreator = gameNight.createdById === session.user.id;
+  if (!isAdminOrMod && !isHost && !isCreator) {
+    return { error: "Only the host can mark attendance" };
+  }
+
+  // Only allow marking attendance for past events
+  // endTime is stored in UTC, date is stored as UTC midnight
+  const [endH, endM] = (gameNight.endTime || "23:59").split(":").map(Number);
+  const eventEnd = new Date(gameNight.date);
+  eventEnd.setUTCHours(endH, endM, 0, 0);
+  if (eventEnd > new Date()) {
+    return { error: "Cannot mark attendance for future events" };
+  }
+
+  try {
+    await prisma.$transaction(async (tx) => {
+      // Reset all attendees to not attended
+      await tx.gameNightAttendee.updateMany({
+        where: { gameNightId },
+        data: { attended: false },
+      });
+
+      // Mark selected users as attended
+      if (attendedUserIds.length > 0) {
+        await tx.gameNightAttendee.updateMany({
+          where: { gameNightId, userId: { in: attendedUserIds } },
+          data: { attended: true },
+        });
+      }
+
+      // Mark the event as attendance confirmed
+      await tx.gameNight.update({
+        where: { id: gameNightId },
+        data: { attendanceConfirmed: true },
+      });
+    });
+
+    revalidatePath("/schedule");
+    revalidatePath("/admin");
+    return { success: true };
+  } catch {
+    return { error: "Failed to mark attendance" };
+  }
 }

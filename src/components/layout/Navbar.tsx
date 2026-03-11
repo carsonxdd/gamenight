@@ -3,13 +3,23 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { getMyPendingInvites } from "@/app/teams/actions";
 
 export default function Navbar() {
   const { data: session } = useSession();
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [inviteCount, setInviteCount] = useState(0);
+
+  useEffect(() => {
+    if (session?.user?.id) {
+      getMyPendingInvites().then((result) => {
+        if ("invites" in result && result.invites) setInviteCount(result.invites.length);
+      });
+    }
+  }, [session?.user?.id, pathname]);
 
   const navLink = (href: string) => {
     const isActive = href === "/" ? pathname === "/" : pathname.startsWith(href);
@@ -36,22 +46,30 @@ export default function Navbar() {
           <Link href="/schedule" className={navLink("/schedule")}>
             Schedule
           </Link>
-          <Link href="/polls" className={navLink("/polls")}>
-            Polls
-          </Link>
-          <Link href="/highlights" className={navLink("/highlights")}>
-            Highlights
-          </Link>
           {session && (
             <>
+              <Link href="/polls" className={navLink("/polls")}>
+                Polls
+              </Link>
               <Link href="/members" className={navLink("/members")}>
                 Members
               </Link>
-              <Link href="/about" className={navLink("/about")}>
-                About
+              <Link href="/teams" className={`${navLink("/teams")} relative`}>
+                Teams
+                {inviteCount > 0 && (
+                  <span className="absolute -top-1.5 -right-3 flex h-4 w-4 items-center justify-center rounded-full bg-neon text-[10px] font-bold text-background">
+                    {inviteCount}
+                  </span>
+                )}
               </Link>
             </>
           )}
+          <Link href="/highlights" className={navLink("/highlights")}>
+            Highlights
+          </Link>
+          <Link href="/about" className={navLink("/about")}>
+            About
+          </Link>
           {(session?.user?.isAdmin || session?.user?.isModerator) && (
             <Link href="/admin" className={navLink("/admin")}>
               Admin
@@ -126,22 +144,15 @@ export default function Navbar() {
               >
                 Schedule
               </Link>
-              <Link
-                href="/polls"
-                onClick={() => setMobileOpen(false)}
-                className={mobileNavLink("/polls")}
-              >
-                Polls
-              </Link>
-              <Link
-                href="/highlights"
-                onClick={() => setMobileOpen(false)}
-                className={mobileNavLink("/highlights")}
-              >
-                Highlights
-              </Link>
               {session && (
                 <>
+                  <Link
+                    href="/polls"
+                    onClick={() => setMobileOpen(false)}
+                    className={mobileNavLink("/polls")}
+                  >
+                    Polls
+                  </Link>
                   <Link
                     href="/members"
                     onClick={() => setMobileOpen(false)}
@@ -150,15 +161,34 @@ export default function Navbar() {
                     Members
                   </Link>
                   <Link
-                    href="/about"
+                    href="/teams"
                     onClick={() => setMobileOpen(false)}
-                    className={mobileNavLink("/about")}
+                    className={`${mobileNavLink("/teams")} inline-flex items-center gap-2`}
                   >
-                    About
+                    Teams
+                    {inviteCount > 0 && (
+                      <span className="flex h-4 w-4 items-center justify-center rounded-full bg-neon text-[10px] font-bold text-background">
+                        {inviteCount}
+                      </span>
+                    )}
                   </Link>
                 </>
               )}
-              {session?.user?.isAdmin && (
+              <Link
+                href="/highlights"
+                onClick={() => setMobileOpen(false)}
+                className={mobileNavLink("/highlights")}
+              >
+                Highlights
+              </Link>
+              <Link
+                href="/about"
+                onClick={() => setMobileOpen(false)}
+                className={mobileNavLink("/about")}
+              >
+                About
+              </Link>
+              {(session?.user?.isAdmin || session?.user?.isModerator) && (
                 <Link
                   href="/admin"
                   onClick={() => setMobileOpen(false)}

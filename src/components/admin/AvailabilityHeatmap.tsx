@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { fadeIn } from "@/lib/animations";
-import { DAYS_OF_WEEK, TIME_SLOTS, formatTime } from "@/lib/constants";
+import { DAYS_OF_WEEK, formatTime, generateTimeSlots, DEFAULT_EXTENDED_START, DEFAULT_EXTENDED_END } from "@/lib/constants";
 import Card from "@/components/ui/Card";
 
 interface AvailabilityEntry {
@@ -16,10 +16,24 @@ interface AvailabilityEntry {
 
 interface Props {
   availability: AvailabilityEntry[];
+  primeSlots?: string[];
+  extendedSlots?: string[];
+  anchorTimezone?: string;
+  viewerTimezone?: string;
+  anchorPrimeStartHour?: number;
+  anchorPrimeEndHour?: number;
 }
 
-function getIntensityClass(ratio: number): string {
-  if (ratio === 0) return "bg-surface-light";
+function getIntensityClass(ratio: number, isPrime: boolean): string {
+  if (ratio === 0) return isPrime ? "bg-surface-light" : "bg-surface-light/50";
+  if (!isPrime) {
+    // Muted/dimmed versions for extended hours
+    if (ratio <= 0.25) return "bg-foreground/5";
+    if (ratio <= 0.5) return "bg-foreground/8";
+    if (ratio <= 0.75) return "bg-foreground/12";
+    return "bg-foreground/15";
+  }
+  // Full neon for prime hours
   if (ratio <= 0.2) return "bg-neon/10";
   if (ratio <= 0.4) return "bg-neon/20";
   if (ratio <= 0.6) return "bg-neon/30";
@@ -28,17 +42,38 @@ function getIntensityClass(ratio: number): string {
 }
 
 function slotCovered(slot: string, start: string, end: string): boolean {
-  return slot >= start && slot < end;
+  if (start <= end) {
+    return slot >= start && slot < end;
+  }
+  return slot >= start || slot < end;
 }
 
-export default function AvailabilityHeatmap({ availability }: Props) {
+const TIMEZONE_LABELS: Record<string, string> = {
+  "America/Phoenix": "Arizona",
+  "America/New_York": "Eastern",
+  "America/Chicago": "Central",
+  "America/Denver": "Mountain",
+  "America/Los_Angeles": "Pacific",
+  "America/Anchorage": "Alaska",
+  "Pacific/Honolulu": "Hawaii",
+};
+
+function formatSlotTo12Hr(slot: string): string {
+  const [hStr, mStr] = slot.split(":");
+  let h = parseInt(hStr, 10);
+  const suffix = h >= 12 ? "PM" : "AM";
+  if (h === 0) h = 12;
+  else if (h > 12) h -= 12;
+  return mStr === "00" ? `${h} ${suffix}` : `${h}:${mStr} ${suffix}`;
+}
+
+export default function AvailabilityHeatmap({ availability, primeSlots: primeSlotsArr, extendedSlots: extendedSlotsArr, anchorTimezone, viewerTimezone, anchorPrimeStartHour, anchorPrimeEndHour }: Props) {
   const [selected, setSelected] = useState<{
     day: number;
     slot: string;
   } | null>(null);
   const [gameFilter, setGameFilter] = useState("");
 
-  // Collect all unique games for the dropdown
   const allGames = useMemo(() => {
     const set = new Set<string>();
     for (const entry of availability) {
@@ -47,24 +82,40 @@ export default function AvailabilityHeatmap({ availability }: Props) {
     return [...set].sort();
   }, [availability]);
 
-  // Filter availability by selected game
+  // Use provided extended slots, or compute from data
+  const timeSlots = useMemo(() => {
+    if (extendedSlotsArr && extendedSlotsArr.length > 0) return extendedSlotsArr;
+    // Fallback: compute from data range
+    let minHour = DEFAULT_EXTENDED_START;
+    let maxHour = DEFAULT_EXTENDED_END > 24 ? DEFAULT_EXTENDED_END - 24 : DEFAULT_EXTENDED_END;
+    for (const entry of availability) {
+      const startH = parseInt(entry.startTime.split(":")[0], 10);
+      const endH = parseInt(entry.endTime.split(":")[0], 10);
+      if (startH < minHour) minHour = startH;
+      if (endH > maxHour) maxHour = endH;
+    }
+    return generateTimeSlots(minHour, maxHour);
+  }, [availability, extendedSlotsArr]);
+
+  const primeSlotSet = useMemo(() => new Set(primeSlotsArr || []), [primeSlotsArr]);
+
   const filtered = gameFilter
     ? availability.filter((e) => e.games.includes(gameFilter))
     : availability;
 
-  // Build counts and player lists for each cell
+  // Build counts and player lists for each cell (deduplicated)
   const cellData: Record<string, { count: number; players: string[] }> = {};
 
   for (const day of DAYS_OF_WEEK.keys()) {
-    for (const slot of TIME_SLOTS) {
+    for (const slot of timeSlots) {
       const key = `${day}-${slot}`;
-      const players: string[] = [];
+      const playerSet = new Set<string>();
       for (const entry of filtered) {
         if (entry.dayOfWeek === day && slotCovered(slot, entry.startTime, entry.endTime)) {
-          players.push(entry.userName);
+          playerSet.add(entry.userName);
         }
       }
-      cellData[key] = { count: players.length, players };
+      cellData[key] = { count: playerSet.size, players: [...playerSet] };
     }
   }
 
@@ -79,7 +130,7 @@ export default function AvailabilityHeatmap({ availability }: Props) {
     <motion.div {...fadeIn}>
       <Card>
         {/* Game filter */}
-        <div className="mb-4">
+        <div className="mb-4 flex items-center gap-3">
           <select
             value={gameFilter}
             onChange={(e) => { setGameFilter(e.target.value); setSelected(null); }}
@@ -90,6 +141,36 @@ export default function AvailabilityHeatmap({ availability }: Props) {
               <option key={g} value={g}>{g}</option>
             ))}
           </select>
+          {primeSlotsArr && primeSlotsArr.length > 0 && (() => {
+            const isLocal = viewerTimezone === anchorTimezone;
+            const fmtHour = (h: number) => {
+              const h12 = h > 12 ? h - 12 : h === 0 ? 12 : h;
+              return `${h12} ${h >= 12 ? "PM" : "AM"}`;
+            };
+            const anchorLabel = anchorTimezone
+              ? TIMEZONE_LABELS[anchorTimezone] || anchorTimezone.split("/").pop()?.replace(/_/g, " ") || anchorTimezone
+              : "";
+
+            if (isLocal && anchorPrimeStartHour != null && anchorPrimeEndHour != null) {
+              return (
+                <span className="text-xs text-foreground/30">
+                  Prime time {fmtHour(anchorPrimeStartHour)}–{fmtHour(anchorPrimeEndHour)} · Dimmed = extended hours
+                </span>
+              );
+            }
+
+            const firstPrime = primeSlotsArr[0] ? formatSlotTo12Hr(primeSlotsArr[0]) : "";
+            const lastPrime = primeSlotsArr.length > 0 ? formatSlotTo12Hr(primeSlotsArr[primeSlotsArr.length - 1]) : "";
+            return (
+              <span className="text-xs text-foreground/30">
+                Prime time {firstPrime}–{lastPrime} your time
+                {anchorTimezone && anchorPrimeStartHour != null && anchorPrimeEndHour != null && (
+                  <span className="text-foreground/20"> ({fmtHour(anchorPrimeStartHour)}–{fmtHour(anchorPrimeEndHour)} {anchorLabel})</span>
+                )}
+                {" · Dimmed = extended hours"}
+              </span>
+            );
+          })()}
         </div>
 
         <div className="overflow-x-auto">
@@ -108,57 +189,70 @@ export default function AvailabilityHeatmap({ availability }: Props) {
               </tr>
             </thead>
             <tbody>
-              {TIME_SLOTS.map((slot) => (
-                <tr key={slot}>
-                  <td className="whitespace-nowrap pr-3 text-right text-xs text-foreground/50">
-                    {formatTime(slot)}
-                  </td>
-                  {dayAbbrevs.map((_, day) => {
-                    const key = `${day}-${slot}`;
-                    const data = cellData[key];
-                    const ratio = data.count / maxCount;
-                    const isSelected =
-                      selected?.day === day && selected?.slot === slot;
-                    return (
-                      <td key={day} className="p-0.5">
-                        <button
-                          onClick={() =>
-                            setSelected(
-                              isSelected ? null : { day, slot }
-                            )
-                          }
-                          className={`flex h-8 w-full items-center justify-center rounded text-xs transition ${getIntensityClass(ratio)} ${
-                            isSelected
-                              ? "ring-2 ring-neon"
-                              : "hover:ring-1 hover:ring-neon/50"
-                          }`}
-                          title={`${DAYS_OF_WEEK[day]} ${formatTime(slot)}: ${data.count} available`}
-                        >
-                          {data.count > 0 && (
-                            <span className="text-foreground/70">
-                              {data.count}
-                            </span>
-                          )}
-                        </button>
-                      </td>
-                    );
-                  })}
-                </tr>
-              ))}
+              {timeSlots.map((slot) => {
+                const isPrime = primeSlotSet.size === 0 || primeSlotSet.has(slot);
+                return (
+                  <tr key={slot}>
+                    <td className={`whitespace-nowrap pr-3 text-right text-xs ${isPrime ? "text-foreground/50" : "text-foreground/25"}`}>
+                      {formatTime(slot)}
+                    </td>
+                    {dayAbbrevs.map((_, day) => {
+                      const key = `${day}-${slot}`;
+                      const data = cellData[key];
+                      const ratio = data.count / maxCount;
+                      const isSelected =
+                        selected?.day === day && selected?.slot === slot;
+                      return (
+                        <td key={day} className="p-0.5">
+                          <button
+                            onClick={() =>
+                              setSelected(
+                                isSelected ? null : { day, slot }
+                              )
+                            }
+                            className={`flex h-10 w-full min-w-[2.5rem] items-center justify-center rounded text-xs transition sm:h-8 ${getIntensityClass(ratio, isPrime)} ${
+                              isSelected
+                                ? "ring-2 ring-neon"
+                                : isPrime
+                                  ? "hover:ring-1 hover:ring-neon/50"
+                                  : "hover:ring-1 hover:ring-foreground/20"
+                            } ${!isPrime && ratio === 0 ? "opacity-40" : ""}`}
+                            title={`${DAYS_OF_WEEK[day]} ${formatTime(slot)}: ${data.count} available${!isPrime ? " (extended)" : ""}`}
+                          >
+                            {data.count > 0 && (
+                              <span className={isPrime ? "text-foreground/70" : "text-foreground/40"}>
+                                {data.count}
+                              </span>
+                            )}
+                          </button>
+                        </td>
+                      );
+                    })}
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
 
         {/* Legend */}
-        <div className="mt-4 flex items-center gap-2 text-xs text-foreground/50">
-          <span>Less</span>
-          {[0, 0.2, 0.4, 0.6, 0.8, 1].map((r) => (
-            <div
-              key={r}
-              className={`h-4 w-6 rounded ${getIntensityClass(r)}`}
-            />
-          ))}
-          <span>More</span>
+        <div className="mt-4 flex flex-wrap items-center gap-4 text-xs text-foreground/50">
+          <div className="flex items-center gap-2">
+            <span>Less</span>
+            {[0, 0.2, 0.4, 0.6, 0.8, 1].map((r) => (
+              <div
+                key={r}
+                className={`h-4 w-6 rounded ${getIntensityClass(r, true)}`}
+              />
+            ))}
+            <span>More</span>
+          </div>
+          {primeSlotSet.size > 0 && (
+            <div className="flex items-center gap-2 text-foreground/30">
+              <div className="h-4 w-6 rounded bg-foreground/10" />
+              <span>Extended hours</span>
+            </div>
+          )}
         </div>
 
         {/* Selected cell detail */}
@@ -173,6 +267,9 @@ export default function AvailabilityHeatmap({ availability }: Props) {
               <span className="ml-2 text-foreground/50">
                 ({selectedPlayers.length} available)
               </span>
+              {!primeSlotSet.has(selected.slot) && primeSlotSet.size > 0 && (
+                <span className="ml-2 text-xs text-foreground/30">(extended hours)</span>
+              )}
             </p>
             {selectedPlayers.length > 0 ? (
               <div className="flex flex-wrap gap-2">

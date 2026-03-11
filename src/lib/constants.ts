@@ -237,14 +237,65 @@ export const DAYS_OF_WEEK = [
   "Saturday",
 ] as const;
 
-// 5:00 PM to 11:00 PM in 30-minute increments
+// Default time window (used as fallback when SiteSettings not loaded)
+export const DEFAULT_PRIME_START = 17; // 5 PM
+export const DEFAULT_PRIME_END = 23;   // 11 PM
+export const DEFAULT_EXTENDED_START = 14; // 2 PM
+export const DEFAULT_EXTENDED_END = 25;   // 1 AM next day (25 = 24+1)
+export const DEFAULT_ANCHOR_TIMEZONE = "America/Phoenix";
+
+// Legacy TIME_SLOTS for backwards compat (prime window only)
 export const TIME_SLOTS: string[] = [];
-for (let hour = 17; hour <= 23; hour++) {
+for (let hour = DEFAULT_PRIME_START; hour <= DEFAULT_PRIME_END; hour++) {
   TIME_SLOTS.push(`${hour.toString().padStart(2, "0")}:00`);
-  if (hour < 23) {
+  if (hour < DEFAULT_PRIME_END) {
     TIME_SLOTS.push(`${hour.toString().padStart(2, "0")}:30`);
   }
 }
+
+/**
+ * Generate 30-min time slots for a given hour range.
+ * Supports wrapping past midnight (e.g. extendedEnd=25 means 1:00 AM).
+ */
+export function generateTimeSlots(startHour: number, endHour: number): string[] {
+  const slots: string[] = [];
+  for (let hour = startHour; hour <= endHour; hour++) {
+    const displayHour = hour % 24;
+    slots.push(`${displayHour.toString().padStart(2, "0")}:00`);
+    if (hour < endHour) {
+      slots.push(`${displayHour.toString().padStart(2, "0")}:30`);
+    }
+  }
+  return slots;
+}
+
+/**
+ * Check if a time slot falls within the prime (recommended) window.
+ * Times are in the viewer's local timezone but we compare against
+ * the Phoenix-anchored prime window (also converted to viewer tz).
+ */
+export function isSlotInPrimeWindow(
+  slot: string,
+  primeSlots: Set<string>
+): boolean {
+  return primeSlots.has(slot);
+}
+
+export interface TimeWindowConfig {
+  primeStartHour: number;
+  primeEndHour: number;
+  extendedStartHour: number;
+  extendedEndHour: number;
+  anchorTimezone: string;
+}
+
+export const DEFAULT_TIME_WINDOW: TimeWindowConfig = {
+  primeStartHour: DEFAULT_PRIME_START,
+  primeEndHour: DEFAULT_PRIME_END,
+  extendedStartHour: DEFAULT_EXTENDED_START,
+  extendedEndHour: DEFAULT_EXTENDED_END,
+  anchorTimezone: DEFAULT_ANCHOR_TIMEZONE,
+};
 
 export function formatTime(time: string): string {
   const [h, m] = time.split(":").map(Number);

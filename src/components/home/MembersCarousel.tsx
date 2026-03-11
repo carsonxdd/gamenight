@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRef, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
 
 interface MemberData {
@@ -28,7 +29,7 @@ function MemberCardComponent({ member }: { member: MemberData }) {
       : "border-border hover:border-neon/30";
 
   return (
-    <div className={`flex-shrink-0 w-72 rounded-xl border bg-surface p-5 transition ${borderClass}`}>
+    <div className={`flex-shrink-0 w-60 sm:w-72 rounded-xl border bg-surface p-4 sm:p-5 transition ${borderClass}`}>
       <div className="flex items-center gap-3">
         {member.avatar ? (
           <img
@@ -81,11 +82,41 @@ interface MembersCarouselProps {
 }
 
 export default function MembersCarousel({ members }: MembersCarouselProps) {
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const animationRef = useRef<number>(0);
+  const scrollPos = useRef(0);
+  const speed = 0.5; // pixels per frame
+
+  // Measure how wide one full set of cards is
+  const getHalfWidth = useCallback(() => {
+    const el = scrollRef.current;
+    if (!el) return 0;
+    return el.scrollWidth / 2;
+  }, []);
+
+  useEffect(() => {
+    if (members.length === 0) return;
+    const el = scrollRef.current;
+    if (!el) return;
+
+    const animate = () => {
+      scrollPos.current += speed;
+      const halfWidth = getHalfWidth();
+      if (halfWidth > 0 && scrollPos.current >= halfWidth) {
+        scrollPos.current -= halfWidth;
+      }
+      el.style.transform = `translateX(-${scrollPos.current}px)`;
+      animationRef.current = requestAnimationFrame(animate);
+    };
+
+    animationRef.current = requestAnimationFrame(animate);
+    return () => cancelAnimationFrame(animationRef.current);
+  }, [getHalfWidth, members.length]);
+
   if (members.length === 0) return null;
 
-  // Need enough cards to fill at least 2x the viewport width so the loop is seamless.
-  // Each card is ~288px + 16px gap = ~304px. At 1920px wide that's ~7 cards visible.
-  // We need at least ~14 cards per copy. Repeat the member list until we hit that.
+  // Build the card list — duplicate enough to fill 2x viewport
+  // Each card is ~240-288px + 16px gap. At 1920px we need ~7 visible, so ~14 total minimum.
   const minCards = 14;
   const repeatCount = Math.max(1, Math.ceil(minCards / members.length));
   const filledList: MemberData[] = [];
@@ -112,22 +143,22 @@ export default function MembersCarousel({ members }: MembersCarouselProps) {
 
       <div className="group relative">
         {/* Fade edges */}
-        <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-20 bg-gradient-to-r from-background to-transparent" />
-        <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-20 bg-gradient-to-l from-background to-transparent" />
+        <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-12 sm:w-20 bg-gradient-to-r from-background to-transparent" />
+        <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-12 sm:w-20 bg-gradient-to-l from-background to-transparent" />
 
-        <div className="animate-marquee group-hover:[animation-play-state:paused]">
+        <div
+          ref={scrollRef}
+          className="flex gap-4 will-change-transform"
+          style={{ width: "max-content" }}
+        >
           {/* Copy A */}
-          <div className="flex gap-4 pr-4">
-            {filledList.map((member, i) => (
-              <MemberCardComponent key={`a-${i}`} member={member} />
-            ))}
-          </div>
-          {/* Copy B — identical, so -50% lands exactly on the seam */}
-          <div className="flex gap-4 pr-4">
-            {filledList.map((member, i) => (
-              <MemberCardComponent key={`b-${i}`} member={member} />
-            ))}
-          </div>
+          {filledList.map((member, i) => (
+            <MemberCardComponent key={`a-${i}`} member={member} />
+          ))}
+          {/* Copy B — identical, so the loop is seamless */}
+          {filledList.map((member, i) => (
+            <MemberCardComponent key={`b-${i}`} member={member} />
+          ))}
         </div>
       </div>
 

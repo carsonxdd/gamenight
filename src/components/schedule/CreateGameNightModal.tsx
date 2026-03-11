@@ -28,6 +28,7 @@ export default function CreateGameNightModal({ open, onClose, isAdmin, userId, m
   const [recurWeeks, setRecurWeeks] = useState(4);
   const [visibility, setVisibility] = useState<"public" | "invite_only">("public");
   const [inviteeIds, setInviteeIds] = useState<string[]>([]);
+  const [hostId, setHostId] = useState(userId);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -69,6 +70,7 @@ export default function CreateGameNightModal({ open, onClose, isAdmin, userId, m
       recurWeeks: isRecurring && !isInviteOnly ? recurWeeks : undefined,
       visibility,
       inviteeIds: isInviteOnly ? inviteeIds : undefined,
+      hostId,
     });
     setLoading(false);
     if (result?.error) {
@@ -84,7 +86,7 @@ export default function CreateGameNightModal({ open, onClose, isAdmin, userId, m
   };
 
   return (
-    <Modal open={open} onClose={onClose} title="Create Game Night">
+    <Modal open={open} onClose={onClose} title="Create Game Night" wide>
       <form onSubmit={handleSubmit} className="space-y-4">
         {/* Visibility toggle */}
         <div className="flex rounded-lg border border-border bg-surface p-1">
@@ -112,41 +114,44 @@ export default function CreateGameNightModal({ open, onClose, isAdmin, userId, m
           </button>
         </div>
 
-        <div>
-          <label className="mb-1 block text-sm text-foreground/70">Title (optional)</label>
-          <input
-            type="text"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            placeholder="e.g. Friday Night Valorant"
-            maxLength={isAdmin ? undefined : INVITE_LIMITS.TITLE_MAX}
-            className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-foreground placeholder:text-foreground/30 focus:border-neon focus:outline-none"
-          />
+        {/* Title & Description side by side */}
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <div>
+            <label className="mb-1 block text-sm text-foreground/70">Title (optional)</label>
+            <input
+              type="text"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="e.g. Friday Night Valorant"
+              maxLength={isAdmin ? undefined : INVITE_LIMITS.TITLE_MAX}
+              className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-foreground placeholder:text-foreground/30 focus:border-neon focus:outline-none"
+            />
+          </div>
+          <div>
+            <label className="mb-1 block text-sm text-foreground/70">Description (optional)</label>
+            <input
+              type="text"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="What's planned?"
+              maxLength={isAdmin ? undefined : INVITE_LIMITS.DESCRIPTION_MAX}
+              className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-foreground placeholder:text-foreground/30 focus:border-neon focus:outline-none"
+            />
+          </div>
         </div>
 
-        <div>
-          <label className="mb-1 block text-sm text-foreground/70">Description (optional)</label>
-          <textarea
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            placeholder="What's planned for this event?"
-            rows={2}
-            maxLength={isAdmin ? undefined : INVITE_LIMITS.DESCRIPTION_MAX}
-            className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-foreground placeholder:text-foreground/30 focus:border-neon focus:outline-none resize-none"
-          />
-        </div>
-
-        <div>
-          <label className="mb-1 block text-sm text-foreground/70">Date</label>
-          <input
-            type="date"
-            value={date}
-            onChange={(e) => setDate(e.target.value)}
-            className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-foreground focus:border-neon focus:outline-none"
-          />
-        </div>
-
-        <div className="grid grid-cols-2 gap-3">
+        {/* Date, Start, End on one row */}
+        <p className="text-xs text-foreground/30">Times are in your timezone</p>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+          <div>
+            <label className="mb-1 block text-sm text-foreground/70">Date</label>
+            <input
+              type="date"
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+              className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-foreground focus:border-neon focus:outline-none"
+            />
+          </div>
           <div>
             <label className="mb-1 block text-sm text-foreground/70">Start</label>
             <select
@@ -173,17 +178,35 @@ export default function CreateGameNightModal({ open, onClose, isAdmin, userId, m
           </div>
         </div>
 
-        <div>
-          <label className="mb-1 block text-sm text-foreground/70">Game</label>
-          <select
-            value={game}
-            onChange={(e) => setGame(e.target.value)}
-            className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-foreground focus:border-neon focus:outline-none"
-          >
-            {GAMES.map((g) => (
-              <option key={g} value={g}>{g}</option>
-            ))}
-          </select>
+        {/* Game & Host on one row */}
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <div>
+            <label className="mb-1 block text-sm text-foreground/70">Game</label>
+            <select
+              value={game}
+              onChange={(e) => setGame(e.target.value)}
+              className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-foreground focus:border-neon focus:outline-none"
+            >
+              {GAMES.map((g) => (
+                <option key={g} value={g}>{g}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="mb-1 block text-sm text-foreground/70">Host</label>
+            <select
+              value={hostId}
+              onChange={(e) => setHostId(e.target.value)}
+              className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-foreground focus:border-neon focus:outline-none"
+            >
+              <option value={userId}>Me</option>
+              {members.map((m) => (
+                <option key={m.id} value={m.id}>
+                  {m.gamertag || m.name}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
 
         {isAdmin && !isInviteOnly && (

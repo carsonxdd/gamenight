@@ -8,9 +8,10 @@ interface ModalProps {
   onClose: () => void;
   children: React.ReactNode;
   title?: string;
+  wide?: boolean;
 }
 
-export default function Modal({ open, onClose, children, title }: ModalProps) {
+export default function Modal({ open, onClose, children, title, wide }: ModalProps) {
   useEffect(() => {
     if (open) {
       document.body.style.overflow = "hidden";
@@ -44,7 +45,7 @@ export default function Modal({ open, onClose, children, title }: ModalProps) {
               damping: 30,
               mass: 0.8,
             }}
-            className="relative w-full max-w-lg rounded-xl border border-border bg-surface p-6"
+            className={`relative w-full rounded-xl border border-border bg-surface p-6 max-h-[90vh] overflow-y-auto ${wide ? "max-w-2xl" : "max-w-lg"}`}
           >
             {title && (
               <h2 className="mb-4 text-lg font-bold text-foreground">

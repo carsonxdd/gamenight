@@ -6,6 +6,21 @@ import PollList from "@/components/polls/PollList";
 export default async function PollsPage() {
   const session = await getServerSession(authOptions);
 
+  if (!session?.user?.id) {
+    return (
+      <div className="mx-auto max-w-6xl px-4 py-20 text-center">
+        <h1 className="mb-4 text-3xl font-bold text-foreground">Polls</h1>
+        <p className="mb-6 text-foreground/50">Sign in to view and vote on polls.</p>
+        <a
+          href="/signup"
+          className="inline-block rounded bg-neon px-6 py-2.5 font-semibold text-background transition hover:bg-neon-dim"
+        >
+          Sign In
+        </a>
+      </div>
+    );
+  }
+
   const polls = await prisma.poll.findMany({
     include: {
       createdBy: { select: { name: true, gamertag: true, avatar: true } },

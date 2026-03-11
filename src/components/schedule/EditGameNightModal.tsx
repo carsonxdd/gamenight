@@ -7,6 +7,7 @@ import { GAMES, TIME_SLOTS, formatTime, DAYS_OF_WEEK, INVITE_LIMITS } from "@/li
 import { updateGameNight, deleteGameNight, deleteRecurringGroup } from "@/app/schedule/actions";
 import { GameNightWithAttendees, InvitableMember, InviteGroupData } from "./ScheduleView";
 import MemberPicker from "./MemberPicker";
+import { utcToLocalDateTime, dateToUtcString } from "@/lib/timezone-utils";
 
 interface Props {
   open: boolean;
@@ -16,11 +17,16 @@ interface Props {
   isAdmin?: boolean;
   members?: InvitableMember[];
   groups?: InviteGroupData[];
+  userTimezone?: string;
 }
 
-export default function EditGameNightModal({ open, onClose, gameNight, userId, isAdmin, members = [], groups = [] }: Props) {
-  const gnDate = new Date(gameNight.date);
-  const dateStr = `${gnDate.getFullYear()}-${String(gnDate.getMonth() + 1).padStart(2, "0")}-${String(gnDate.getDate()).padStart(2, "0")}`;
+export default function EditGameNightModal({ open, onClose, gameNight, userId, isAdmin, members = [], groups = [], userTimezone = "America/Phoenix" }: Props) {
+  // Convert UTC times back to the event's timezone for editing
+  const eventTz = gameNight.timezone || "America/Phoenix";
+  const gnUtcDateStr = dateToUtcString(new Date(gameNight.date));
+  const localStart = utcToLocalDateTime(gnUtcDateStr, gameNight.startTime, eventTz);
+  const localEnd = utcToLocalDateTime(gnUtcDateStr, gameNight.endTime, eventTz);
+  const dateStr = localStart.localDate;
 
   const isInviteOnly = gameNight.visibility === "invite_only";
   const isCreator = userId === gameNight.createdById;
@@ -29,12 +35,14 @@ export default function EditGameNightModal({ open, onClose, gameNight, userId, i
   const [title, setTitle] = useState(gameNight.title || "");
   const [description, setDescription] = useState(gameNight.description || "");
   const [date, setDate] = useState(dateStr);
-  const [startTime, setStartTime] = useState(gameNight.startTime);
-  const [endTime, setEndTime] = useState(gameNight.endTime);
+  const [startTime, setStartTime] = useState(localStart.localTime);
+  const [endTime, setEndTime] = useState(localEnd.localTime);
   const [game, setGame] = useState(gameNight.game);
   const [status, setStatus] = useState(gameNight.status);
   const [isRecurring, setIsRecurring] = useState(gameNight.isRecurring);
-  const [recurDay, setRecurDay] = useState(gnDate.getDay());
+  const localDate = new Date(localStart.localDate + "T12:00:00");
+  const [recurDay, setRecurDay] = useState(localDate.getDay());
+  const [hostId, setHostId] = useState(gameNight.hostId || gameNight.createdById);
   const [inviteeIds, setInviteeIds] = useState<string[]>(
     gameNight.invites?.map((inv) => inv.userId) || []
   );
@@ -68,6 +76,7 @@ export default function EditGameNightModal({ open, onClose, gameNight, userId, i
       isRecurring,
       recurDay: isRecurring ? recurDay : undefined,
       inviteeIds: isInviteOnly ? inviteeIds : undefined,
+      hostId,
     });
     setLoading(false);
     if (result?.error) {
@@ -153,7 +162,7 @@ export default function EditGameNightModal({ open, onClose, gameNight, userId, i
           />
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <div>
             <label className="mb-1 block text-sm text-foreground/70">Start</label>
             <select
@@ -192,6 +201,29 @@ export default function EditGameNightModal({ open, onClose, gameNight, userId, i
             ))}
           </select>
         </div>
+
+        {/* Host selector */}
+        {canEdit && (
+          <div>
+            <label className="mb-1 block text-sm text-foreground/70">Host</label>
+            <select
+              value={hostId}
+              onChange={(e) => setHostId(e.target.value)}
+              className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-foreground focus:border-neon focus:outline-none"
+            >
+              <option value={gameNight.createdById}>
+                {gameNight.createdBy?.gamertag || gameNight.createdBy?.name || "Creator"}
+              </option>
+              {members
+                .filter((m) => m.id !== gameNight.createdById)
+                .map((m) => (
+                  <option key={m.id} value={m.id}>
+                    {m.gamertag || m.name}
+                  </option>
+                ))}
+            </select>
+          </div>
+        )}
 
         {/* Status + recurring: only for admin/mod */}
         {isAdmin && (
@@ -254,6 +286,58 @@ export default function EditGameNightModal({ open, onClose, gameNight, userId, i
             <p className="text-xs text-foreground/50">
               {gameNight.invites.map((inv) => inv.user.gamertag || inv.user.name).join(", ")}
             </p>
+          </div>
+        )}
+
+        {/* RSVP summary (edit mode shows all statuses) */}
+        {gameNight.attendees.length > 0 && (
+          <div className="space-y-2 rounded-lg border border-border bg-surface-light p-3">
+            <p className="text-xs font-medium text-foreground/40 uppercase tracking-wider">RSVPs</p>
+            {(() => {
+              const confirmed = gameNight.attendees.filter((a) => a.status === "confirmed");
+              const maybe = gameNight.attendees.filter((a) => a.status === "maybe");
+              const declined = gameNight.attendees.filter((a) => a.status === "declined");
+              return (
+                <>
+                  {confirmed.length > 0 && (
+                    <div>
+                      <p className="mb-1 text-[10px] font-medium text-neon/60 uppercase">Going ({confirmed.length})</p>
+                      <div className="flex flex-wrap gap-1">
+                        {confirmed.map((a) => (
+                          <span key={a.userId} className="rounded-full border border-neon/30 bg-neon/10 px-2 py-0.5 text-xs text-neon">
+                            {a.user.gamertag || a.user.name}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {maybe.length > 0 && (
+                    <div>
+                      <p className="mb-1 text-[10px] font-medium text-warning/60 uppercase">Maybe ({maybe.length})</p>
+                      <div className="flex flex-wrap gap-1">
+                        {maybe.map((a) => (
+                          <span key={a.userId} className="rounded-full border border-warning/30 bg-warning/10 px-2 py-0.5 text-xs text-warning">
+                            {a.user.gamertag || a.user.name}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {declined.length > 0 && (
+                    <div>
+                      <p className="mb-1 text-[10px] font-medium text-danger/60 uppercase">Declined ({declined.length})</p>
+                      <div className="flex flex-wrap gap-1">
+                        {declined.map((a) => (
+                          <span key={a.userId} className="rounded-full border border-danger/30 bg-danger/10 px-2 py-0.5 text-xs text-foreground/50">
+                            {a.user.gamertag || a.user.name}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </>
+              );
+            })()}
           </div>
         )}
 

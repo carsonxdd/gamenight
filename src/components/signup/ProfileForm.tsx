@@ -1,10 +1,12 @@
 "use client";
 
-import { useState, useCallback, useImperativeHandle, forwardRef } from "react";
+import { useState, useCallback, useImperativeHandle, forwardRef, useMemo } from "react";
 import GameSelector, { GameSelection } from "./GameSelector";
 import AvailabilityGrid from "./AvailabilityGrid";
 import Button from "@/components/ui/Button";
 import TimezoneSelect from "@/components/ui/TimezoneSelect";
+import { US_TIMEZONES, DEFAULT_PRIME_START, DEFAULT_PRIME_END, DEFAULT_EXTENDED_START, DEFAULT_EXTENDED_END, DEFAULT_ANCHOR_TIMEZONE } from "@/lib/constants";
+import { computeTimeSlotsForViewer } from "@/lib/timezone-utils";
 import { completeProfile } from "@/app/signup/actions";
 import { updateProfile } from "@/app/profile/actions";
 
@@ -31,6 +33,12 @@ interface ProfileFormProps {
   onGamesChange?: (games: GameSelection[]) => void;
   hideSubmit?: boolean;
   hideModerate?: boolean;
+  /** Time window config from site settings — slots are recomputed when timezone changes */
+  primeStartHour?: number;
+  primeEndHour?: number;
+  extendedStartHour?: number;
+  extendedEndHour?: number;
+  anchorTimezone?: string;
 }
 
 const ProfileFormInner = forwardRef<ProfileFormHandle, ProfileFormProps>(function ProfileFormInner({
@@ -43,9 +51,27 @@ const ProfileFormInner = forwardRef<ProfileFormHandle, ProfileFormProps>(functio
   onGamesChange,
   hideSubmit,
   hideModerate,
+  primeStartHour = DEFAULT_PRIME_START,
+  primeEndHour = DEFAULT_PRIME_END,
+  extendedStartHour = DEFAULT_EXTENDED_START,
+  extendedEndHour = DEFAULT_EXTENDED_END,
+  anchorTimezone = DEFAULT_ANCHOR_TIMEZONE,
 }, ref) {
   const [gamertag, setGamertag] = useState(defaultName || "");
   const [timezone, setTimezone] = useState(initialTimezone || "");
+
+  // Recompute prime/extended slots whenever the user changes their timezone
+  const { primeSlots, extendedSlots } = useMemo(() => {
+    const viewerTz = timezone || anchorTimezone;
+    return computeTimeSlotsForViewer(
+      viewerTz,
+      anchorTimezone,
+      primeStartHour,
+      primeEndHour,
+      extendedStartHour,
+      extendedEndHour
+    );
+  }, [timezone, anchorTimezone, primeStartHour, primeEndHour, extendedStartHour, extendedEndHour]);
   const [games, setGames] = useState<GameSelection[]>(initialGames || []);
   const [selectedSlots, setSelectedSlots] = useState<Set<string>>(
     () => new Set(initialSlots || [])
@@ -158,7 +184,17 @@ const ProfileFormInner = forwardRef<ProfileFormHandle, ProfileFormProps>(functio
       </div>
 
       <GameSelector selected={games} onChange={handleGamesChange} mode={mode} />
-      <AvailabilityGrid selected={selectedSlots} onChange={handleSlotsChange} />
+      <AvailabilityGrid
+        selected={selectedSlots}
+        onChange={handleSlotsChange}
+        timezoneLabel={timezone ? US_TIMEZONES.find((tz) => tz.value === timezone)?.label || timezone : undefined}
+        primeSlots={primeSlots}
+        extendedSlots={extendedSlots}
+        anchorTimezone={anchorTimezone}
+        viewerTimezone={timezone || anchorTimezone}
+        anchorPrimeStartHour={primeStartHour}
+        anchorPrimeEndHour={primeEndHour}
+      />
 
       {!hideModerate && (
         <div>

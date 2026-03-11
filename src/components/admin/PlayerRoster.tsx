@@ -3,7 +3,6 @@
 import { useState, useTransition } from "react";
 import { motion } from "framer-motion";
 import { fadeIn } from "@/lib/animations";
-import { DAYS_OF_WEEK } from "@/lib/constants";
 import Card from "@/components/ui/Card";
 import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
@@ -33,10 +32,14 @@ const dayAbbrevs = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
 
 export default function PlayerRoster({ players, currentUserId, isCurrentUserAdmin }: Props) {
   const [search, setSearch] = useState("");
+  const [showModOnly, setShowModOnly] = useState(false);
   const [confirmRemove, setConfirmRemove] = useState<PlayerData | null>(null);
   const [isPending, startTransition] = useTransition();
 
+  const willingCount = players.filter((p) => p.willingToModerate).length;
+
   const filtered = players.filter((p) => {
+    if (showModOnly && !p.willingToModerate) return false;
     const q = search.toLowerCase();
     return (
       p.name.toLowerCase().includes(q) ||
@@ -63,15 +66,32 @@ export default function PlayerRoster({ players, currentUserId, isCurrentUserAdmi
 
   return (
     <motion.div {...fadeIn}>
-      {/* Search */}
-      <div className="mb-4">
+      {/* Search & Filter */}
+      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center">
         <input
           type="text"
           placeholder="Search by name, gamertag, or game..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-full rounded-lg border border-border bg-surface px-4 py-2 text-sm text-foreground placeholder:text-foreground/30 focus:border-neon/50 focus:outline-none focus:ring-1 focus:ring-neon/50"
+          className="flex-1 rounded-lg border border-border bg-surface px-4 py-2 text-sm text-foreground placeholder:text-foreground/30 focus:border-neon/50 focus:outline-none focus:ring-1 focus:ring-neon/50"
         />
+        {willingCount > 0 && (
+          <button
+            onClick={() => setShowModOnly(!showModOnly)}
+            className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-sm transition ${
+              showModOnly
+                ? "border-warning/50 bg-warning/10 text-warning"
+                : "border-border bg-surface text-foreground/50 hover:border-warning/30 hover:text-warning/70"
+            }`}
+          >
+            <span>Willing to Mod</span>
+            <span className={`rounded-full px-1.5 py-0.5 text-xs font-semibold ${
+              showModOnly ? "bg-warning/20 text-warning" : "bg-surface-lighter text-foreground/40"
+            }`}>
+              {willingCount}
+            </span>
+          </button>
+        )}
       </div>
 
       <Card>
@@ -183,13 +203,16 @@ export default function PlayerRoster({ players, currentUserId, isCurrentUserAdmi
                         {!player.isAdmin && !player.isModerator && !player.isOwner && (
                           <Badge variant="neutral">Member</Badge>
                         )}
+                        {player.willingToModerate && (
+                          <Badge variant="warning">Willing to Mod</Badge>
+                        )}
                       </div>
                     </td>
 
                     {/* Actions */}
                     <td className="py-3">
                       {!isSelf && !player.isOwner && isCurrentUserAdmin && (
-                        <div className="flex gap-2 opacity-0 transition group-hover:opacity-100">
+                        <div className="flex gap-2 sm:opacity-0 sm:transition sm:group-hover:opacity-100">
                           {!player.isAdmin && (
                             <Button
                               size="sm"

@@ -16,13 +16,14 @@ export default function RankSelector({
   onChange,
 }: RankSelectorProps) {
   const tiers = GAME_RANK_TIERS[gameName];
-  if (!tiers) return null;
 
   // Find which tier the current value belongs to
-  const activeTier = tiers.find((t) => t.ranks.includes(value));
+  const activeTier = tiers?.find((t) => t.ranks.includes(value));
   const [expandedTier, setExpandedTier] = useState<string | null>(
     activeTier?.name ?? null
   );
+
+  if (!tiers) return null;
 
   const handleTierClick = (tier: (typeof tiers)[0]) => {
     if (tier.ranks.length === 1) {

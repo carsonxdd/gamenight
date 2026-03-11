@@ -3,6 +3,7 @@
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { localTimeToUtc, DEFAULT_TIMEZONE } from "@/lib/timezone-utils";
 
 interface GameInput {
   name: string;
@@ -25,6 +26,18 @@ function parseSlot(key: string) {
   const endH = m === 0 ? h : h + 1;
   const endTime = `${endH.toString().padStart(2, "0")}:${endM}`;
   return { dayOfWeek, startTime, endTime };
+}
+
+/** Convert a parsed local slot to UTC using the user's timezone */
+function parseSlotUtc(key: string, timezone: string) {
+  const local = parseSlot(key);
+  const utcStart = localTimeToUtc(local.startTime, local.dayOfWeek, timezone);
+  const utcEnd = localTimeToUtc(local.endTime, local.dayOfWeek, timezone);
+  return {
+    dayOfWeek: utcStart.utcDayOfWeek,
+    startTime: utcStart.utcTime,
+    endTime: utcEnd.utcTime,
+  };
 }
 
 export async function completeProfile(data: ProfileData) {
@@ -71,7 +84,7 @@ export async function completeProfile(data: ProfileData) {
       await tx.userAvailability.createMany({
         data: data.slots.map((key) => ({
           userId: session.user.id,
-          ...parseSlot(key),
+          ...parseSlotUtc(key, data.timezone || DEFAULT_TIMEZONE),
         })),
       });
     });

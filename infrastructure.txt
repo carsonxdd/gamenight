@@ -1,0 +1,63 @@
+# Caplan Game Night — Infrastructure Setup
+
+## Services
+
+- **Supabase** — database (Postgres), authentication (Discord OAuth), user data
+- **Railway** — frontend hosting, backend API, Discord bot
+- **Cloudflare** — domain registrar, DNS
+
+## Step-by-Step
+
+### 1. Buy Your Domain
+- Go to Cloudflare, create an account if you don't have one
+- Search for and register your domain (e.g., caplangamenight.com)
+- Don't touch DNS settings yet — you'll point it at Railway later
+
+### 2. Set Up Supabase
+- Create a Supabase project
+- Enable Discord as an auth provider (Authentication → Providers → Discord)
+- You'll need to create a Discord application at discord.com/developers to get a client ID and secret — paste those into Supabase
+- Set your redirect URL in both Supabase and the Discord developer portal
+- Your database tables live here — users, events, availability, RSVPs, game preferences, etc.
+- Save your Supabase project URL and anon/service keys — your backend will need these
+
+### 3. Set Up Railway
+- Create a Railway project with three services:
+  1. **Frontend** — your React app, deployed from your GitHub repo
+  2. **Backend API** — your server (Node/Express or whatever you're using), also from GitHub
+  3. **Discord Bot** — runs as a persistent worker process, also from GitHub
+- Add your Supabase credentials as environment variables on the backend and bot services
+- Add your Discord bot token as an environment variable on the bot service
+- Railway will give you a generated URL for each service — use these to test before connecting your domain
+
+### 4. Connect Your Domain
+- In Railway, go to your frontend service → Settings → Custom Domain → add your domain
+- Railway will give you a CNAME record
+- Go to Cloudflare → DNS → add that CNAME record pointing your domain to Railway
+- Wait for it to propagate (usually a few minutes)
+- Do the same for your backend API if you want it on a subdomain like api.caplangamenight.com
+
+### 5. Connect Everything
+- Frontend talks to your backend API
+- Backend API talks to Supabase (database and auth)
+- Discord bot talks to your backend API (to know about events and RSVPs)
+- Frontend uses Supabase client library for login (Discord OAuth flow)
+
+## Environment Variables You'll Need
+
+**Backend API (Railway):**
+- SUPABASE_URL
+- SUPABASE_SERVICE_KEY
+- DISCORD_BOT_TOKEN (if bot and API share a service)
+
+**Discord Bot (Railway):**
+- DISCORD_BOT_TOKEN
+- BACKEND_API_URL (or SUPABASE_URL if bot reads from DB directly)
+
+**Frontend (Railway):**
+- SUPABASE_URL
+- SUPABASE_ANON_KEY
+- API_URL (your backend)
+
+## That's It
+Supabase handles your database and login. Railway runs your code. Cloudflare owns your domain. Three accounts, clean separation.

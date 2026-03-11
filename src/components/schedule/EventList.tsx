@@ -3,18 +3,22 @@
 import Card from "@/components/ui/Card";
 import Badge from "@/components/ui/Badge";
 import RSVPButton from "./RSVPButton";
-import { formatTime } from "@/lib/constants";
 import { approveGameNight, rejectGameNight } from "@/app/schedule/actions";
 import { GameNightWithAttendees } from "./ScheduleView";
+import { formatWithTag, type TeamTagMap } from "@/lib/team-utils";
+import { formatEventTimeForViewer, utcToLocalDateTime, dateToUtcString } from "@/lib/timezone-utils";
 
 interface Props {
   gameNights: GameNightWithAttendees[];
   userId?: string;
   isAdmin?: boolean;
-  onEditEvent?: (gn: GameNightWithAttendees) => void;
+  onViewEvent?: (gn: GameNightWithAttendees) => void;
+  onMarkAttendance?: (gn: GameNightWithAttendees) => void;
+  teamTagMap?: TeamTagMap;
+  userTimezone?: string;
 }
 
-export default function EventList({ gameNights, userId, isAdmin, onEditEvent }: Props) {
+export default function EventList({ gameNights, userId, isAdmin, onViewEvent, onMarkAttendance, teamTagMap = {}, userTimezone = "America/Phoenix" }: Props) {
   if (gameNights.length === 0) {
     return (
       <div className="py-20 text-center text-foreground/40">
@@ -34,7 +38,19 @@ export default function EventList({ gameNights, userId, isAdmin, onEditEvent }: 
         const isRejected = gn.status === "rejected";
         const isInviteOnly = gn.visibility === "invite_only";
         const isCreator = userId === gn.createdById;
-        const canEdit = isAdmin || (isCreator && isInviteOnly);
+        const isHost = userId === gn.hostId;
+        // Convert UTC date to viewer's local date for display
+        const utcDateStr = dateToUtcString(new Date(gn.date));
+        const localStart = utcToLocalDateTime(utcDateStr, gn.startTime, userTimezone);
+        const localEnd = utcToLocalDateTime(utcDateStr, gn.endTime, userTimezone);
+        const localDisplayDate = new Date(localStart.localDate + "T12:00:00");
+
+        // Check if event is past using UTC end time
+        const [endH, endM] = gn.endTime.split(":").map(Number);
+        const eventEnd = new Date(gn.date);
+        eventEnd.setUTCHours(endH, endM, 0, 0);
+        const isPast = eventEnd < new Date();
+        const canMarkAttendance = isPast && gn.status === "scheduled" && (isAdmin || isHost || isCreator);
 
         return (
           <Card
@@ -48,10 +64,10 @@ export default function EventList({ gameNights, userId, isAdmin, onEditEvent }: 
             }`}
           >
             <div
-              className={`flex-1 ${canEdit ? "cursor-pointer" : ""}`}
-              onClick={canEdit ? () => onEditEvent?.(gn) : undefined}
+              className="flex-1 cursor-pointer"
+              onClick={() => onViewEvent?.(gn)}
             >
-              <div className="mb-1 flex items-center gap-2">
+              <div className="mb-1 flex flex-wrap items-center gap-2">
                 <h3 className="font-bold text-foreground">
                   {gn.title || gn.game}
                 </h3>
@@ -67,20 +83,22 @@ export default function EventList({ gameNights, userId, isAdmin, onEditEvent }: 
                 {isInviteOnly && (
                   <Badge variant="neutral">Invite-Only</Badge>
                 )}
-                {canEdit && (
-                  <span className="text-xs text-foreground/30 ml-auto">Edit</span>
-                )}
               </div>
               <p className="text-sm text-foreground/50">
-                {new Date(gn.date).toLocaleDateString("en-US", {
+                {localDisplayDate.toLocaleDateString("en-US", {
                   weekday: "long",
                   month: "short",
                   day: "numeric",
                 })}{" "}
-                &middot; {formatTime(gn.startTime)} - {formatTime(gn.endTime)}
+                &middot; {formatEventTimeForViewer(gn.startTime, utcDateStr, userTimezone, gn.timezone)} - {formatEventTimeForViewer(gn.endTime, utcDateStr, userTimezone, gn.timezone)}
               </p>
               {gn.description && (
                 <p className="mt-1 text-sm text-foreground/60">{gn.description}</p>
+              )}
+              {gn.host && (
+                <p className="mt-1 text-xs text-foreground/40">
+                  Hosted by <span className="text-foreground/60">{gn.host.gamertag || gn.host.name}</span>
+                </p>
               )}
               {isPending && gn.createdBy && (
                 <p className="mt-1 text-xs text-warning/70">
@@ -89,12 +107,7 @@ export default function EventList({ gameNights, userId, isAdmin, onEditEvent }: 
               )}
               {confirmed.length > 0 && (
                 <p className="mt-1 text-xs text-neon">
-                  {confirmed.map((a) => a.user.gamertag || a.user.name).join(", ")}
-                </p>
-              )}
-              {isInviteOnly && gn.invites && gn.invites.length > 0 && (
-                <p className="mt-1 text-xs text-foreground/40">
-                  Invited: {gn.invites.map((inv) => inv.user.gamertag || inv.user.name).join(", ")}
+                  {confirmed.map((a) => formatWithTag(a.user.gamertag || a.user.name, a.userId, teamTagMap, gn.game)).join(", ")}
                 </p>
               )}
             </div>
@@ -115,7 +128,19 @@ export default function EventList({ gameNights, userId, isAdmin, onEditEvent }: 
                   </button>
                 </>
               )}
-              {gn.status === "scheduled" && userId && (
+              {canMarkAttendance && (
+                <button
+                  onClick={() => onMarkAttendance?.(gn)}
+                  className={`rounded-lg px-3 py-1.5 text-xs font-medium transition ${
+                    gn.attendanceConfirmed
+                      ? "border border-neon/30 text-neon/70 hover:bg-neon/10"
+                      : "bg-neon/10 text-neon hover:bg-neon/20"
+                  }`}
+                >
+                  {gn.attendanceConfirmed ? "Attendance ✓" : "Mark Attendance"}
+                </button>
+              )}
+              {gn.status === "scheduled" && userId && !isPast && (
                 <RSVPButton gameNightId={gn.id} currentStatus={myRsvp} />
               )}
             </div>

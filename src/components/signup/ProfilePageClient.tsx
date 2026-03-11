@@ -33,6 +33,11 @@ interface ProfilePageClientProps {
   initialCustomLink?: string;
   groups?: { id: string; name: string; memberIds: string[] }[];
   members?: InvitableMember[];
+  primeStartHour?: number;
+  primeEndHour?: number;
+  extendedStartHour?: number;
+  extendedEndHour?: number;
+  anchorTimezone?: string;
 }
 
 export default function ProfilePageClient({
@@ -51,6 +56,11 @@ export default function ProfilePageClient({
   initialCustomLink,
   groups = [],
   members = [],
+  primeStartHour,
+  primeEndHour,
+  extendedStartHour,
+  extendedEndHour,
+  anchorTimezone,
 }: ProfilePageClientProps) {
   const profileRef = useRef<ProfileFormHandle>(null);
   const extendedRef = useRef<ExtendedProfileFormHandle>(null);
@@ -126,6 +136,11 @@ export default function ProfilePageClient({
               onGamesChange={handleGamesChange}
               hideSubmit
               hideModerate
+              primeStartHour={primeStartHour}
+              primeEndHour={primeEndHour}
+              extendedStartHour={extendedStartHour}
+              extendedEndHour={extendedEndHour}
+              anchorTimezone={anchorTimezone}
             />
           </Card>
         </div>

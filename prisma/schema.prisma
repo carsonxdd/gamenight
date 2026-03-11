@@ -13,7 +13,7 @@ model User {
   name                   String
   gamertag               String?
   avatar                 String?
-  timezone               String?
+  timezone               String              @default("America/Phoenix")
   isAdmin                Boolean             @default(false)
   isModerator            Boolean             @default(false)
   isOwner                Boolean             @default(false)
@@ -32,6 +32,7 @@ model User {
   ranks                  UserGameRank[]
   availability           UserAvailability[]
   createdNights          GameNight[]         @relation("CreatedBy")
+  hostedNights           GameNight[]         @relation("HostedBy")
   attendances            GameNightAttendee[]
   invitedToNights        GameNightInvite[]   @relation("InvitedTo")
   ownedGroups            InviteGroup[]       @relation("OwnedGroups")
@@ -39,6 +40,18 @@ model User {
   createdPolls           Poll[]              @relation("PollCreator")
   pollVotes              PollVote[]
   pollComments           PollComment[]
+  createdTournaments     Tournament[]        @relation("TournamentCreator")
+  tournamentEntries      TournamentEntrant[]  @relation("TournamentPlayer")
+  captainedTeams         TournamentTeam[]     @relation("TeamCaptain")
+  teamMemberships        TournamentTeamMember[] @relation("TeamMembership")
+  tournamentPredictions  TournamentPrediction[] @relation("TournamentPredictor")
+  tournamentComments     TournamentComment[]  @relation("TournamentCommenter")
+  createdTemplates       TournamentTemplate[] @relation("TemplateCreator")
+  // Persistent Teams
+  captainedPersistentTeams Team[]           @relation("PersistentTeamCaptain")
+  persistentTeamMembers    TeamMember[]     @relation("PersistentTeamMembership")
+  teamInvitesReceived      TeamInvite[]     @relation("TeamInviteReceived")
+  teamInvitesSent          TeamInvite[]     @relation("TeamInviteSent")
 }
 
 model UserGameRank {
@@ -85,10 +98,15 @@ model GameNight {
   isRecurring  Boolean             @default(false)
   recurDay     Int?                // 0-6 day of week
   recurGroupId String?             // shared ID linking recurring event instances
+  timezone    String              @default("America/Phoenix") // IANA timezone of the event host
+  attendanceConfirmed Boolean     @default(false)       // true once host has confirmed who showed up
   createdById String
   createdBy   User                @relation("CreatedBy", fields: [createdById], references: [id])
+  hostId      String?
+  host        User?               @relation("HostedBy", fields: [hostId], references: [id])
   attendees   GameNightAttendee[]
   invites     GameNightInvite[]
+  tournamentSessions TournamentSession[]
   createdAt   DateTime            @default(now())
   updatedAt   DateTime            @updatedAt
 }
@@ -98,6 +116,7 @@ model GameNightAttendee {
   gameNightId String
   userId      String
   status      String    @default("confirmed") // confirmed, maybe, declined
+  attended    Boolean   @default(false)        // true if host confirmed they showed up
   gameNight   GameNight @relation(fields: [gameNightId], references: [id], onDelete: Cascade)
   user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -180,4 +199,217 @@ model PollComment {
   poll      Poll     @relation(fields: [pollId], references: [id], onDelete: Cascade)
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
+}
+
+// ─── Site Settings (admin-configurable) ─────────────────────────────
+
+model SiteSettings {
+  id                     String  @id @default("singleton") // always one row
+  // Availability time window (24h format, Phoenix time anchored)
+  primeStartHour         Int     @default(17)  // 5 PM
+  primeEndHour           Int     @default(23)  // 11 PM
+  extendedStartHour      Int     @default(14)  // 2 PM
+  extendedEndHour        Int     @default(25)  // 1 AM (next day)
+  anchorTimezone         String  @default("America/Phoenix")
+  // Event defaults
+  defaultEventDuration   Int     @default(3)   // hours
+  maxEventsPerWeek       Int     @default(5)   // for non-admin users
+  maxPollsPerWeek        Int     @default(5)
+  // Community
+  communityName          String  @default("Game Night")
+  motd                   String? // message of the day shown on home
+}
+
+// ─── Tournament System ───────────────────────────────────────────────
+
+model Tournament {
+  id            String   @id @default(cuid())
+  title         String
+  description   String?
+  game          String
+  bracketType   String   // single_elim, double_elim, round_robin, swiss, constellation, ffa
+  format        String   // "solo" or "team"
+  teamSize      Int?     // 5 (LoL/Dota), 6 (OW), null for solo
+  bestOf        Int      @default(1) // 1 or 3
+  maxSlots      Int      // total entrant slots (players or teams)
+  seedingMode   String   @default("random") // random, ranked, random_constrained
+  captainMode   String?  // ranked, manual, random (team format only)
+  status        String   @default("draft") // draft, open, in_progress, completed, archived
+  draftStatus   String?  // null, "pending", "in_progress", "completed"
+  draftOrder    String?  // JSON array of captain user IDs in pick order
+  currentPickIndex Int?  // which pick we're on in the draft
+  buyIn         Float?
+  isMultiSession Boolean @default(false)
+  createdById   String
+  createdBy     User     @relation("TournamentCreator", fields: [createdById], references: [id])
+  sessions      TournamentSession[]
+  entrants      TournamentEntrant[]
+  teams         TournamentTeam[]
+  matches       TournamentMatch[]
+  predictions   TournamentPrediction[]
+  comments      TournamentComment[]
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model TournamentSession {
+  id           String    @id @default(cuid())
+  tournamentId String
+  tournament   Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  gameNightId  String?
+  gameNight    GameNight? @relation(fields: [gameNightId], references: [id], onDelete: SetNull)
+  label        String    // "Round 1", "Semifinals", etc.
+  date         DateTime
+  orderIndex   Int       // session sequence
+}
+
+model TournamentTeam {
+  id               String    @id @default(cuid())
+  tournamentId     String
+  tournament       Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  name             String
+  captainId        String
+  captain          User      @relation("TeamCaptain", fields: [captainId], references: [id])
+  persistentTeamId String?
+  persistentTeam   Team?     @relation("TournamentTeamLink", fields: [persistentTeamId], references: [id])
+  members          TournamentTeamMember[]
+  entrant          TournamentEntrant?
+}
+
+model TournamentTeamMember {
+  id     String          @id @default(cuid())
+  teamId String
+  team   TournamentTeam  @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  userId String
+  user   User            @relation("TeamMembership", fields: [userId], references: [id])
+
+  @@unique([teamId, userId])
+}
+
+model TournamentEntrant {
+  id           String    @id @default(cuid())
+  tournamentId String
+  tournament   Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  type         String    // "solo" or "team"
+  userId       String?
+  user         User?     @relation("TournamentPlayer", fields: [userId], references: [id])
+  teamId       String?   @unique
+  team         TournamentTeam? @relation(fields: [teamId], references: [id])
+  displayName  String
+  seed         Int?
+
+  matchesAsEntrant1 TournamentMatch[] @relation("MatchEntrant1")
+  matchesAsEntrant2 TournamentMatch[] @relation("MatchEntrant2")
+  matchesWon        TournamentMatch[] @relation("MatchWinner")
+  predictions       TournamentPrediction[] @relation("PredictedWinner")
+}
+
+model TournamentMatch {
+  id             String    @id @default(cuid())
+  tournamentId   String
+  tournament     Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  sessionId      String?
+  round          Int       // round number
+  matchNumber    Int       // position within round
+  bracketSide    String?   // "winners" or "losers" (double elim)
+  entrant1Id     String?
+  entrant1       TournamentEntrant? @relation("MatchEntrant1", fields: [entrant1Id], references: [id])
+  entrant2Id     String?
+  entrant2       TournamentEntrant? @relation("MatchEntrant2", fields: [entrant2Id], references: [id])
+  winnerEntrantId String?
+  winner         TournamentEntrant? @relation("MatchWinner", fields: [winnerEntrantId], references: [id])
+  score1         Int?
+  score2         Int?
+  bestOfGame     Int       @default(1) // which game in best-of series
+  status         String    @default("pending") // pending, in_progress, completed, bye
+  reportedById   String?
+  confirmedById  String?
+  predictions    TournamentPrediction[]
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+}
+
+model TournamentPrediction {
+  id                String    @id @default(cuid())
+  tournamentId      String
+  tournament        Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  userId            String
+  user              User      @relation("TournamentPredictor", fields: [userId], references: [id])
+  matchId           String
+  match             TournamentMatch @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  predictedWinnerId String
+  predictedWinner   TournamentEntrant @relation("PredictedWinner", fields: [predictedWinnerId], references: [id])
+  correct           Boolean?
+
+  @@unique([matchId, userId])
+}
+
+model TournamentComment {
+  id           String    @id @default(cuid())
+  tournamentId String
+  tournament   Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  userId       String
+  user         User      @relation("TournamentCommenter", fields: [userId], references: [id])
+  text         String
+  createdAt    DateTime  @default(now())
+}
+
+model TournamentTemplate {
+  id          String @id @default(cuid())
+  name        String
+  bracketType String
+  format      String
+  teamSize    Int?
+  bestOf      Int    @default(1)
+  seedingMode String @default("random")
+  captainMode String?
+  createdById String
+  createdBy   User   @relation("TemplateCreator", fields: [createdById], references: [id])
+  createdAt   DateTime @default(now())
+}
+
+// ─── Persistent Teams ────────────────────────────────────────────────
+
+model Team {
+  id          String    @id @default(cuid())
+  name        String
+  tag         String    @unique // 3–5 chars, e.g. "NOVA"
+  game        String
+  captainId   String
+  captain     User      @relation("PersistentTeamCaptain", fields: [captainId], references: [id])
+  bio         String?
+  avatarUrl   String?
+  isActive    Boolean   @default(true)
+  minSize     Int
+  maxSize     Int
+  members     TeamMember[]
+  invites     TeamInvite[]
+  tournamentTeams TournamentTeam[] @relation("TournamentTeamLink")
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model TeamMember {
+  id       String   @id @default(cuid())
+  teamId   String
+  team     Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  userId   String
+  user     User     @relation("PersistentTeamMembership", fields: [userId], references: [id], onDelete: Cascade)
+  role     String   @default("member") // "captain" | "co_captain" | "member" | "sub"
+  joinedAt DateTime @default(now())
+
+  @@unique([teamId, userId])
+}
+
+model TeamInvite {
+  id              String    @id @default(cuid())
+  teamId          String
+  team            Team      @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  invitedUserId   String
+  invitedUser     User      @relation("TeamInviteReceived", fields: [invitedUserId], references: [id], onDelete: Cascade)
+  invitedByUserId String
+  invitedBy       User      @relation("TeamInviteSent", fields: [invitedByUserId], references: [id], onDelete: Cascade)
+  status          String    @default("pending") // "pending" | "accepted" | "declined" | "expired"
+  createdAt       DateTime  @default(now())
+  respondedAt     DateTime?
 }

@@ -13,6 +13,7 @@ declare module "next-auth" {
       isModerator: boolean;
       isOwner: boolean;
       willingToModerate: boolean;
+      timezone: string;
     };
   }
 }
@@ -26,5 +27,6 @@ declare module "next-auth/jwt" {
     isModerator?: boolean;
     isOwner?: boolean;
     willingToModerate?: boolean;
+    timezone?: string;
   }
 }

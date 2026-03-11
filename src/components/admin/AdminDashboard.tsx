@@ -8,6 +8,8 @@ import GamePopularity from "./GamePopularity";
 import AvailabilityHeatmap from "./AvailabilityHeatmap";
 import RSVPOverview from "./RSVPOverview";
 import PlayerRoster from "./PlayerRoster";
+import Insights from "./Insights";
+import SiteSettingsPanel from "./SiteSettingsPanel";
 
 interface GameStat {
   gameName: string;
@@ -52,6 +54,28 @@ interface PlayerData {
   availabilityDays: number[];
 }
 
+interface PendingAttendanceEvent {
+  id: string;
+  title: string | null;
+  game: string;
+  date: string;
+  hostName: string | null;
+  attendeeCount: number;
+}
+
+interface SiteSettingsData {
+  primeStartHour: number;
+  primeEndHour: number;
+  extendedStartHour: number;
+  extendedEndHour: number;
+  anchorTimezone: string;
+  defaultEventDuration: number;
+  maxEventsPerWeek: number;
+  maxPollsPerWeek: number;
+  communityName: string;
+  motd: string | null;
+}
+
 interface Props {
   stats: {
     playerCount: number;
@@ -65,15 +89,25 @@ interface Props {
   players: PlayerData[];
   currentUserId: string;
   isCurrentUserAdmin: boolean;
+  pendingAttendance: PendingAttendanceEvent[];
+  siteSettings?: SiteSettingsData;
+  primeSlots?: string[];
+  extendedSlots?: string[];
+  anchorTimezone?: string;
+  viewerTimezone?: string;
+  anchorPrimeStartHour?: number;
+  anchorPrimeEndHour?: number;
 }
 
-type Tab = "games" | "availability" | "rsvps" | "roster";
+type Tab = "games" | "availability" | "rsvps" | "roster" | "insights" | "settings";
 
-const tabs: { key: Tab; label: string }[] = [
+const tabs: { key: Tab; label: string; adminOnly?: boolean }[] = [
   { key: "games", label: "Games" },
   { key: "availability", label: "Availability" },
   { key: "rsvps", label: "RSVPs" },
   { key: "roster", label: "Roster" },
+  { key: "insights", label: "Insights" },
+  { key: "settings", label: "Settings", adminOnly: true },
 ];
 
 export default function AdminDashboard({
@@ -84,6 +118,14 @@ export default function AdminDashboard({
   players,
   currentUserId,
   isCurrentUserAdmin,
+  pendingAttendance,
+  siteSettings,
+  primeSlots,
+  extendedSlots,
+  anchorTimezone,
+  viewerTimezone,
+  anchorPrimeStartHour,
+  anchorPrimeEndHour,
 }: Props) {
   const [activeTab, setActiveTab] = useState<Tab>("games");
 
@@ -96,6 +138,44 @@ export default function AdminDashboard({
 
   return (
     <div>
+      {/* Attendance Nudge */}
+      {pendingAttendance.length > 0 && (
+        <motion.div {...fadeIn} className="mb-6">
+          <div className="rounded-xl border border-warning/30 bg-warning/5 p-4">
+            <div className="mb-2 flex items-center gap-2">
+              <span className="text-lg">📋</span>
+              <p className="text-sm font-semibold text-warning">
+                {pendingAttendance.length} {pendingAttendance.length === 1 ? "event needs" : "events need"} attendance confirmation
+              </p>
+            </div>
+            <div className="space-y-1.5">
+              {pendingAttendance.map((e) => (
+                <a
+                  key={e.id}
+                  href="/schedule"
+                  className="flex items-center justify-between rounded-lg border border-border bg-surface px-3 py-2 text-sm transition hover:border-warning/40"
+                >
+                  <div>
+                    <span className="font-medium text-foreground">{e.title || e.game}</span>
+                    {e.title && <span className="ml-2 text-foreground/40">{e.game}</span>}
+                    <span className="ml-2 text-xs text-foreground/40">
+                      {new Date(e.date).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2 text-xs text-foreground/50">
+                    {e.hostName && <span>Host: {e.hostName}</span>}
+                    <span>{e.attendeeCount} RSVPs</span>
+                  </div>
+                </a>
+              ))}
+            </div>
+            <p className="mt-2 text-xs text-foreground/40">
+              Go to the schedule page and click &quot;Mark Attendance&quot; on past events.
+            </p>
+          </div>
+        </motion.div>
+      )}
+
       {/* Summary Stats */}
       <motion.div
         {...fadeIn}
@@ -111,7 +191,9 @@ export default function AdminDashboard({
 
       {/* Tab Navigation */}
       <div className="mb-6 flex rounded-lg border border-border bg-surface p-1">
-        {tabs.map((tab) => (
+        {tabs
+          .filter((tab) => !tab.adminOnly || isCurrentUserAdmin)
+          .map((tab) => (
           <button
             key={tab.key}
             onClick={() => setActiveTab(tab.key)}
@@ -129,11 +211,15 @@ export default function AdminDashboard({
       {/* Tab Content */}
       {activeTab === "games" && <GamePopularity gameStats={gameStats} />}
       {activeTab === "availability" && (
-        <AvailabilityHeatmap availability={availability} />
+        <AvailabilityHeatmap availability={availability} primeSlots={primeSlots} extendedSlots={extendedSlots} anchorTimezone={anchorTimezone} viewerTimezone={viewerTimezone} anchorPrimeStartHour={anchorPrimeStartHour} anchorPrimeEndHour={anchorPrimeEndHour} />
       )}
       {activeTab === "rsvps" && <RSVPOverview gameNights={gameNights} />}
       {activeTab === "roster" && (
         <PlayerRoster players={players} currentUserId={currentUserId} isCurrentUserAdmin={isCurrentUserAdmin} />
+      )}
+      {activeTab === "insights" && <Insights />}
+      {activeTab === "settings" && siteSettings && (
+        <SiteSettingsPanel settings={siteSettings} />
       )}
     </div>
   );

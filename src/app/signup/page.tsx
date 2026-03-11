@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth";
 import DiscordLoginButton from "@/components/signup/DiscordLoginButton";
 import ProfileForm from "@/components/signup/ProfileForm";
 import Card from "@/components/ui/Card";
+import { getSiteSettings } from "@/app/admin/settings-actions";
 
 export default async function SignUpPage() {
   const session = await getServerSession(authOptions);
@@ -12,6 +13,8 @@ export default async function SignUpPage() {
   if (session?.user?.gamertag) {
     redirect("/schedule");
   }
+
+  const settings = await getSiteSettings();
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-12">
@@ -26,7 +29,14 @@ export default async function SignUpPage() {
 
       <Card className="p-6 sm:p-8">
         {session ? (
-          <ProfileForm defaultName={session.user.name ?? undefined} />
+          <ProfileForm
+            defaultName={session.user.name ?? undefined}
+            primeStartHour={settings.primeStartHour}
+            primeEndHour={settings.primeEndHour}
+            extendedStartHour={settings.extendedStartHour}
+            extendedEndHour={settings.extendedEndHour}
+            anchorTimezone={settings.anchorTimezone}
+          />
         ) : (
           <div className="flex flex-col items-center gap-6 py-8">
             <p className="text-foreground/60">

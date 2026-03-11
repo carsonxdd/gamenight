@@ -3,6 +3,8 @@ import { redirect } from "next/navigation";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import ProfilePageClient from "@/components/signup/ProfilePageClient";
+import { utcToLocalTime, DEFAULT_TIMEZONE } from "@/lib/timezone-utils";
+import { getSiteSettings } from "@/app/admin/settings-actions";
 
 export default async function ProfilePage() {
   const session = await getServerSession(authOptions);
@@ -43,9 +45,12 @@ export default async function ProfilePage() {
     modes: g.modes ? (JSON.parse(g.modes) as string[]) : undefined,
   }));
 
-  const slots = user.availability.map(
-    (a) => `${a.dayOfWeek}-${a.startTime}`
-  );
+  // Convert UTC availability back to user's local timezone for editing
+  const userTz = user.timezone || DEFAULT_TIMEZONE;
+  const slots = user.availability.map((a) => {
+    const local = utcToLocalTime(a.startTime, a.dayOfWeek, userTz);
+    return `${local.localDayOfWeek}-${local.localTime}`;
+  });
 
   const ranks = user.ranks.map((r) => ({
     gameName: r.gameName,
@@ -61,6 +66,8 @@ export default async function ProfilePage() {
     name: g.name,
     memberIds: g.members.map((m) => m.userId),
   }));
+
+  const settings = await getSiteSettings();
 
   return (
     <ProfilePageClient
@@ -79,6 +86,11 @@ export default async function ProfilePage() {
       initialCustomLink={user.customLink || undefined}
       groups={groups}
       members={allMembers}
+      primeStartHour={settings.primeStartHour}
+      primeEndHour={settings.primeEndHour}
+      extendedStartHour={settings.extendedStartHour}
+      extendedEndHour={settings.extendedEndHour}
+      anchorTimezone={settings.anchorTimezone}
     />
   );
 }

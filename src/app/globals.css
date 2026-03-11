@@ -94,18 +94,3 @@ textarea {
   color: #fff;
 }
 
-/* Marquee animation for members carousel */
-@keyframes marquee {
-  0% {
-    transform: translateX(0);
-  }
-  100% {
-    transform: translateX(-50%);
-  }
-}
-
-.animate-marquee {
-  display: flex;
-  will-change: transform;
-  animation: marquee 40s linear infinite;
-}

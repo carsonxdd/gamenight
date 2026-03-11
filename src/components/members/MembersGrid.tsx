@@ -13,6 +13,7 @@ export interface MemberData {
   games: string[];
   displayGames: string[];
   ranks: { gameName: string; rank: string; color: string }[];
+  teamTags: { tag: string; game: string; teamId: string }[];
   twitter: string | null;
   twitch: string | null;
   youtube: string | null;
@@ -42,24 +43,12 @@ export default function MembersGrid({ members }: MembersGridProps) {
   });
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-20">
-      <motion.div
-        variants={staggerContainer}
-        initial="initial"
-        animate="animate"
-        className="flex flex-col gap-8"
-      >
-        <motion.div variants={staggerItem}>
-          <h1 className="mb-2 text-4xl font-extrabold tracking-tight text-neon text-glow-sm sm:text-5xl">
-            Members
-          </h1>
-          <p className="text-foreground/50">
-            {members.length} {members.length === 1 ? "player" : "players"} in
-            the community
-          </p>
-          <div className="mt-3 h-px w-16 bg-neon/40" />
-        </motion.div>
-
+    <motion.div
+      variants={staggerContainer}
+      initial="initial"
+      animate="animate"
+      className="flex flex-col gap-8"
+    >
         {/* Search & Filter */}
         <motion.div
           variants={staggerItem}
@@ -103,7 +92,6 @@ export default function MembersGrid({ members }: MembersGridProps) {
             ))}
           </motion.div>
         )}
-      </motion.div>
-    </div>
+    </motion.div>
   );
 }
