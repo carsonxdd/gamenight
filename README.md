@@ -1,6 +1,6 @@
 # Caplan's Game Night
 
-**v0.7.0**
+**v0.7.1**
 
 A fully customizable web app for organizing gaming communities. Sign up with Discord, pick your games, set your availability, RSVP to game nights, build persistent teams, and run full tournament brackets. Admin-configurable branding, access controls, and feature toggles make it ready for any community.
 
@@ -40,7 +40,7 @@ A fully customizable web app for organizing gaming communities. Sign up with Dis
 - **Drag-select availability grid** (When2Meet-style) — click and drag to paint 30-min slots across a 7-day grid. **Prime time rows** (default 5–11 PM Phoenix) are bright neon; **extended rows** (default 2 PM–1 AM) are dimmed/muted, visually guiding players toward recommended hours without restricting selection. Shows a timezone hint label so users know times are in their selected timezone. **Prime time legend** adapts to the viewer's timezone: Arizona users see a simple "Prime time 5 PM–11 PM" label; users in other timezones see "Group prime time — 7 PM–1 AM your time" (or whatever their local equivalent is) with an explanation that prime time is based on the group's anchor timezone. **Reactive to timezone changes** — when a user changes their timezone in the dropdown, prime/extended slot highlighting and the legend immediately recalculate client-side (e.g. switching from Arizona to Eastern shifts the highlighted rows from 5–11 PM to 7 PM–1 AM). Time windows are admin-configurable and automatically converted to each viewer's local timezone.
 - Opt-in to moderate game nights (host lobbies, coordinate players) — shown during onboarding; on the profile page this lives in the extended profile section alongside tournament/event interests
 - Returning users edit preferences through the profile page, not the signup flow
-- **Sticky save bar** — fixed to the viewport bottom so the save button is always visible no matter where you scroll. Saves both profile and extended profile sections in parallel. Shows animated error/success feedback inline.
+- **Sticky save bar** — fixed to the viewport bottom, slides up only when you've actually changed something (dirty-state tracking across both profile and extended profile forms). Saves both sections in parallel. Slides back down after a successful save. Shows animated error/success feedback inline.
 
 ### Extended Profile (profile page only)
 - **Favorite games** — pick up to 3 games to feature on your member card in the landing page carousel. Falls back to first 3 games if none selected.
@@ -158,6 +158,7 @@ Custom games can be added via text input.
   - **Feature Toggles** — master switches for Tournaments, Teams, Polls, Highlights, and Stats tab. Disabled features are hidden from navigation and redirect on direct URL access.
   - **Limits** — default event duration, max events per week, max polls per week
   - **Community** — community name (used in page title, hero, signup), message of the day (MOTD)
+  - Save button only appears when settings have been changed (dirty-state tracking via shallow key comparison against initial values). Animates in/out with `AnimatePresence`.
   - Settings stored as a singleton `SiteSettings` row in the database. Client-side access via `SiteSettingsProvider` React context and `useSiteSettings()` hook.
 - Route-level protection via middleware (admins and moderators only)
 
@@ -422,6 +423,11 @@ Event templates for recurring game nights
 Spectator RSVP option
 
 ## Version History
+
+### v0.7.1 — 2026-03-12
+- **Conditional save buttons** — Profile page sticky save bar and Admin Settings save button now only appear when the user has actually changed something. Dirty-state tracking across all form fields (gamertag, timezone, games, availability, ranks, socials, toggles, site settings). Save bar slides in/out with spring animation. On successful save, baseline resets so button disappears.
+- **MD cleanup** — archived completed plan files (`SETTINGS_PLAN.md`, `TEAMS_PLAN.md`) to `docs/archive/`. Removed scrapped rebrand checklist.
+- **Fix accent color flash** — accent color CSS variables are now set as inline styles on `<html>` during server-side rendering, eliminating the green flash before client hydration.
 
 ### v0.7.0 — 2026-03-12
 - **Site Settings expansion** — comprehensive admin settings panel redesigned with left sidebar (desktop) / horizontal tabs (mobile) layout across 8 sections: Branding, Availability, Access & Privacy, Events, Polls, Tournaments, Teams, and Feature Toggles.

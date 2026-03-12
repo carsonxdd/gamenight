@@ -7,6 +7,7 @@ import PageTransition from "@/components/providers/PageTransition";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { getSiteSettings } from "@/app/admin/settings-actions";
+import { hexToRgb, darkenHex } from "@/lib/settings-constants";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -36,8 +37,18 @@ export default async function RootLayout({
 }>) {
   const settings = await getSiteSettings();
 
+  // Pre-compute accent color CSS vars so they're in the initial HTML (no FOUC)
+  const hex = settings.accentColor || "#00ff41";
+  const [r, g, b] = hexToRgb(hex);
+  const accentStyle = {
+    "--accent-color": hex,
+    "--accent-dim": darkenHex(hex, 0.2),
+    "--accent-dark": darkenHex(hex, 0.4),
+    "--neon-rgb": `${r}, ${g}, ${b}`,
+  } as React.CSSProperties;
+
   return (
-    <html lang="en" className="dark">
+    <html lang="en" className="dark" style={accentStyle}>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen bg-background text-foreground`}
       >

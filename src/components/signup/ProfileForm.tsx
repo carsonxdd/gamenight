@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useImperativeHandle, forwardRef, useMemo } from "react";
+import { useState, useCallback, useImperativeHandle, forwardRef, useMemo, useEffect } from "react";
 import GameSelector, { GameSelection } from "./GameSelector";
 import AvailabilityGrid from "./AvailabilityGrid";
 import Button from "@/components/ui/Button";
@@ -21,6 +21,7 @@ export interface ProfileFormData {
 export interface ProfileFormHandle {
   getData: () => ProfileFormData;
   validate: () => string | null;
+  markSaved: () => void;
 }
 
 interface ProfileFormProps {
@@ -31,6 +32,7 @@ interface ProfileFormProps {
   initialTimezone?: string;
   mode?: "setup" | "edit";
   onGamesChange?: (games: GameSelection[]) => void;
+  onDirty?: (dirty: boolean) => void;
   hideSubmit?: boolean;
   hideModerate?: boolean;
   /** Time window config from site settings — slots are recomputed when timezone changes */
@@ -49,6 +51,7 @@ const ProfileFormInner = forwardRef<ProfileFormHandle, ProfileFormProps>(functio
   initialTimezone,
   mode = "setup",
   onGamesChange,
+  onDirty,
   hideSubmit,
   hideModerate,
   primeStartHour = DEFAULT_PRIME_START,
@@ -77,6 +80,30 @@ const ProfileFormInner = forwardRef<ProfileFormHandle, ProfileFormProps>(functio
     () => new Set(initialSlots || [])
   );
   const [willingToModerate, setWillingToModerate] = useState(initialModerate || false);
+
+  // Dirty tracking
+  const [baseline, setBaseline] = useState(() => ({
+    gamertag: defaultName || "",
+    timezone: initialTimezone || "",
+    games: JSON.stringify((initialGames || []).map((g) => ({ name: g.name, modes: g.modes }))),
+    slots: JSON.stringify([...(initialSlots || [])].sort()),
+    willingToModerate: initialModerate || false,
+  }));
+
+  const isDirty = useMemo(() => {
+    return (
+      gamertag !== baseline.gamertag ||
+      timezone !== baseline.timezone ||
+      JSON.stringify(games.map((g) => ({ name: g.name, modes: g.modes }))) !== baseline.games ||
+      JSON.stringify([...selectedSlots].sort()) !== baseline.slots ||
+      willingToModerate !== baseline.willingToModerate
+    );
+  }, [gamertag, timezone, games, selectedSlots, willingToModerate, baseline]);
+
+  useEffect(() => {
+    onDirty?.(isDirty);
+  }, [isDirty, onDirty]);
+
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
@@ -104,6 +131,15 @@ const ProfileFormInner = forwardRef<ProfileFormHandle, ProfileFormProps>(functio
       if (games.length === 0) return "Select at least one game";
       if (selectedSlots.size === 0) return "Select at least one available time slot";
       return null;
+    },
+    markSaved: () => {
+      setBaseline({
+        gamertag,
+        timezone,
+        games: JSON.stringify(games.map((g) => ({ name: g.name, modes: g.modes }))),
+        slots: JSON.stringify([...selectedSlots].sort()),
+        willingToModerate,
+      });
     },
   }));
 

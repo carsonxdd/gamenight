@@ -26,6 +26,7 @@ export interface ExtendedProfileFormData {
 
 export interface ExtendedProfileFormHandle {
   getData: () => ExtendedProfileFormData;
+  markSaved: () => void;
 }
 
 interface ExtendedProfileFormProps {
@@ -40,6 +41,7 @@ interface ExtendedProfileFormProps {
   initialYoutube?: string;
   initialCustomLink?: string;
   hideSubmit?: boolean;
+  onDirty?: (dirty: boolean) => void;
 }
 
 const ExtendedProfileForm = forwardRef<ExtendedProfileFormHandle, ExtendedProfileFormProps>(function ExtendedProfileForm({
@@ -54,6 +56,7 @@ const ExtendedProfileForm = forwardRef<ExtendedProfileFormHandle, ExtendedProfil
   initialYoutube,
   initialCustomLink,
   hideSubmit,
+  onDirty,
 }, ref) {
   const rankedUserGames = useMemo(
     () => userGames.filter((g) => g in GAME_RANK_TIERS),
@@ -112,6 +115,39 @@ const ExtendedProfileForm = forwardRef<ExtendedProfileFormHandle, ExtendedProfil
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
 
+  // Dirty tracking
+  const [baseline, setBaseline] = useState(() => ({
+    ranks: JSON.stringify(Object.entries(
+      (() => { const map: Record<string, string> = {}; for (const g of rankedUserGames) { const existing = initialRanks?.find((r) => r.gameName === g); map[g] = existing?.rank || ""; } return map; })()
+    ).map(([gameName, rank]) => ({ gameName, rank }))),
+    interestedInBuyIn: initialBuyIn || false,
+    interestedInLAN: initialLAN || false,
+    willingToModerate: initialModerate || false,
+    favoriteGames: JSON.stringify((initialFavoriteGames || []).filter((g) => userGames.includes(g)).sort()),
+    twitter: (initialTwitter || "").trim(),
+    twitch: (initialTwitch || "").trim(),
+    youtube: (initialYoutube || "").trim(),
+    customLink: (initialCustomLink || "").trim(),
+  }));
+
+  const isDirtyExtended = useMemo(() => {
+    return (
+      JSON.stringify(Object.entries(ranks).map(([gameName, rank]) => ({ gameName, rank }))) !== baseline.ranks ||
+      interestedInBuyIn !== baseline.interestedInBuyIn ||
+      interestedInLAN !== baseline.interestedInLAN ||
+      willingToModerate !== baseline.willingToModerate ||
+      JSON.stringify([...favoriteGames].sort()) !== baseline.favoriteGames ||
+      twitter.trim() !== baseline.twitter ||
+      twitch.trim() !== baseline.twitch ||
+      youtube.trim() !== baseline.youtube ||
+      customLink.trim() !== baseline.customLink
+    );
+  }, [ranks, interestedInBuyIn, interestedInLAN, willingToModerate, favoriteGames, twitter, twitch, youtube, customLink, baseline]);
+
+  useEffect(() => {
+    onDirty?.(isDirtyExtended);
+  }, [isDirtyExtended, onDirty]);
+
   useImperativeHandle(ref, () => ({
     getData: () => ({
       ranks: Object.entries(ranks).map(([gameName, rank]) => ({
@@ -127,6 +163,19 @@ const ExtendedProfileForm = forwardRef<ExtendedProfileFormHandle, ExtendedProfil
       youtube: youtube.trim(),
       customLink: customLink.trim(),
     }),
+    markSaved: () => {
+      setBaseline({
+        ranks: JSON.stringify(Object.entries(ranks).map(([gameName, rank]) => ({ gameName, rank }))),
+        interestedInBuyIn,
+        interestedInLAN,
+        willingToModerate,
+        favoriteGames: JSON.stringify([...favoriteGames].sort()),
+        twitter: twitter.trim(),
+        twitch: twitch.trim(),
+        youtube: youtube.trim(),
+        customLink: customLink.trim(),
+      });
+    },
   }));
 
   const handleSubmit = async (e: React.FormEvent) => {

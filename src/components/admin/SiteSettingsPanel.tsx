@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { motion } from "framer-motion";
+import { useState, useRef } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { fadeIn } from "@/lib/animations";
 import Card from "@/components/ui/Card";
 import { US_TIMEZONES, formatTime } from "@/lib/constants";
@@ -143,12 +143,17 @@ function TextField({
 
 export default function SiteSettingsPanel({ settings }: Props) {
   const [form, setForm] = useState<SiteSettingsData>(settings);
+  const initialRef = useRef<SiteSettingsData>(settings);
   const [section, setSection] = useState<SettingsSection>("branding");
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{
     type: "success" | "error";
     text: string;
   } | null>(null);
+
+  const isDirty = (Object.keys(form) as (keyof SiteSettingsData)[]).some(
+    (key) => form[key] !== initialRef.current[key]
+  );
 
   const update = <K extends keyof SiteSettingsData>(
     key: K,
@@ -166,6 +171,7 @@ export default function SiteSettingsPanel({ settings }: Props) {
     if (result.error) {
       setMessage({ type: "error", text: result.error });
     } else {
+      initialRef.current = { ...form };
       setMessage({ type: "success", text: "Settings saved!" });
     }
   };
@@ -684,22 +690,34 @@ export default function SiteSettingsPanel({ settings }: Props) {
         )}
 
         {/* Save */}
-        <div className="mt-6 flex items-center gap-3">
-          <button
-            onClick={handleSave}
-            disabled={saving}
-            className="rounded-lg bg-neon px-5 py-2 text-sm font-semibold text-background transition hover:bg-neon-dim disabled:opacity-50"
-          >
-            {saving ? "Saving..." : "Save Settings"}
-          </button>
-          {message && (
-            <p
-              className={`text-sm ${message.type === "error" ? "text-red-400" : "text-neon"}`}
+        <AnimatePresence>
+          {(isDirty || message) && (
+            <motion.div
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 8 }}
+              transition={{ duration: 0.2 }}
+              className="mt-6 flex items-center gap-3"
             >
-              {message.text}
-            </p>
+              {isDirty && (
+                <button
+                  onClick={handleSave}
+                  disabled={saving}
+                  className="rounded-lg bg-neon px-5 py-2 text-sm font-semibold text-background transition hover:bg-neon-dim disabled:opacity-50"
+                >
+                  {saving ? "Saving..." : "Save Settings"}
+                </button>
+              )}
+              {message && (
+                <p
+                  className={`text-sm ${message.type === "error" ? "text-red-400" : "text-neon"}`}
+                >
+                  {message.text}
+                </p>
+              )}
+            </motion.div>
           )}
-        </div>
+        </AnimatePresence>
       </div>
       </div>
     </motion.div>

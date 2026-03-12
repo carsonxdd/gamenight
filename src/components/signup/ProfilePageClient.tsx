@@ -70,6 +70,9 @@ export default function ProfilePageClient({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [profileDirty, setProfileDirty] = useState(false);
+  const [extendedDirty, setExtendedDirty] = useState(false);
+  const isDirty = profileDirty || extendedDirty;
 
   const handleGamesChange = useCallback((games: GameSelection[]) => {
     setCurrentGames(games.map((g) => g.name));
@@ -103,6 +106,8 @@ export default function ProfilePageClient({
       } else if (extendedResult?.error) {
         setError(extendedResult.error);
       } else {
+        profileRef.current?.markSaved();
+        extendedRef.current?.markSaved();
         setSuccess("Saved!");
         setTimeout(() => setSuccess(""), 3000);
       }
@@ -134,6 +139,7 @@ export default function ProfilePageClient({
               initialTimezone={initialTimezone}
               mode="edit"
               onGamesChange={handleGamesChange}
+              onDirty={setProfileDirty}
               hideSubmit
               hideModerate
               primeStartHour={primeStartHour}
@@ -166,6 +172,7 @@ export default function ProfilePageClient({
               initialTwitch={initialTwitch}
               initialYoutube={initialYoutube}
               initialCustomLink={initialCustomLink}
+              onDirty={setExtendedDirty}
               hideSubmit
             />
           </Card>
@@ -185,45 +192,57 @@ export default function ProfilePageClient({
         </div>
       </div>
 
-      {/* Sticky bottom save bar */}
-      <div className="fixed bottom-0 inset-x-0 z-50 border-t border-border bg-background/95 backdrop-blur-sm">
-        <div className="mx-auto max-w-2xl px-4 py-3 flex items-center justify-between gap-4">
-          <AnimatePresence mode="wait">
-            {error && (
-              <motion.p
-                key="error"
-                initial={{ opacity: 0, y: 4 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0 }}
-                className="text-sm text-danger truncate"
-              >
-                {error}
-              </motion.p>
-            )}
-            {success && (
-              <motion.p
-                key="success"
-                initial={{ opacity: 0, y: 4 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0 }}
-                className="text-sm text-neon"
-              >
-                {success}
-              </motion.p>
-            )}
-            {!error && !success && <div />}
-          </AnimatePresence>
-
-          <Button
-            size="lg"
-            disabled={loading}
-            onClick={handleSave}
-            className="min-w-[140px]"
+      {/* Sticky bottom save bar — slides in when dirty */}
+      <AnimatePresence>
+        {(isDirty || error || success) && (
+          <motion.div
+            initial={{ y: "100%" }}
+            animate={{ y: 0 }}
+            exit={{ y: "100%" }}
+            transition={{ type: "spring", damping: 25, stiffness: 300 }}
+            className="fixed bottom-0 inset-x-0 z-50 border-t border-border bg-background/95 backdrop-blur-sm"
           >
-            {loading ? "Saving..." : "Save Changes"}
-          </Button>
-        </div>
-      </div>
+            <div className="mx-auto max-w-2xl px-4 py-3 flex items-center justify-between gap-4">
+              <AnimatePresence mode="wait">
+                {error && (
+                  <motion.p
+                    key="error"
+                    initial={{ opacity: 0, y: 4 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0 }}
+                    className="text-sm text-danger truncate"
+                  >
+                    {error}
+                  </motion.p>
+                )}
+                {success && (
+                  <motion.p
+                    key="success"
+                    initial={{ opacity: 0, y: 4 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0 }}
+                    className="text-sm text-neon"
+                  >
+                    {success}
+                  </motion.p>
+                )}
+                {!error && !success && <div />}
+              </AnimatePresence>
+
+              {isDirty && (
+                <Button
+                  size="lg"
+                  disabled={loading}
+                  onClick={handleSave}
+                  className="min-w-[140px]"
+                >
+                  {loading ? "Saving..." : "Save Changes"}
+                </Button>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </>
   );
 }
