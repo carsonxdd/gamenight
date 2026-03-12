@@ -183,6 +183,21 @@ Custom games can be added via text input.
 - Signed-in users see their **bold** gamertag as a profile link in the navbar; signup/join buttons hidden
 - **Members carousel** — `requestAnimationFrame`-driven infinite scroll (no CSS animation glitches). Pauses on hover and touch. Responsive card sizing (`w-60` mobile, `w-72` desktop). Seamless loop by measuring actual scroll width and resetting position at the midpoint.
 
+## Live Site
+
+**[pvpers.us](https://pvpers.us)** — hosted on a Raspberry Pi with a Cloudflare Tunnel.
+
+## Development
+
+This branch (`main`) is the development branch. It uses a **separate Discord application** from production so dev logins don't interfere with live user sessions.
+
+| Environment | Discord Client ID | NEXTAUTH_URL |
+|-------------|-------------------|--------------|
+| **Production** (Pi) | *(production app)* | `https://pvpers.us` |
+| **Development** (local) | `1481158977093107793` | `http://localhost:3000` |
+
+> **Workflow:** Edit and push from your dev PC only. The Pi pulls from GitHub, rebuilds, and restarts. Never push from the Pi. `git pull` does not touch the database — user data is always safe.
+
 ## Repository
 
 Hosted on GitHub: [carsonxdd/gamenight](https://github.com/carsonxdd/gamenight)
@@ -192,7 +207,7 @@ Hosted on GitHub: [carsonxdd/gamenight](https://github.com/carsonxdd/gamenight)
 ### Prerequisites
 
 - Node.js 18+
-- A Discord application with OAuth2 credentials
+- A Discord application with OAuth2 credentials (use the dev app for local development)
 
 ### Setup
 
@@ -231,6 +246,8 @@ npx tsx prisma/seed-test-users.ts
 ```
 
 This creates 15 test users with full profiles (games, ranks, availability, social links, favorite games), 20 game night events (spread across US timezones, aligned to Phoenix prime time 5–11 PM with late night events), 6 persistent teams with rosters, 8 polls with votes and comments, 7 tournaments (open, in-progress, and completed across multiple bracket types), 3 invite groups, and team invites. All event times are properly UTC-converted so they display correctly in each viewer's timezone. Running the script again cleanly replaces all seed data.
+
+> **WARNING:** Do NOT run the seed script on the production Pi — it will wipe all real user data. This is for local development only.
 
 ### First Admin
 
