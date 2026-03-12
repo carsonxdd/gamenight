@@ -86,7 +86,7 @@ export default async function SignUpPage() {
                     <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
                   </svg>
                   <p className="text-xs text-foreground/50 leading-relaxed">
-                    We only receive your Discord <span className="text-foreground/70">username</span> and <span className="text-foreground/70">profile picture</span>. We cannot see your password, email, DMs, friends list, or servers. Discord handles the login — your credentials never touch our site.
+                    We only request Discord&apos;s &quot;identify&quot; scope — the only info we receive is your <span className="text-foreground/70">username</span> and <span className="text-foreground/70">profile picture</span>. We don&apos;t ask for your email, and we cannot see your password, DMs, friends list, or servers. Discord handles the login — your credentials never touch our site.
                   </p>
                 </div>
               </>

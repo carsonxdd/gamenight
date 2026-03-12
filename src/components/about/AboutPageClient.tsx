@@ -132,9 +132,11 @@ function AboutContent() {
             Discord handles your login directly — your password never touches our site.
           </p>
           <p>
-            The only info we receive from Discord is your <span className="text-foreground">username</span> and{" "}
-            <span className="text-foreground">profile picture</span>. We <span className="text-foreground">cannot</span> see
-            your email, password, DMs, friends list, servers, or any other account details.
+            We only request Discord&apos;s <span className="text-foreground">identify</span> scope, which means
+            the only info we receive is your <span className="text-foreground">username</span> and{" "}
+            <span className="text-foreground">profile picture</span>. We do <span className="text-foreground">not</span> request
+            access to your email, and we <span className="text-foreground">cannot</span> see
+            your password, DMs, friends list, servers, or any other account details.
           </p>
           <p>
             Everything else on your profile (gamertag, games, availability, social links) is info you
@@ -407,7 +409,7 @@ const FAQ_ITEMS = [
   },
   {
     question: "What info does Discord share with this site?",
-    answer: "Only your username and profile picture. We cannot see your email, password, DMs, friends list, servers, or any other account details.",
+    answer: "Only your username and profile picture. We only request the \"identify\" scope — we don't ask for your email, and we cannot see your password, DMs, friends list, servers, or any other account details.",
   },
   {
     question: "How do I set up my profile?",

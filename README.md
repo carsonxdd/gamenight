@@ -19,7 +19,8 @@ A fully customizable web app for organizing gaming communities. Sign up with Dis
 - Discord OAuth sign-in
 - JWT sessions with owner/admin/moderator/member roles
 - Gamertag autofills from Discord username during onboarding
-- **Privacy notice** on signup page — reassures users that only their Discord username and avatar are accessed (no email, password, DMs, friends, or servers)
+- **Minimal OAuth scope** — only requests Discord's `identify` scope (username + avatar). Email is never requested or accessed.
+- **Privacy notice** on signup page and About page — reassures users about the limited scope
 - **Public pages** (no sign-in required) — Home, Schedule (view-only), Highlights, About, Join
 - **Authenticated pages** — Polls, Members, Teams, Profile
 - **Admin/mod pages** — Admin panel

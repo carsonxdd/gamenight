@@ -6,7 +6,6 @@ declare module "next-auth" {
       id: string;
       discordId: string;
       name: string;
-      email?: string | null;
       image?: string | null;
       gamertag: string | null;
       isAdmin: boolean;
