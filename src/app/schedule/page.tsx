@@ -6,6 +6,7 @@ import ProfileBanner from "@/components/ui/ProfileBanner";
 import InfoBubble from "@/components/schedule/InfoBubble";
 import type { TeamTagMap } from "@/lib/team-utils";
 import { DEFAULT_TIMEZONE } from "@/lib/timezone-utils";
+import { getSiteSettings } from "@/app/admin/settings-actions";
 
 export default async function SchedulePage({
   searchParams,
@@ -37,7 +38,9 @@ export default async function SchedulePage({
   }
 
   const isAdminOrMod = session?.user?.isAdmin || session?.user?.isModerator || session?.user?.isOwner;
-  const dateFilter = { gte: new Date(new Date().setDate(new Date().getDate() - 7)) };
+  const settings = await getSiteSettings();
+  const archiveDays = settings.autoArchiveDays || 30;
+  const dateFilter = { gte: new Date(new Date().setDate(new Date().getDate() - archiveDays)) };
 
   let whereClause;
   if (isAdminOrMod) {

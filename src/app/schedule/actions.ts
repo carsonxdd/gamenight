@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { INVITE_LIMITS } from "@/lib/constants";
 import { localDateTimeToUtc, DEFAULT_TIMEZONE } from "@/lib/timezone-utils";
+import { getSiteSettings } from "@/app/admin/settings-actions";
 
 function parseLocalDate(dateStr: string): Date {
   const [year, month, day] = dateStr.split("-").map(Number);
@@ -37,6 +38,15 @@ export async function createGameNight(data: {
   }
 
   const isAdminOrMod = session.user.isAdmin || session.user.isModerator || session.user.isOwner;
+
+  // Check allowMemberEvents setting
+  if (!isAdminOrMod) {
+    const settings = await getSiteSettings();
+    if (!settings.allowMemberEvents) {
+      return { error: "Only admins can create events" };
+    }
+  }
+
   const visibility = data.visibility === "invite_only" ? "invite_only" : "public";
   const isInviteOnly = visibility === "invite_only";
 
@@ -169,6 +179,19 @@ export async function updateRSVP(gameNightId: string, status: string) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) {
     return { error: "Not authenticated" };
+  }
+
+  // If RSVPing as confirmed, check attendee cap
+  if (status === "confirmed") {
+    const settings = await getSiteSettings();
+    if (settings.maxAttendeesDefault > 0) {
+      const currentConfirmed = await prisma.gameNightAttendee.count({
+        where: { gameNightId, status: "confirmed", userId: { not: session.user.id } },
+      });
+      if (currentConfirmed >= settings.maxAttendeesDefault) {
+        return { error: "This event is full" };
+      }
+    }
   }
 
   try {

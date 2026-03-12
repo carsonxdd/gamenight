@@ -15,18 +15,35 @@ export const authOptions: NextAuthOptions = {
   callbacks: {
     async signIn({ user, account }) {
       if (account?.provider === "discord") {
-        await prisma.user.upsert({
+        // Check if user already exists (returning user)
+        const existing = await prisma.user.findUnique({
           where: { discordId: account.providerAccountId },
-          update: {
-            name: user.name || "Unknown",
-            avatar: user.image,
-          },
-          create: {
-            discordId: account.providerAccountId,
-            name: user.name || "Unknown",
-            avatar: user.image,
-          },
         });
+
+        if (existing) {
+          // Update name/avatar for returning users
+          await prisma.user.update({
+            where: { discordId: account.providerAccountId },
+            data: { name: user.name || "Unknown", avatar: user.image },
+          });
+        } else {
+          // New user — check joinMode for approval status
+          const settings = await prisma.siteSettings.findUnique({ where: { id: "singleton" } });
+          const joinMode = settings?.joinMode || "open";
+
+          // Block new signups in invite_only mode (must redeem code on signup page first)
+          // For approval mode, create with "pending" status
+          const approvalStatus = joinMode === "approval" ? "pending" : null;
+
+          await prisma.user.create({
+            data: {
+              discordId: account.providerAccountId,
+              name: user.name || "Unknown",
+              avatar: user.image,
+              approvalStatus,
+            },
+          });
+        }
       }
       return true;
     },
@@ -46,6 +63,7 @@ export const authOptions: NextAuthOptions = {
           token.isOwner = dbUser.isOwner;
           token.willingToModerate = dbUser.willingToModerate;
           token.timezone = dbUser.timezone;
+          token.approvalStatus = dbUser.approvalStatus;
         }
       }
       return token;
@@ -59,6 +77,7 @@ export const authOptions: NextAuthOptions = {
       session.user.isOwner = token.isOwner as boolean;
       session.user.willingToModerate = token.willingToModerate as boolean;
       session.user.timezone = (token.timezone as string) || "America/Phoenix";
+      session.user.approvalStatus = (token.approvalStatus as string | null) ?? null;
       return session;
     },
   },

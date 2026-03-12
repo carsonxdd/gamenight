@@ -1,10 +1,14 @@
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { redirect } from "next/navigation";
 import PollList from "@/components/polls/PollList";
+import { getSiteSettings } from "@/app/admin/settings-actions";
+import { checkAccessOrRedirect } from "@/lib/access-guard";
 
 export default async function PollsPage() {
-  const session = await getServerSession(authOptions);
+  const settings = await getSiteSettings();
+  if (!settings.enablePolls) redirect("/");
+
+  const session = await checkAccessOrRedirect();
 
   if (!session?.user?.id) {
     return (

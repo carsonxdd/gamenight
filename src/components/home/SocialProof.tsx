@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import { staggerContainer, staggerItem } from "@/lib/animations";
+import { useSiteSettings } from "@/components/providers/SiteSettingsProvider";
 
 interface SocialProofProps {
   memberCount: number;
@@ -10,8 +11,9 @@ interface SocialProofProps {
 }
 
 export default function SocialProof({ memberCount, eventsHosted, gamesAvailable }: SocialProofProps) {
+  const settings = useSiteSettings();
   const stats = [
-    { label: "Members", value: String(memberCount) },
+    ...(settings.showMemberCount ? [{ label: "Members", value: String(memberCount) }] : []),
     { label: "Events Hosted", value: String(eventsHosted) },
     { label: "Games Available", value: `${gamesAvailable}+` },
   ];

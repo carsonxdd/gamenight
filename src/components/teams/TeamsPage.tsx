@@ -7,6 +7,7 @@ import TeamCard, { type TeamData } from "./TeamCard";
 import CreateTeamModal from "./CreateTeamModal";
 import PendingInvites from "./PendingInvites";
 import Button from "@/components/ui/Button";
+import { useSiteSettings } from "@/components/providers/SiteSettingsProvider";
 
 const TABS = ["All Teams", "My Teams"] as const;
 type Tab = (typeof TABS)[number];
@@ -27,6 +28,7 @@ interface Props {
 }
 
 export default function TeamsPage({ teams, myTeams, pendingInvites }: Props) {
+  const settings = useSiteSettings();
   const [activeTab, setActiveTab] = useState<Tab>("All Teams");
   const [search, setSearch] = useState("");
   const [gameFilter, setGameFilter] = useState("");
@@ -64,7 +66,9 @@ export default function TeamsPage({ teams, myTeams, pendingInvites }: Props) {
             </p>
             <div className="mt-3 h-px w-16 bg-neon/40" />
           </div>
-          <Button onClick={() => setCreateOpen(true)}>Create Team</Button>
+          {settings.allowTeamCreation && (
+            <Button onClick={() => setCreateOpen(true)}>Create Team</Button>
+          )}
         </motion.div>
 
         {/* Pending Invites */}

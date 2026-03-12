@@ -5,6 +5,7 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { TOURNAMENT_LIMITS } from "@/lib/tournament-constants";
+import { getSiteSettings } from "@/app/admin/settings-actions";
 import {
   seedEntrants,
   generateSingleElimMatches,
@@ -72,6 +73,13 @@ export async function createTournament(data: {
   const isAdminOrMod =
     session.user.isAdmin || session.user.isModerator || session.user.isOwner;
 
+  const settings = await getSiteSettings();
+
+  // Check allowMemberTournaments setting
+  if (!isAdminOrMod && !settings.allowMemberTournaments) {
+    return { error: "Only admins can create tournaments" };
+  }
+
   // Validation
   const title = data.title?.trim();
   if (!title || title.length > TOURNAMENT_LIMITS.TITLE_MAX) {
@@ -80,8 +88,14 @@ export async function createTournament(data: {
   if (data.description && data.description.length > TOURNAMENT_LIMITS.DESCRIPTION_MAX) {
     return { error: `Description must be under ${TOURNAMENT_LIMITS.DESCRIPTION_MAX} characters` };
   }
-  if (data.maxSlots < TOURNAMENT_LIMITS.MIN_SLOTS || data.maxSlots > TOURNAMENT_LIMITS.MAX_SLOTS) {
-    return { error: `Slots must be between ${TOURNAMENT_LIMITS.MIN_SLOTS} and ${TOURNAMENT_LIMITS.MAX_SLOTS}` };
+  const maxSlotsCap = settings.maxTournamentSize || TOURNAMENT_LIMITS.MAX_SLOTS;
+  if (data.maxSlots < TOURNAMENT_LIMITS.MIN_SLOTS || data.maxSlots > maxSlotsCap) {
+    return { error: `Slots must be between ${TOURNAMENT_LIMITS.MIN_SLOTS} and ${maxSlotsCap}` };
+  }
+
+  // Strip buy-in if disabled
+  if (!settings.enableBuyIns) {
+    data.buyIn = undefined;
   }
 
   // Rate limit for non-admins

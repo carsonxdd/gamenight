@@ -18,6 +18,7 @@ import {
 import { calculatePrizePool } from "@/lib/bracket-utils";
 import { createTournament, fetchTemplates } from "@/app/schedule/tournament-actions";
 import { InvitableMember } from "./ScheduleView";
+import { useSiteSettings } from "@/components/providers/SiteSettingsProvider";
 
 interface Props {
   open: boolean;
@@ -43,6 +44,8 @@ export default function CreateTournamentModal({
   onClose,
   members = [],
 }: Props) {
+  const settings = useSiteSettings();
+  const maxSlotsCap = settings.maxTournamentSize || TOURNAMENT_LIMITS.MAX_SLOTS;
   const [step, setStep] = useState(1);
   const totalSteps = 6;
 
@@ -199,7 +202,7 @@ export default function CreateTournamentModal({
       case 2: return true;
       case 3: return true;
       case 4: return !isMultiSession || activeSessions.some((s) => s.date);
-      case 5: return maxSlots >= TOURNAMENT_LIMITS.MIN_SLOTS && maxSlots <= TOURNAMENT_LIMITS.MAX_SLOTS;
+      case 5: return maxSlots >= TOURNAMENT_LIMITS.MIN_SLOTS && maxSlots <= maxSlotsCap;
       case 6: return true;
       default: return true;
     }
@@ -585,33 +588,35 @@ export default function CreateTournamentModal({
               <input
                 type="number"
                 value={maxSlots}
-                onChange={(e) => setMaxSlots(Math.max(TOURNAMENT_LIMITS.MIN_SLOTS, Math.min(TOURNAMENT_LIMITS.MAX_SLOTS, Number(e.target.value))))}
+                onChange={(e) => setMaxSlots(Math.max(TOURNAMENT_LIMITS.MIN_SLOTS, Math.min(maxSlotsCap, Number(e.target.value))))}
                 min={TOURNAMENT_LIMITS.MIN_SLOTS}
-                max={TOURNAMENT_LIMITS.MAX_SLOTS}
+                max={maxSlotsCap}
                 className={inputClass}
               />
             </div>
 
-            <div>
-              <label className={labelClass}>Buy-in (optional)</label>
-              <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-foreground/40">$</span>
-                <input
-                  type="number"
-                  value={buyIn}
-                  onChange={(e) => setBuyIn(e.target.value)}
-                  placeholder="0.00"
-                  min="0"
-                  step="0.01"
-                  className={inputClass + " pl-7"}
-                />
+            {settings.enableBuyIns && (
+              <div>
+                <label className={labelClass}>Buy-in (optional)</label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-foreground/40">$</span>
+                  <input
+                    type="number"
+                    value={buyIn}
+                    onChange={(e) => setBuyIn(e.target.value)}
+                    placeholder="0.00"
+                    min="0"
+                    step="0.01"
+                    className={inputClass + " pl-7"}
+                  />
+                </div>
+                {prizePool && (
+                  <p className="mt-1 text-sm text-neon">
+                    Estimated prize pool: ${prizePool.toFixed(2)}
+                  </p>
+                )}
               </div>
-              {prizePool && (
-                <p className="mt-1 text-sm text-neon">
-                  Estimated prize pool: ${prizePool.toFixed(2)}
-                </p>
-              )}
-            </div>
+            )}
 
             <div className="border-t border-border pt-3">
               <label className="flex items-center gap-2 text-sm text-foreground/70">

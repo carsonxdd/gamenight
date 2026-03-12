@@ -10,6 +10,7 @@ import { approveGameNight, rejectGameNight } from "@/app/schedule/actions";
 import { GameNightWithAttendees } from "./ScheduleView";
 import { formatWithTag, type TeamTagMap } from "@/lib/team-utils";
 import { formatEventTimeForViewer, utcToLocalDateTime, dateToUtcString } from "@/lib/timezone-utils";
+import { useSiteSettings } from "@/components/providers/SiteSettingsProvider";
 
 interface Props {
   open: boolean;
@@ -51,7 +52,12 @@ export default function EventDetailModal({
   eventEnd.setUTCHours(_endH, _endM, 0, 0);
   const isPast = eventEnd < new Date();
 
-  const canRSVP = userId && gn.status === "scheduled" && !isPast;
+  const settings = useSiteSettings();
+  const maxAttendees = settings.maxAttendeesDefault;
+  const confirmedCount = gn.attendees.filter((a) => a.status === "confirmed").length;
+  const isFull = maxAttendees > 0 && confirmedCount >= maxAttendees;
+  const myCurrentRsvp = gn.attendees.find((a) => a.userId === userId)?.status;
+  const canRSVP = userId && gn.status === "scheduled" && !isPast && !(isFull && myCurrentRsvp !== "confirmed");
   const canApprove = isPending && (isAdmin || isModerator || isOwner);
   const canAttendance = isPast && gn.status === "scheduled" && (isAdmin || isModerator || isOwner || isHost || isCreator);
   const canEdit = canEditEvent({
@@ -159,7 +165,7 @@ export default function EventDetailModal({
         {confirmed.length > 0 && (
           <div>
             <p className="mb-1.5 text-xs font-medium text-neon/60 uppercase tracking-wider">
-              Going ({confirmed.length})
+              Going ({confirmed.length}{maxAttendees > 0 ? `/${maxAttendees}` : ""}){isFull && <span className="ml-1 text-warning"> Full</span>}
             </p>
             <div className="flex flex-wrap gap-1.5">
               {confirmed.map((a) => (

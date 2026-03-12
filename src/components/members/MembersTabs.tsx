@@ -8,9 +8,10 @@ import GamePopularity from "@/components/admin/GamePopularity";
 import AvailabilityHeatmap from "@/components/admin/AvailabilityHeatmap";
 import CommunityStats from "./CommunityStats";
 import type { CommunityStats as CommunityStatsData } from "@/app/members/stats-actions";
+import { useSiteSettings } from "@/components/providers/SiteSettingsProvider";
 
-const TABS = ["Members", "Games", "Availability", "Stats"] as const;
-type Tab = (typeof TABS)[number];
+const ALL_TABS = ["Members", "Games", "Availability", "Stats"] as const;
+type Tab = (typeof ALL_TABS)[number];
 
 interface GameStat {
   gameName: string;
@@ -40,6 +41,8 @@ interface Props {
 }
 
 export default function MembersTabs({ members, gameStats, availability, primeSlots, extendedSlots, anchorTimezone, viewerTimezone, anchorPrimeStartHour, anchorPrimeEndHour, communityStats }: Props) {
+  const settings = useSiteSettings();
+  const tabs = ALL_TABS.filter((t) => t !== "Stats" || settings.enableStats);
   const [activeTab, setActiveTab] = useState<Tab>("Members");
 
   return (
@@ -63,7 +66,7 @@ export default function MembersTabs({ members, gameStats, availability, primeSlo
 
         {/* Tab Navigation */}
         <motion.div variants={staggerItem} className="flex gap-3 border-b border-border sm:gap-6">
-          {TABS.map((tab) => (
+          {tabs.map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}

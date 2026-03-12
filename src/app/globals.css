@@ -3,9 +3,9 @@
 @theme inline {
   --color-background: #0a0a0f;
   --color-foreground: #e0e0e0;
-  --color-neon: #00ff41;
-  --color-neon-dim: #00cc33;
-  --color-neon-dark: #009926;
+  --color-neon: var(--accent-color, #00ff41);
+  --color-neon-dim: var(--accent-dim, #00cc33);
+  --color-neon-dark: var(--accent-dark, #009926);
   --color-surface: #111118;
   --color-surface-light: #1a1a24;
   --color-surface-lighter: #242430;
@@ -15,7 +15,7 @@
   --color-discord-hover: #4752c4;
   --color-danger: #ff4444;
   --color-warning: #ffaa00;
-  --color-success: #00ff41;
+  --color-success: var(--accent-color, #00ff41);
 
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
@@ -36,29 +36,29 @@ body {
 /* Utility: neon text glow */
 .text-glow {
   text-shadow:
-    0 0 6px rgba(0, 255, 65, 0.4),
-    0 0 12px rgba(0, 255, 65, 0.2),
-    0 0 24px rgba(0, 204, 51, 0.1);
+    0 0 6px rgba(var(--neon-rgb, 0, 255, 65), 0.4),
+    0 0 12px rgba(var(--neon-rgb, 0, 255, 65), 0.2),
+    0 0 24px rgba(var(--neon-rgb, 0, 255, 65), 0.1);
 }
 
 .text-glow-sm {
   text-shadow:
-    0 0 4px rgba(0, 255, 65, 0.35),
-    0 0 8px rgba(0, 255, 65, 0.15);
+    0 0 4px rgba(var(--neon-rgb, 0, 255, 65), 0.35),
+    0 0 8px rgba(var(--neon-rgb, 0, 255, 65), 0.15);
 }
 
 /* Utility: neon box glow */
 .box-glow {
   box-shadow:
-    0 0 5px rgba(0, 255, 65, 0.3),
-    0 0 15px rgba(0, 255, 65, 0.15);
+    0 0 5px rgba(var(--neon-rgb, 0, 255, 65), 0.3),
+    0 0 15px rgba(var(--neon-rgb, 0, 255, 65), 0.15);
 }
 
 .box-glow-lg {
   box-shadow:
-    0 0 10px rgba(0, 255, 65, 0.4),
-    0 0 30px rgba(0, 255, 65, 0.2),
-    0 0 60px rgba(0, 255, 65, 0.1);
+    0 0 10px rgba(var(--neon-rgb, 0, 255, 65), 0.4),
+    0 0 30px rgba(var(--neon-rgb, 0, 255, 65), 0.2),
+    0 0 60px rgba(var(--neon-rgb, 0, 255, 65), 0.1);
 }
 
 /* Styled scrollbar */
@@ -90,7 +90,7 @@ textarea {
 
 /* Selection color */
 ::selection {
-  background: rgba(0, 255, 65, 0.3);
+  background: rgba(var(--neon-rgb, 0, 255, 65), 0.3);
   color: #fff;
 }
 

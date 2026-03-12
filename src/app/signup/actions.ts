@@ -16,6 +16,7 @@ interface ProfileData {
   games: GameInput[];
   slots: string[];
   willingToModerate: boolean;
+  inviteCode?: string;
 }
 
 function parseSlot(key: string) {
@@ -59,8 +60,34 @@ export async function completeProfile(data: ProfileData) {
     return { error: "Select at least one time slot" };
   }
 
+  // If invite code provided, validate and redeem
+  if (data.inviteCode) {
+    const inviteCode = await prisma.inviteCode.findUnique({
+      where: { code: data.inviteCode.toUpperCase().trim() },
+    });
+    if (!inviteCode || !inviteCode.isActive || inviteCode.uses >= inviteCode.maxUses) {
+      return { error: "Invalid or expired invite code" };
+    }
+    if (inviteCode.expiresAt && inviteCode.expiresAt < new Date()) {
+      return { error: "Invite code has expired" };
+    }
+  }
+
   try {
     await prisma.$transaction(async (tx) => {
+      // Redeem invite code if provided
+      if (data.inviteCode) {
+        const code = data.inviteCode.toUpperCase().trim();
+        await tx.inviteCode.update({
+          where: { code },
+          data: { uses: { increment: 1 } },
+        });
+        await tx.user.update({
+          where: { id: session.user.id },
+          data: { usedInviteCodeId: (await tx.inviteCode.findUnique({ where: { code } }))!.id },
+        });
+      }
+
       await tx.user.update({
         where: { id: session.user.id },
         data: {

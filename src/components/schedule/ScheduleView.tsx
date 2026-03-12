@@ -12,6 +12,7 @@ import TournamentList, { TournamentData } from "./TournamentList";
 import Modal from "@/components/ui/Modal";
 import Button from "@/components/ui/Button";
 import type { TeamTagMap } from "@/lib/team-utils";
+import { useSiteSettings } from "@/components/providers/SiteSettingsProvider";
 
 export interface GameNightWithAttendees {
   id: string;
@@ -137,6 +138,8 @@ export default function ScheduleView({
     }
   };
 
+  const settings = useSiteSettings();
+
   return (
     <div>
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -161,19 +164,21 @@ export default function ScheduleView({
           >
             Events
           </button>
-          <button
-            onClick={() => switchView("tournaments")}
-            className={`rounded-md px-3 py-1.5 text-sm transition ${
-              view === "tournaments"
-                ? "bg-neon/10 text-neon"
-                : "text-foreground/50 hover:text-foreground"
-            }`}
-          >
-            Tournaments
-          </button>
+          {settings.enableTournaments && (
+            <button
+              onClick={() => switchView("tournaments")}
+              className={`rounded-md px-3 py-1.5 text-sm transition ${
+                view === "tournaments"
+                  ? "bg-neon/10 text-neon"
+                  : "text-foreground/50 hover:text-foreground"
+              }`}
+            >
+              Tournaments
+            </button>
+          )}
         </div>
 
-        {userId && view !== "tournaments" && (
+        {userId && view !== "tournaments" && (settings.allowMemberEvents || isAdmin || isModerator || isOwner) && (
           <Button onClick={() => setShowCreate(true)} size="sm">
             + New Game Night
           </Button>

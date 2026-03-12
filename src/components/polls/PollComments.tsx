@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { addComment, deleteComment } from "@/app/polls/actions";
 import { POLL_LIMITS } from "@/lib/constants";
+import { useSiteSettings } from "@/components/providers/SiteSettingsProvider";
 
 interface Comment {
   id: string;
@@ -20,6 +21,8 @@ interface Props {
 }
 
 export default function PollComments({ pollId, comments, userId, isAdmin }: Props) {
+  const settings = useSiteSettings();
+  const commentsEnabled = settings.allowPollComments;
   const [expanded, setExpanded] = useState(false);
   const [text, setText] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -54,6 +57,8 @@ export default function PollComments({ pollId, comments, userId, isAdmin }: Prop
       " " +
       d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
   };
+
+  if (!commentsEnabled && comments.length === 0) return null;
 
   return (
     <div className="mt-3 border-t border-border pt-3">
@@ -117,7 +122,7 @@ export default function PollComments({ pollId, comments, userId, isAdmin }: Prop
       )}
 
       {/* Add comment form */}
-      {userId && (
+      {userId && commentsEnabled && (
         <form onSubmit={handleSubmit} className="flex gap-2">
           <input
             type="text"

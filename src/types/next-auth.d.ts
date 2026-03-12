@@ -14,6 +14,7 @@ declare module "next-auth" {
       isOwner: boolean;
       willingToModerate: boolean;
       timezone: string;
+      approvalStatus: string | null;
     };
   }
 }
@@ -28,5 +29,6 @@ declare module "next-auth/jwt" {
     isOwner?: boolean;
     willingToModerate?: boolean;
     timezone?: string;
+    approvalStatus?: string | null;
   }
 }

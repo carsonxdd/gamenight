@@ -11,6 +11,7 @@ export const dynamic = "force-dynamic";
 
 export default async function MembersPage() {
   const session = await getServerSession(authOptions);
+  const settings = await getSiteSettings();
 
   if (!session?.user?.id) {
     return (
@@ -145,10 +146,7 @@ export default async function MembersPage() {
   });
 
   // Compute prime/extended time slots and community stats
-  const [settings, communityStats] = await Promise.all([
-    getSiteSettings(),
-    getCommunityStats(),
-  ]);
+  const communityStats = await getCommunityStats();
   const { primeSlots, extendedSlots } = computeTimeSlotsForViewer(
     viewerTimezone,
     settings.anchorTimezone,

@@ -4,6 +4,7 @@ import { useState } from "react";
 import PollCard from "./PollCard";
 import CreatePollModal from "./CreatePollModal";
 import Button from "@/components/ui/Button";
+import { useSiteSettings } from "@/components/providers/SiteSettingsProvider";
 
 export interface PollData {
   id: string;
@@ -36,6 +37,8 @@ interface Props {
 }
 
 export default function PollList({ polls, userId, isAdmin }: Props) {
+  const settings = useSiteSettings();
+  const canCreate = userId && (settings.allowMemberPolls || isAdmin);
   const [showCreate, setShowCreate] = useState(false);
   const [filter, setFilter] = useState<"all" | "active" | "closed">("all");
 
@@ -64,7 +67,7 @@ export default function PollList({ polls, userId, isAdmin }: Props) {
           ))}
         </div>
 
-        {userId && (
+        {canCreate && (
           <Button onClick={() => setShowCreate(true)} size="sm">
             + New Poll
           </Button>
@@ -90,7 +93,7 @@ export default function PollList({ polls, userId, isAdmin }: Props) {
         </div>
       )}
 
-      {userId && (
+      {canCreate && (
         <CreatePollModal
           open={showCreate}
           onClose={() => setShowCreate(false)}

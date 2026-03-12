@@ -1,4 +1,10 @@
-export default function HighlightsPage() {
+import { redirect } from "next/navigation";
+import { getSiteSettings } from "@/app/admin/settings-actions";
+
+export default async function HighlightsPage() {
+  const settings = await getSiteSettings();
+  if (!settings.enableHighlights) redirect("/");
+
   return (
     <div className="mx-auto max-w-6xl px-4 py-20">
       <h1 className="mb-4 text-3xl font-bold text-foreground">Highlights</h1>

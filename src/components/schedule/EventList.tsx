@@ -7,6 +7,7 @@ import { approveGameNight, rejectGameNight } from "@/app/schedule/actions";
 import { GameNightWithAttendees } from "./ScheduleView";
 import { formatWithTag, type TeamTagMap } from "@/lib/team-utils";
 import { formatEventTimeForViewer, utcToLocalDateTime, dateToUtcString } from "@/lib/timezone-utils";
+import { useSiteSettings } from "@/components/providers/SiteSettingsProvider";
 
 interface Props {
   gameNights: GameNightWithAttendees[];
@@ -19,6 +20,8 @@ interface Props {
 }
 
 export default function EventList({ gameNights, userId, isAdmin, onViewEvent, onMarkAttendance, teamTagMap = {}, userTimezone = "America/Phoenix" }: Props) {
+  const settings = useSiteSettings();
+  const maxAttendees = settings.maxAttendeesDefault;
   if (gameNights.length === 0) {
     return (
       <div className="py-20 text-center text-foreground/40">
@@ -108,6 +111,9 @@ export default function EventList({ gameNights, userId, isAdmin, onViewEvent, on
               {confirmed.length > 0 && (
                 <p className="mt-1 text-xs text-neon">
                   {confirmed.map((a) => formatWithTag(a.user.gamertag || a.user.name, a.userId, teamTagMap, gn.game)).join(", ")}
+                  {maxAttendees > 0 && (
+                    <span className="text-foreground/30"> ({confirmed.length}/{maxAttendees})</span>
+                  )}
                 </p>
               )}
             </div>
@@ -140,8 +146,11 @@ export default function EventList({ gameNights, userId, isAdmin, onViewEvent, on
                   {gn.attendanceConfirmed ? "Attendance ✓" : "Mark Attendance"}
                 </button>
               )}
-              {gn.status === "scheduled" && userId && !isPast && (
+              {gn.status === "scheduled" && userId && !isPast && !(maxAttendees > 0 && confirmed.length >= maxAttendees && myRsvp !== "confirmed") && (
                 <RSVPButton gameNightId={gn.id} currentStatus={myRsvp} />
+              )}
+              {gn.status === "scheduled" && userId && !isPast && maxAttendees > 0 && confirmed.length >= maxAttendees && myRsvp !== "confirmed" && (
+                <span className="text-xs text-warning">Full</span>
               )}
             </div>
           </Card>

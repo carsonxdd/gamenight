@@ -173,19 +173,8 @@ export default async function AdminPage() {
     willingToModerate: u.willingToModerate,
   }));
 
-  // Site settings for the settings panel
-  const siteSettingsData = {
-    primeStartHour: settings.primeStartHour,
-    primeEndHour: settings.primeEndHour,
-    extendedStartHour: settings.extendedStartHour,
-    extendedEndHour: settings.extendedEndHour,
-    anchorTimezone: settings.anchorTimezone,
-    defaultEventDuration: settings.defaultEventDuration,
-    maxEventsPerWeek: settings.maxEventsPerWeek,
-    maxPollsPerWeek: settings.maxPollsPerWeek,
-    communityName: settings.communityName,
-    motd: settings.motd,
-  };
+  // Site settings for the settings panel — settings already typed as SiteSettingsData
+  const siteSettingsData = settings;
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-12">

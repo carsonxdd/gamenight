@@ -7,6 +7,7 @@ import TournamentDetail from "./TournamentDetail";
 import { BRACKET_TYPES, TOURNAMENT_STATUSES } from "@/lib/tournament-constants";
 import { calculatePrizePool } from "@/lib/bracket-utils";
 import { InvitableMember } from "./ScheduleView";
+import { useSiteSettings } from "@/components/providers/SiteSettingsProvider";
 
 export interface TournamentTeamData {
   id: string;
@@ -107,6 +108,9 @@ export default function TournamentList({
   members = [],
   initialTournamentId,
 }: Props) {
+  const settings = useSiteSettings();
+  const isAdminOrMod = isAdmin || isModerator || isOwner;
+  const canCreate = userId && (settings.allowMemberTournaments || isAdminOrMod);
   const [showCreate, setShowCreate] = useState(false);
   const [viewingTournament, setViewingTournament] = useState<TournamentData | null>(() => {
     if (initialTournamentId) {
@@ -121,8 +125,6 @@ export default function TournamentList({
     }
     return "active";
   });
-
-  const isAdminOrMod = isAdmin || isModerator || isOwner;
 
   const activeTournaments = tournaments.filter(
     (t) => ["draft", "open", "in_progress"].includes(t.status)
@@ -159,7 +161,7 @@ export default function TournamentList({
           </button>
         </div>
 
-        {userId && (
+        {canCreate && (
           <Button onClick={() => setShowCreate(true)} size="sm">
             + New Tournament
           </Button>
@@ -187,7 +189,7 @@ export default function TournamentList({
         </div>
       )}
 
-      {userId && (
+      {canCreate && (
         <CreateTournamentModal
           open={showCreate}
           onClose={() => setShowCreate(false)}

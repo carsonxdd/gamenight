@@ -10,6 +10,7 @@ import RSVPOverview from "./RSVPOverview";
 import PlayerRoster from "./PlayerRoster";
 import Insights from "./Insights";
 import SiteSettingsPanel from "./SiteSettingsPanel";
+import type { SiteSettingsData } from "@/lib/settings-constants";
 
 interface GameStat {
   gameName: string;
@@ -61,19 +62,6 @@ interface PendingAttendanceEvent {
   date: string;
   hostName: string | null;
   attendeeCount: number;
-}
-
-interface SiteSettingsData {
-  primeStartHour: number;
-  primeEndHour: number;
-  extendedStartHour: number;
-  extendedEndHour: number;
-  anchorTimezone: string;
-  defaultEventDuration: number;
-  maxEventsPerWeek: number;
-  maxPollsPerWeek: number;
-  communityName: string;
-  motd: string | null;
 }
 
 interface Props {

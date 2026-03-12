@@ -5,6 +5,7 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { TAG_REGEX, TEAM_LIMITS, getTeamSizeLimits } from "@/lib/team-constants";
+import { getSiteSettings } from "@/app/admin/settings-actions";
 
 // ─── Create Team ─────────────────────────────────────────────────────
 
@@ -19,6 +20,12 @@ export async function createTeam(data: {
   if (!session?.user?.id) return { error: "Not authenticated" };
 
   const isAdminOrMod = session.user.isAdmin || session.user.isModerator || session.user.isOwner;
+  const settings = await getSiteSettings();
+
+  // Check allowTeamCreation setting
+  if (!isAdminOrMod && !settings.allowTeamCreation) {
+    return { error: "Only admins can create teams" };
+  }
 
   const name = data.name?.trim();
   if (!name || name.length > TEAM_LIMITS.NAME_MAX) {
@@ -40,13 +47,14 @@ export async function createTeam(data: {
     return { error: `Tag "${tag}" is already taken` };
   }
 
-  // Rate limit: max teams created per user
+  // Rate limit: max teams created per user (use setting override)
   if (!isAdminOrMod) {
+    const maxTeams = settings.maxTeamsPerUser || TEAM_LIMITS.MAX_TEAMS_CREATED_PER_USER;
     const teamCount = await prisma.team.count({
       where: { captainId: session.user.id },
     });
-    if (teamCount >= TEAM_LIMITS.MAX_TEAMS_CREATED_PER_USER) {
-      return { error: `You can only create up to ${TEAM_LIMITS.MAX_TEAMS_CREATED_PER_USER} teams` };
+    if (teamCount >= maxTeams) {
+      return { error: `You can only create up to ${maxTeams} teams` };
     }
   }
 
@@ -61,7 +69,11 @@ export async function createTeam(data: {
     return { error: `You are already on a team for ${data.game}` };
   }
 
-  const { minSize, maxSize } = getTeamSizeLimits(data.game);
+  const gameLimits = getTeamSizeLimits(data.game);
+  const minSize = gameLimits.minSize;
+  const maxSize = settings.maxTeamSize
+    ? Math.min(gameLimits.maxSize, settings.maxTeamSize)
+    : gameLimits.maxSize;
 
   try {
     const team = await prisma.team.create({

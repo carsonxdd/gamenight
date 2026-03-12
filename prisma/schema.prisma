@@ -14,6 +14,7 @@ model User {
   gamertag               String?
   avatar                 String?
   timezone               String              @default("America/Phoenix")
+  approvalStatus         String?             // null = legacy (approved), "pending", "approved", "rejected"
   isAdmin                Boolean             @default(false)
   isModerator            Boolean             @default(false)
   isOwner                Boolean             @default(false)
@@ -26,6 +27,8 @@ model User {
   youtube                String?
   customLink             String?
   dismissedProfileBanner Boolean             @default(false)
+  usedInviteCodeId       String?
+  usedInviteCode         InviteCode?         @relation("UsedInviteCode", fields: [usedInviteCodeId], references: [id])
   createdAt              DateTime            @default(now())
   updatedAt              DateTime            @updatedAt
   games                  UserGame[]
@@ -52,6 +55,21 @@ model User {
   persistentTeamMembers    TeamMember[]     @relation("PersistentTeamMembership")
   teamInvitesReceived      TeamInvite[]     @relation("TeamInviteReceived")
   teamInvitesSent          TeamInvite[]     @relation("TeamInviteSent")
+  createdInviteCodes       InviteCode[]     @relation("InviteCodeCreator")
+}
+
+model InviteCode {
+  id          String    @id @default(cuid())
+  code        String    @unique
+  label       String?           // admin note, e.g. "For Discord drop"
+  maxUses     Int       @default(1)
+  uses        Int       @default(0)
+  expiresAt   DateTime?
+  isActive    Boolean   @default(true)
+  createdById String
+  createdBy   User      @relation("InviteCodeCreator", fields: [createdById], references: [id])
+  usedBy      User[]    @relation("UsedInviteCode")
+  createdAt   DateTime  @default(now())
 }
 
 model UserGameRank {
@@ -218,6 +236,45 @@ model SiteSettings {
   // Community
   communityName          String  @default("Game Night")
   motd                   String? // message of the day shown on home
+
+  // Branding
+  accentColor            String  @default("#00ff41")
+  communityTagline       String?
+  logoUrl                String?
+  faviconUrl             String?
+
+  // Access & Privacy
+  joinMode               String  @default("open")      // "open", "invite_only", "approval"
+  requireGamertag        Boolean @default(false)
+  allowPublicProfiles    Boolean @default(true)
+  showMemberCount        Boolean @default(true)
+
+  // Events
+  allowMemberEvents      Boolean @default(true)
+  requireRSVP            Boolean @default(false)
+  maxAttendeesDefault    Int     @default(0)            // 0 = unlimited
+  autoArchiveDays        Int     @default(30)
+
+  // Polls
+  allowMemberPolls       Boolean @default(true)
+  allowPollComments      Boolean @default(true)
+
+  // Tournaments
+  allowMemberTournaments Boolean @default(false)
+  maxTournamentSize      Int     @default(32)
+  enableBuyIns           Boolean @default(true)
+
+  // Teams
+  allowTeamCreation      Boolean @default(true)
+  maxTeamsPerUser        Int     @default(3)
+  maxTeamSize            Int     @default(10)
+
+  // Feature Toggles
+  enableTournaments      Boolean @default(true)
+  enableTeams            Boolean @default(true)
+  enablePolls            Boolean @default(true)
+  enableHighlights       Boolean @default(true)
+  enableStats            Boolean @default(true)
 }
 
 // ─── Tournament System ───────────────────────────────────────────────

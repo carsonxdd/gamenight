@@ -5,6 +5,7 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { POLL_LIMITS } from "@/lib/constants";
+import { getSiteSettings } from "@/app/admin/settings-actions";
 
 export async function createPoll(data: {
   title: string;
@@ -42,6 +43,15 @@ export async function createPoll(data: {
   }
 
   const isAdminOrMod = session.user.isAdmin || session.user.isModerator;
+
+  // Check allowMemberPolls setting
+  if (!isAdminOrMod) {
+    const settings = await getSiteSettings();
+    if (!settings.allowMemberPolls) {
+      return { error: "Only admins can create polls" };
+    }
+  }
+
   if (!isAdminOrMod) {
     const weekAgo = new Date();
     weekAgo.setDate(weekAgo.getDate() - 7);
@@ -122,6 +132,11 @@ export async function addComment(pollId: string, text: string) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) {
     return { error: "Not authenticated" };
+  }
+
+  const settings = await getSiteSettings();
+  if (!settings.allowPollComments) {
+    return { error: "Comments are disabled" };
   }
 
   const trimmed = text.trim();

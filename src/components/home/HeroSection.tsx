@@ -4,9 +4,11 @@ import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { motion } from "framer-motion";
 import { fadeIn, staggerContainer, staggerItem } from "@/lib/animations";
+import { useSiteSettings } from "@/components/providers/SiteSettingsProvider";
 
 export default function HeroSection() {
   const { data: session } = useSession();
+  const settings = useSiteSettings();
 
   return (
     <section className="relative flex min-h-[80vh] items-center justify-center overflow-hidden">
@@ -15,7 +17,7 @@ export default function HeroSection() {
         <div
           className="absolute inset-0 opacity-[0.07]"
           style={{
-            backgroundImage: `linear-gradient(rgba(0,255,65,0.3) 1px, transparent 1px), linear-gradient(90deg, rgba(0,255,65,0.3) 1px, transparent 1px)`,
+            backgroundImage: `linear-gradient(rgba(var(--neon-rgb, 0,255,65),0.3) 1px, transparent 1px), linear-gradient(90deg, rgba(var(--neon-rgb, 0,255,65),0.3) 1px, transparent 1px)`,
             backgroundSize: "60px 60px",
             transform: "translateZ(0)",
           }}
@@ -36,8 +38,16 @@ export default function HeroSection() {
           className="mb-4 text-5xl font-extrabold tracking-tight text-neon text-glow-sm sm:text-7xl"
           variants={staggerItem}
         >
-          Caplan&apos;s Game Night
+          {settings.communityName}
         </motion.h1>
+        {settings.communityTagline && (
+          <motion.p
+            className="mx-auto mb-3 max-w-lg text-xl font-medium text-neon/60"
+            variants={staggerItem}
+          >
+            {settings.communityTagline}
+          </motion.p>
+        )}
         <motion.p
           className="mx-auto mb-8 max-w-md text-lg text-foreground/60"
           variants={staggerItem}
