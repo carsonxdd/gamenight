@@ -36,10 +36,11 @@ const testUsers = [
       { gameName: "Rocket League", rank: "Champion II" },
     ],
     availability: [
-      { dayOfWeek: 1, startTime: "19:00", endTime: "00:00" },
-      { dayOfWeek: 3, startTime: "19:30", endTime: "01:00" },
-      { dayOfWeek: 5, startTime: "19:00", endTime: "01:00" },
-      { dayOfWeek: 6, startTime: "19:00", endTime: "01:00" },
+      { dayOfWeek: 1, startTime: "20:00", endTime: "01:00" },  // Mon — late gamer
+      { dayOfWeek: 2, startTime: "21:00", endTime: "00:00" },  // Tue
+      { dayOfWeek: 3, startTime: "19:30", endTime: "01:00" },  // Wed
+      { dayOfWeek: 5, startTime: "18:00", endTime: "02:00" },  // Fri — long session
+      { dayOfWeek: 6, startTime: "17:00", endTime: "01:00" },  // Sat — starts early
     ],
   },
   {
@@ -71,11 +72,12 @@ const testUsers = [
       { gameName: "Overwatch 2", rank: "Diamond 3" },
     ],
     availability: [
-      { dayOfWeek: 0, startTime: "18:00", endTime: "23:00" },
-      { dayOfWeek: 2, startTime: "19:00", endTime: "00:00" },
-      { dayOfWeek: 4, startTime: "19:00", endTime: "00:00" },
-      { dayOfWeek: 5, startTime: "18:00", endTime: "00:00" },
-      { dayOfWeek: 6, startTime: "18:00", endTime: "00:00" },
+      { dayOfWeek: 0, startTime: "17:00", endTime: "22:00" },  // Sun — early start
+      { dayOfWeek: 1, startTime: "19:00", endTime: "23:00" },  // Mon
+      { dayOfWeek: 2, startTime: "18:00", endTime: "00:00" },  // Tue
+      { dayOfWeek: 4, startTime: "19:00", endTime: "23:30" },  // Thu
+      { dayOfWeek: 5, startTime: "17:00", endTime: "01:00" },  // Fri — long
+      { dayOfWeek: 6, startTime: "16:00", endTime: "00:00" },  // Sat — early bird
     ],
   },
   {
@@ -109,9 +111,11 @@ const testUsers = [
       { gameName: "Brawlhalla", rank: "Platinum" },
     ],
     availability: [
-      { dayOfWeek: 0, startTime: "17:00", endTime: "21:00" },
-      { dayOfWeek: 5, startTime: "18:00", endTime: "23:00" },
-      { dayOfWeek: 6, startTime: "17:00", endTime: "23:00" },
+      { dayOfWeek: 0, startTime: "17:00", endTime: "22:00" },  // Sun
+      { dayOfWeek: 3, startTime: "19:00", endTime: "23:00" },  // Wed
+      { dayOfWeek: 4, startTime: "20:00", endTime: "23:30" },  // Thu — late start
+      { dayOfWeek: 5, startTime: "17:00", endTime: "00:00" },  // Fri
+      { dayOfWeek: 6, startTime: "15:00", endTime: "23:00" },  // Sat — afternoon start
     ],
   },
   {
@@ -146,12 +150,11 @@ const testUsers = [
       { gameName: "Dota 2", rank: "Ancient" },
     ],
     availability: [
-      { dayOfWeek: 1, startTime: "16:00", endTime: "21:00" },
-      { dayOfWeek: 2, startTime: "16:00", endTime: "21:00" },
-      { dayOfWeek: 3, startTime: "16:00", endTime: "21:00" },
-      { dayOfWeek: 4, startTime: "16:00", endTime: "21:00" },
-      { dayOfWeek: 5, startTime: "16:00", endTime: "22:00" },
-      { dayOfWeek: 6, startTime: "15:00", endTime: "22:00" },
+      { dayOfWeek: 0, startTime: "14:00", endTime: "19:00" },  // Sun — afternoon
+      { dayOfWeek: 1, startTime: "16:00", endTime: "21:00" },  // Mon
+      { dayOfWeek: 3, startTime: "16:00", endTime: "22:00" },  // Wed
+      { dayOfWeek: 5, startTime: "15:00", endTime: "23:00" },  // Fri — long session
+      { dayOfWeek: 6, startTime: "14:00", endTime: "23:00" },  // Sat — all afternoon+evening
     ],
   },
   {
@@ -185,10 +188,12 @@ const testUsers = [
       { gameName: "League of Legends", rank: "Emerald I" },
     ],
     availability: [
-      { dayOfWeek: 0, startTime: "19:00", endTime: "23:00" },
-      { dayOfWeek: 3, startTime: "20:00", endTime: "00:00" },
-      { dayOfWeek: 5, startTime: "19:00", endTime: "01:00" },
-      { dayOfWeek: 6, startTime: "19:00", endTime: "01:00" },
+      { dayOfWeek: 0, startTime: "19:00", endTime: "23:00" },  // Sun
+      { dayOfWeek: 1, startTime: "21:00", endTime: "01:00" },  // Mon — night owl
+      { dayOfWeek: 3, startTime: "20:00", endTime: "01:00" },  // Wed
+      { dayOfWeek: 4, startTime: "20:30", endTime: "00:00" },  // Thu
+      { dayOfWeek: 5, startTime: "18:00", endTime: "02:00" },  // Fri — marathon
+      { dayOfWeek: 6, startTime: "17:00", endTime: "01:00" },  // Sat
     ],
   },
   // ─── New users 6-10 ───────────────────────────────────────────────
@@ -224,13 +229,13 @@ const testUsers = [
       { gameName: "League of Legends", rank: "Diamond III" },
     ],
     availability: [
-      { dayOfWeek: 0, startTime: "18:00", endTime: "23:00" },
-      { dayOfWeek: 1, startTime: "19:00", endTime: "23:00" },
-      { dayOfWeek: 2, startTime: "19:00", endTime: "23:00" },
-      { dayOfWeek: 3, startTime: "19:00", endTime: "23:00" },
-      { dayOfWeek: 4, startTime: "19:00", endTime: "23:00" },
-      { dayOfWeek: 5, startTime: "17:00", endTime: "23:00" },
-      { dayOfWeek: 6, startTime: "15:00", endTime: "23:00" },
+      { dayOfWeek: 0, startTime: "16:00", endTime: "23:00" },  // Sun
+      { dayOfWeek: 1, startTime: "18:00", endTime: "23:00" },  // Mon
+      { dayOfWeek: 2, startTime: "17:00", endTime: "22:00" },  // Tue
+      { dayOfWeek: 3, startTime: "18:00", endTime: "23:00" },  // Wed
+      { dayOfWeek: 4, startTime: "19:00", endTime: "23:00" },  // Thu
+      { dayOfWeek: 5, startTime: "15:00", endTime: "01:00" },  // Fri — marathon admin
+      { dayOfWeek: 6, startTime: "14:00", endTime: "01:00" },  // Sat — all day
     ],
   },
   {
@@ -264,10 +269,11 @@ const testUsers = [
       { gameName: "Overwatch 2", rank: "Master 2" },
     ],
     availability: [
-      { dayOfWeek: 1, startTime: "18:00", endTime: "22:00" },
-      { dayOfWeek: 3, startTime: "18:00", endTime: "22:00" },
-      { dayOfWeek: 5, startTime: "18:00", endTime: "00:00" },
-      { dayOfWeek: 6, startTime: "16:00", endTime: "00:00" },
+      { dayOfWeek: 1, startTime: "18:00", endTime: "22:30" },  // Mon
+      { dayOfWeek: 2, startTime: "19:00", endTime: "23:00" },  // Tue
+      { dayOfWeek: 3, startTime: "18:00", endTime: "23:00" },  // Wed
+      { dayOfWeek: 5, startTime: "17:00", endTime: "01:00" },  // Fri
+      { dayOfWeek: 6, startTime: "15:00", endTime: "01:00" },  // Sat — long
     ],
   },
   {
@@ -302,11 +308,12 @@ const testUsers = [
       { gameName: "Brawlhalla", rank: "Diamond" },
     ],
     availability: [
-      { dayOfWeek: 0, startTime: "16:00", endTime: "22:00" },
-      { dayOfWeek: 2, startTime: "19:00", endTime: "23:00" },
-      { dayOfWeek: 4, startTime: "19:00", endTime: "23:00" },
-      { dayOfWeek: 5, startTime: "18:00", endTime: "23:00" },
-      { dayOfWeek: 6, startTime: "16:00", endTime: "23:00" },
+      { dayOfWeek: 0, startTime: "16:00", endTime: "22:00" },  // Sun
+      { dayOfWeek: 1, startTime: "20:00", endTime: "23:30" },  // Mon — late
+      { dayOfWeek: 2, startTime: "17:00", endTime: "22:00" },  // Tue — early
+      { dayOfWeek: 4, startTime: "18:00", endTime: "23:00" },  // Thu
+      { dayOfWeek: 5, startTime: "16:00", endTime: "00:00" },  // Fri
+      { dayOfWeek: 6, startTime: "15:00", endTime: "00:00" },  // Sat
     ],
   },
   {
@@ -342,11 +349,12 @@ const testUsers = [
       { gameName: "Marvel Rivals", rank: "Grandmaster III" },
     ],
     availability: [
-      { dayOfWeek: 0, startTime: "20:00", endTime: "01:00" },
-      { dayOfWeek: 1, startTime: "20:00", endTime: "23:00" },
-      { dayOfWeek: 3, startTime: "20:00", endTime: "01:00" },
-      { dayOfWeek: 5, startTime: "19:00", endTime: "01:00" },
-      { dayOfWeek: 6, startTime: "18:00", endTime: "01:00" },
+      { dayOfWeek: 0, startTime: "20:00", endTime: "02:00" },  // Sun — night owl
+      { dayOfWeek: 1, startTime: "21:00", endTime: "01:00" },  // Mon
+      { dayOfWeek: 2, startTime: "20:00", endTime: "00:00" },  // Tue
+      { dayOfWeek: 3, startTime: "20:00", endTime: "01:00" },  // Wed
+      { dayOfWeek: 5, startTime: "19:00", endTime: "02:00" },  // Fri — late night
+      { dayOfWeek: 6, startTime: "18:00", endTime: "02:00" },  // Sat — late night
     ],
   },
   {
@@ -379,8 +387,10 @@ const testUsers = [
     ],
     ranks: [],
     availability: [
-      { dayOfWeek: 5, startTime: "17:00", endTime: "22:00" },
-      { dayOfWeek: 6, startTime: "16:00", endTime: "22:00" },
+      { dayOfWeek: 0, startTime: "15:00", endTime: "20:00" },  // Sun — afternoon
+      { dayOfWeek: 3, startTime: "17:00", endTime: "21:00" },  // Wed
+      { dayOfWeek: 5, startTime: "16:00", endTime: "23:00" },  // Fri
+      { dayOfWeek: 6, startTime: "14:00", endTime: "22:00" },  // Sat — long casual day
     ],
   },
 ];
@@ -1230,11 +1240,12 @@ async function main() {
         { gameName: "CS2", rank: "Distinguished Master Guardian" },
       ],
       availability: [
-        { dayOfWeek: 1, startTime: "14:00", endTime: "20:00" },
-        { dayOfWeek: 3, startTime: "15:00", endTime: "20:00" },
-        { dayOfWeek: 5, startTime: "14:00", endTime: "20:00" },
-        { dayOfWeek: 6, startTime: "13:00", endTime: "21:00" },
-        { dayOfWeek: 0, startTime: "17:00", endTime: "21:00" },
+        { dayOfWeek: 0, startTime: "15:00", endTime: "21:00" },  // Sun
+        { dayOfWeek: 1, startTime: "14:00", endTime: "20:00" },  // Mon
+        { dayOfWeek: 2, startTime: "16:00", endTime: "21:00" },  // Tue
+        { dayOfWeek: 3, startTime: "15:00", endTime: "21:00" },  // Wed
+        { dayOfWeek: 5, startTime: "13:00", endTime: "22:00" },  // Fri — long island session
+        { dayOfWeek: 6, startTime: "12:00", endTime: "22:00" },  // Sat — all day
       ],
     },
     {
@@ -1267,10 +1278,11 @@ async function main() {
         { gameName: "Overwatch 2", rank: "Platinum 3" },
       ],
       availability: [
-        { dayOfWeek: 2, startTime: "14:30", endTime: "19:30" },
-        { dayOfWeek: 4, startTime: "15:00", endTime: "19:00" },
-        { dayOfWeek: 5, startTime: "14:00", endTime: "20:00" },
-        { dayOfWeek: 6, startTime: "12:00", endTime: "20:00" },
+        { dayOfWeek: 0, startTime: "14:00", endTime: "19:00" },  // Sun
+        { dayOfWeek: 2, startTime: "14:30", endTime: "20:00" },  // Tue
+        { dayOfWeek: 4, startTime: "15:00", endTime: "20:00" },  // Thu
+        { dayOfWeek: 5, startTime: "13:00", endTime: "21:00" },  // Fri — long
+        { dayOfWeek: 6, startTime: "11:00", endTime: "21:00" },  // Sat — all day
       ],
     },
     {
@@ -1304,11 +1316,12 @@ async function main() {
         { gameName: "Rocket League", rank: "Diamond II" },
       ],
       availability: [
-        { dayOfWeek: 1, startTime: "15:00", endTime: "21:00" },
-        { dayOfWeek: 3, startTime: "16:00", endTime: "21:00" },
-        { dayOfWeek: 5, startTime: "15:00", endTime: "22:00" },
-        { dayOfWeek: 6, startTime: "14:00", endTime: "22:00" },
-        { dayOfWeek: 0, startTime: "16:00", endTime: "20:00" },
+        { dayOfWeek: 0, startTime: "16:00", endTime: "21:00" },  // Sun
+        { dayOfWeek: 1, startTime: "15:00", endTime: "21:00" },  // Mon
+        { dayOfWeek: 3, startTime: "16:00", endTime: "22:00" },  // Wed
+        { dayOfWeek: 4, startTime: "17:00", endTime: "22:00" },  // Thu
+        { dayOfWeek: 5, startTime: "14:00", endTime: "23:00" },  // Fri
+        { dayOfWeek: 6, startTime: "13:00", endTime: "23:00" },  // Sat — long
       ],
     },
     {
@@ -1343,12 +1356,13 @@ async function main() {
         { gameName: "Rocket League", rank: "Diamond III" },
       ],
       availability: [
-        { dayOfWeek: 0, startTime: "17:00", endTime: "22:00" },
-        { dayOfWeek: 1, startTime: "19:00", endTime: "23:00" },
-        { dayOfWeek: 2, startTime: "19:00", endTime: "23:00" },
-        { dayOfWeek: 4, startTime: "19:00", endTime: "23:00" },
-        { dayOfWeek: 5, startTime: "17:00", endTime: "23:00" },
-        { dayOfWeek: 6, startTime: "16:00", endTime: "23:00" },
+        { dayOfWeek: 0, startTime: "17:00", endTime: "23:00" },  // Sun
+        { dayOfWeek: 1, startTime: "18:00", endTime: "23:00" },  // Mon
+        { dayOfWeek: 2, startTime: "19:00", endTime: "00:00" },  // Tue — late
+        { dayOfWeek: 3, startTime: "18:00", endTime: "23:00" },  // Wed
+        { dayOfWeek: 4, startTime: "19:00", endTime: "00:00" },  // Thu — late
+        { dayOfWeek: 5, startTime: "16:00", endTime: "01:00" },  // Fri — marathon
+        { dayOfWeek: 6, startTime: "15:00", endTime: "01:00" },  // Sat — marathon
       ],
     },
     {
@@ -1382,9 +1396,10 @@ async function main() {
         { gameName: "CS2", rank: "Distinguished Master Guardian" },
       ],
       availability: [
-        { dayOfWeek: 5, startTime: "19:00", endTime: "23:00" },
-        { dayOfWeek: 6, startTime: "17:00", endTime: "23:00" },
-        { dayOfWeek: 0, startTime: "17:00", endTime: "21:00" },
+        { dayOfWeek: 0, startTime: "17:00", endTime: "22:00" },  // Sun
+        { dayOfWeek: 3, startTime: "19:00", endTime: "22:00" },  // Wed
+        { dayOfWeek: 5, startTime: "17:00", endTime: "00:00" },  // Fri
+        { dayOfWeek: 6, startTime: "16:00", endTime: "00:00" },  // Sat
       ],
     },
   ];

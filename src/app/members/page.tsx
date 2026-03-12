@@ -5,6 +5,7 @@ import { GAME_RANK_TIERS } from "@/lib/constants";
 import MembersTabs from "@/components/members/MembersTabs";
 import { utcToLocalTime, DEFAULT_TIMEZONE, computeTimeSlotsForViewer } from "@/lib/timezone-utils";
 import { getSiteSettings } from "@/app/admin/settings-actions";
+import { getCommunityStats } from "./stats-actions";
 
 export const dynamic = "force-dynamic";
 
@@ -143,8 +144,11 @@ export default async function MembersPage() {
     });
   });
 
-  // Compute prime/extended time slots for the viewer's timezone
-  const settings = await getSiteSettings();
+  // Compute prime/extended time slots and community stats
+  const [settings, communityStats] = await Promise.all([
+    getSiteSettings(),
+    getCommunityStats(),
+  ]);
   const { primeSlots, extendedSlots } = computeTimeSlotsForViewer(
     viewerTimezone,
     settings.anchorTimezone,
@@ -165,6 +169,7 @@ export default async function MembersPage() {
       viewerTimezone={viewerTimezone}
       anchorPrimeStartHour={settings.primeStartHour}
       anchorPrimeEndHour={settings.primeEndHour}
+      communityStats={communityStats}
     />
   );
 }

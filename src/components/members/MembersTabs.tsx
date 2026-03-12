@@ -6,8 +6,10 @@ import { staggerContainer, staggerItem } from "@/lib/animations";
 import MembersGrid, { type MemberData } from "./MembersGrid";
 import GamePopularity from "@/components/admin/GamePopularity";
 import AvailabilityHeatmap from "@/components/admin/AvailabilityHeatmap";
+import CommunityStats from "./CommunityStats";
+import type { CommunityStats as CommunityStatsData } from "@/app/members/stats-actions";
 
-const TABS = ["Members", "Games", "Availability"] as const;
+const TABS = ["Members", "Games", "Availability", "Stats"] as const;
 type Tab = (typeof TABS)[number];
 
 interface GameStat {
@@ -34,9 +36,10 @@ interface Props {
   viewerTimezone?: string;
   anchorPrimeStartHour?: number;
   anchorPrimeEndHour?: number;
+  communityStats?: CommunityStatsData;
 }
 
-export default function MembersTabs({ members, gameStats, availability, primeSlots, extendedSlots, anchorTimezone, viewerTimezone, anchorPrimeStartHour, anchorPrimeEndHour }: Props) {
+export default function MembersTabs({ members, gameStats, availability, primeSlots, extendedSlots, anchorTimezone, viewerTimezone, anchorPrimeStartHour, anchorPrimeEndHour, communityStats }: Props) {
   const [activeTab, setActiveTab] = useState<Tab>("Members");
 
   return (
@@ -86,6 +89,7 @@ export default function MembersTabs({ members, gameStats, availability, primeSlo
         {activeTab === "Members" && <MembersGrid members={members} />}
         {activeTab === "Games" && <GamePopularity gameStats={gameStats} />}
         {activeTab === "Availability" && <AvailabilityHeatmap availability={availability} primeSlots={primeSlots} extendedSlots={extendedSlots} anchorTimezone={anchorTimezone} viewerTimezone={viewerTimezone} anchorPrimeStartHour={anchorPrimeStartHour} anchorPrimeEndHour={anchorPrimeEndHour} />}
+        {activeTab === "Stats" && communityStats && <CommunityStats stats={communityStats} gameStats={gameStats} availability={availability} memberCount={members.length} />}
       </motion.div>
     </div>
   );
