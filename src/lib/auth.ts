@@ -64,6 +64,8 @@ export const authOptions: NextAuthOptions = {
           token.willingToModerate = dbUser.willingToModerate;
           token.timezone = dbUser.timezone;
           token.approvalStatus = dbUser.approvalStatus;
+          token.isMuted = dbUser.isMuted;
+          token.mutedUntil = dbUser.mutedUntil?.toISOString() ?? null;
         }
       }
       return token;
@@ -78,6 +80,8 @@ export const authOptions: NextAuthOptions = {
       session.user.willingToModerate = token.willingToModerate as boolean;
       session.user.timezone = (token.timezone as string) || "America/Phoenix";
       session.user.approvalStatus = (token.approvalStatus as string | null) ?? null;
+      session.user.isMuted = (token.isMuted as boolean) || false;
+      session.user.mutedUntil = (token.mutedUntil as string | null) ?? null;
       return session;
     },
   },

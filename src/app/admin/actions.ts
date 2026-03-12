@@ -45,6 +45,79 @@ export async function cycleRole(userId: string, direction: "promote" | "demote")
   }
 }
 
+export async function muteUser(userId: string) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.isAdmin) {
+    return { error: "Admin only" };
+  }
+  if (session.user.id === userId) {
+    return { error: "Cannot mute yourself" };
+  }
+
+  try {
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user) return { error: "User not found" };
+    if (user.isOwner) return { error: "Cannot mute owner" };
+
+    await prisma.user.update({
+      where: { id: userId },
+      data: { isMuted: true, mutedUntil: null },
+    });
+    revalidatePath("/admin");
+    return { success: true };
+  } catch {
+    return { error: "Failed to mute user" };
+  }
+}
+
+export async function unmuteUser(userId: string) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.isAdmin) {
+    return { error: "Admin only" };
+  }
+
+  try {
+    await prisma.user.update({
+      where: { id: userId },
+      data: { isMuted: false, mutedUntil: null },
+    });
+    revalidatePath("/admin");
+    return { success: true };
+  } catch {
+    return { error: "Failed to unmute user" };
+  }
+}
+
+export async function tempMuteUser(userId: string, minutes: number) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.isAdmin) {
+    return { error: "Admin only" };
+  }
+  if (session.user.id === userId) {
+    return { error: "Cannot mute yourself" };
+  }
+
+  if (!Number.isInteger(minutes) || minutes < 1 || minutes > 10080) {
+    return { error: "Duration must be 1–10080 minutes (1 week max)" };
+  }
+
+  try {
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user) return { error: "User not found" };
+    if (user.isOwner) return { error: "Cannot mute owner" };
+
+    const mutedUntil = new Date(Date.now() + minutes * 60000);
+    await prisma.user.update({
+      where: { id: userId },
+      data: { isMuted: false, mutedUntil },
+    });
+    revalidatePath("/admin");
+    return { success: true };
+  } catch {
+    return { error: "Failed to temp mute user" };
+  }
+}
+
 export async function removeUser(userId: string) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.isAdmin) {

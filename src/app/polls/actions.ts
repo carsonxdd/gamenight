@@ -139,6 +139,18 @@ export async function addComment(pollId: string, text: string) {
     return { error: "Comments are disabled" };
   }
 
+  // Mute check
+  const dbUser = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: { isMuted: true, mutedUntil: true },
+  });
+  if (dbUser) {
+    const { isUserMuted } = await import("@/lib/mute-utils");
+    if (isUserMuted(dbUser)) {
+      return { error: "You are currently muted" };
+    }
+  }
+
   const trimmed = text.trim();
   if (!trimmed) return { error: "Comment cannot be empty" };
   if (trimmed.length > POLL_LIMITS.COMMENT_MAX) {

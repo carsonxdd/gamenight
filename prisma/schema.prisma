@@ -18,6 +18,8 @@ model User {
   isAdmin                Boolean             @default(false)
   isModerator            Boolean             @default(false)
   isOwner                Boolean             @default(false)
+  isMuted                Boolean             @default(false)
+  mutedUntil             DateTime?
   willingToModerate      Boolean             @default(false)
   interestedInBuyIn      Boolean             @default(false)
   interestedInLAN        Boolean             @default(false)
@@ -56,6 +58,8 @@ model User {
   teamInvitesReceived      TeamInvite[]     @relation("TeamInviteReceived")
   teamInvitesSent          TeamInvite[]     @relation("TeamInviteSent")
   createdInviteCodes       InviteCode[]     @relation("InviteCodeCreator")
+  // Suggestions
+  suggestions              Suggestion[]     @relation("SuggestionAuthor")
 }
 
 model InviteCode {
@@ -469,4 +473,17 @@ model TeamInvite {
   status          String    @default("pending") // "pending" | "accepted" | "declined" | "expired"
   createdAt       DateTime  @default(now())
   respondedAt     DateTime?
+}
+
+// ─── Suggestions ─────────────────────────────────────────────────────
+
+model Suggestion {
+  id          String              @id @default(cuid())
+  title       String
+  description String?
+  status      String              @default("open") // open, noted, planned, done, declined
+  userId      String
+  user        User                @relation("SuggestionAuthor", fields: [userId], references: [id], onDelete: Cascade)
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
 }

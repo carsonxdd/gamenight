@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import AdminDashboard from "@/components/admin/AdminDashboard";
 import { utcToLocalTime, DEFAULT_TIMEZONE, computeTimeSlotsForViewer } from "@/lib/timezone-utils";
 import { getSiteSettings } from "./settings-actions";
+import { getOpenSuggestionCount } from "@/app/suggestions/actions";
 
 export default async function AdminPage() {
   const session = await getServerSession(authOptions);
@@ -12,7 +13,7 @@ export default async function AdminPage() {
     redirect("/");
   }
 
-  const [users, gameNights, settings] = await Promise.all([
+  const [users, gameNights, settings, openSuggestionCount] = await Promise.all([
     prisma.user.findMany({
       include: {
         games: true,
@@ -31,6 +32,7 @@ export default async function AdminPage() {
       orderBy: { date: "desc" },
     }),
     getSiteSettings(),
+    getOpenSuggestionCount(),
   ]);
 
   // Summary stats — unique games across all user profiles
@@ -163,6 +165,8 @@ export default async function AdminPage() {
     isAdmin: u.isAdmin,
     isModerator: u.isModerator,
     isOwner: u.isOwner,
+    isMuted: u.isMuted,
+    mutedUntil: u.mutedUntil?.toISOString() ?? null,
     games: u.games.map((g) => {
       const modes = g.modes ? (JSON.parse(g.modes) as string[]) : undefined;
       return modes && modes.length > 0
@@ -198,6 +202,7 @@ export default async function AdminPage() {
         viewerTimezone={viewerTimezone}
         anchorPrimeStartHour={settings.primeStartHour}
         anchorPrimeEndHour={settings.primeEndHour}
+        openSuggestionCount={openSuggestionCount}
       />
     </div>
   );

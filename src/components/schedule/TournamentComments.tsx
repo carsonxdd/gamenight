@@ -1,9 +1,11 @@
 "use client";
 
 import { useState } from "react";
+import { useSession } from "next-auth/react";
 import Button from "@/components/ui/Button";
 import { addTournamentComment } from "@/app/schedule/tournament-actions";
 import { TOURNAMENT_LIMITS } from "@/lib/tournament-constants";
+import { isUserMuted } from "@/lib/mute-utils";
 
 interface Comment {
   id: string;
@@ -17,13 +19,17 @@ interface Props {
   tournamentId: string;
   comments: Comment[];
   userId?: string;
+  isMuted?: boolean;
 }
 
 export default function TournamentComments({
   tournamentId,
   comments,
   userId,
+  isMuted: isMutedProp,
 }: Props) {
+  const { data: session } = useSession();
+  const muted = isMutedProp ?? (session?.user ? isUserMuted({ isMuted: session.user.isMuted, mutedUntil: session.user.mutedUntil }) : false);
   const [text, setText] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -70,19 +76,25 @@ export default function TournamentComments({
 
       {/* Comment input */}
       {userId ? (
-        <form onSubmit={handleSubmit} className="flex gap-2">
-          <input
-            type="text"
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-            placeholder="Add a comment..."
-            maxLength={TOURNAMENT_LIMITS.COMMENT_MAX}
-            className="flex-1 rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground placeholder:text-foreground/30 focus:border-neon focus:outline-none"
-          />
-          <Button type="submit" size="sm" disabled={loading || !text.trim()}>
-            {loading ? "..." : "Send"}
-          </Button>
-        </form>
+        muted ? (
+          <p className="text-center text-sm text-foreground/40">
+            You are currently muted.
+          </p>
+        ) : (
+          <form onSubmit={handleSubmit} className="flex gap-2">
+            <input
+              type="text"
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              placeholder="Add a comment..."
+              maxLength={TOURNAMENT_LIMITS.COMMENT_MAX}
+              className="flex-1 rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground placeholder:text-foreground/30 focus:border-neon focus:outline-none"
+            />
+            <Button type="submit" size="sm" disabled={loading || !text.trim()}>
+              {loading ? "..." : "Send"}
+            </Button>
+          </form>
+        )
       ) : (
         <p className="text-center text-sm text-foreground/40">
           Sign in to join the discussion.

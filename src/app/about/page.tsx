@@ -1,11 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { staggerContainer, staggerItem } from "@/lib/animations";
 
-type Tab = "About" | "Changelog";
-const TABS: Tab[] = ["About", "Changelog"];
+type Tab = "About" | "Changelog" | "FAQ";
+const TABS: Tab[] = ["About", "Changelog", "FAQ"];
 
 export default function AboutPage() {
   const [activeTab, setActiveTab] = useState<Tab>("About");
@@ -53,6 +53,7 @@ export default function AboutPage() {
         {/* Tab Content */}
         {activeTab === "About" && <AboutContent />}
         {activeTab === "Changelog" && <ChangelogContent />}
+        {activeTab === "FAQ" && <FAQContent />}
       </motion.div>
     </div>
   );
@@ -349,5 +350,84 @@ function ChangelogContent() {
         </div>
       </motion.section>
     </>
+  );
+}
+
+const FAQ_ITEMS = [
+  {
+    question: "How do I join?",
+    answer: "Click \"Join\" in the top right and sign in with your Discord account. Depending on the community settings, you might need an invite code or admin approval.",
+  },
+  {
+    question: "What info does Discord share with this site?",
+    answer: "Only your username and profile picture. We cannot see your email, password, DMs, friends list, servers, or any other account details.",
+  },
+  {
+    question: "How do I set up my profile?",
+    answer: "After signing in, go to your Profile page. Add your gamertag, select your timezone, pick the games you play, and set your weekly availability so others can find the best time to play.",
+  },
+  {
+    question: "How do events work?",
+    answer: "Anyone (or just admins, depending on settings) can create game night events. RSVP with Confirmed, Maybe, or Declined. Hosts can mark attendance after the event.",
+  },
+  {
+    question: "What are tournaments?",
+    answer: "Organized bracket competitions. Admins create tournaments with various formats (single/double elimination, round robin, swiss, etc.). Join solo or with a team, report match results, and compete for the win.",
+  },
+  {
+    question: "How do teams work?",
+    answer: "Create a persistent team with a unique tag (like a clan tag). Invite members, assign roles (Captain, Co-Captain, Member, Sub), and register your team for tournaments together.",
+  },
+  {
+    question: "What does the availability grid do?",
+    answer: "It lets you mark when you're free each week. The site uses this to find overlapping times across players, helping organizers pick the best time for events. All times are automatically converted to each viewer's timezone.",
+  },
+  {
+    question: "Can I suggest new features?",
+    answer: "Yes! Go to your Profile page and scroll to the Suggestions section at the bottom. Submit your idea there and admins will review it.",
+  },
+];
+
+function FAQContent() {
+  const [openIndex, setOpenIndex] = useState<number | null>(null);
+
+  return (
+    <motion.section variants={staggerItem}>
+      <h2 className="mb-6 text-xl font-bold text-foreground">Frequently Asked Questions</h2>
+      <div className="space-y-2">
+        {FAQ_ITEMS.map((faq, i) => (
+          <motion.div
+            key={i}
+            variants={staggerItem}
+            className="rounded-xl border border-border bg-surface overflow-hidden"
+          >
+            <button
+              onClick={() => setOpenIndex(openIndex === i ? null : i)}
+              className="flex w-full items-center justify-between px-5 py-4 text-left text-sm font-medium text-foreground transition hover:text-neon"
+            >
+              {faq.question}
+              <span className={`ml-2 shrink-0 text-foreground/30 transition-transform ${openIndex === i ? "rotate-45" : ""}`}>
+                +
+              </span>
+            </button>
+            <AnimatePresence initial={false}>
+              {openIndex === i && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: "auto", opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                  className="border-t border-border overflow-hidden"
+                >
+                  <p className="px-5 py-4 text-sm text-foreground/70 leading-relaxed">
+                    {faq.answer}
+                  </p>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </motion.div>
+        ))}
+      </div>
+    </motion.section>
   );
 }

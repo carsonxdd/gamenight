@@ -10,6 +10,7 @@ import Button from "@/components/ui/Button";
 import { updateProfile } from "@/app/profile/actions";
 import { updateExtendedProfile } from "@/app/profile/actions";
 import InviteGroupManager from "@/components/profile/InviteGroupManager";
+import ProfileSuggestionBox from "@/components/suggestions/ProfileSuggestionBox";
 import { InvitableMember } from "@/components/schedule/ScheduleView";
 
 interface RankData {
@@ -38,6 +39,8 @@ interface ProfilePageClientProps {
   extendedStartHour?: number;
   extendedEndHour?: number;
   anchorTimezone?: string;
+  mySuggestions?: { id: string; title: string; description: string | null; status: string; createdAt: string }[];
+  isMuted?: boolean;
 }
 
 export default function ProfilePageClient({
@@ -61,6 +64,8 @@ export default function ProfilePageClient({
   extendedStartHour,
   extendedEndHour,
   anchorTimezone,
+  mySuggestions = [],
+  isMuted = false,
 }: ProfilePageClientProps) {
   const profileRef = useRef<ProfileFormHandle>(null);
   const extendedRef = useRef<ExtendedProfileFormHandle>(null);
@@ -188,6 +193,19 @@ export default function ProfilePageClient({
 
           <Card className="p-6 sm:p-8">
             <InviteGroupManager groups={groups} members={members} />
+          </Card>
+        </div>
+
+        <div>
+          <h2 className="mb-2 text-center text-2xl font-bold text-foreground">
+            Suggestions
+          </h2>
+          <p className="mb-4 text-center text-foreground/50">
+            Have an idea or feedback? Let the admins know.
+          </p>
+
+          <Card className="p-6 sm:p-8">
+            <ProfileSuggestionBox mySuggestions={mySuggestions} isMuted={isMuted} />
           </Card>
         </div>
       </div>

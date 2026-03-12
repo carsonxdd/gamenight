@@ -15,6 +15,8 @@ declare module "next-auth" {
       willingToModerate: boolean;
       timezone: string;
       approvalStatus: string | null;
+      isMuted: boolean;
+      mutedUntil: string | null;
     };
   }
 }
@@ -30,5 +32,7 @@ declare module "next-auth/jwt" {
     willingToModerate?: boolean;
     timezone?: string;
     approvalStatus?: string | null;
+    isMuted?: boolean;
+    mutedUntil?: string | null;
   }
 }

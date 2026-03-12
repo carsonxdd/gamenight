@@ -7,7 +7,8 @@ import Card from "@/components/ui/Card";
 import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
 import Modal from "@/components/ui/Modal";
-import { cycleRole, removeUser } from "@/app/admin/actions";
+import { cycleRole, removeUser, muteUser, unmuteUser, tempMuteUser } from "@/app/admin/actions";
+import { isUserMuted, formatMuteRemaining } from "@/lib/mute-utils";
 
 interface PlayerData {
   id: string;
@@ -18,6 +19,8 @@ interface PlayerData {
   isModerator: boolean;
   isOwner: boolean;
   willingToModerate: boolean;
+  isMuted: boolean;
+  mutedUntil: string | null;
   games: string[];
   availabilityDays: number[];
 }
@@ -34,6 +37,8 @@ export default function PlayerRoster({ players, currentUserId, isCurrentUserAdmi
   const [search, setSearch] = useState("");
   const [showModOnly, setShowModOnly] = useState(false);
   const [confirmRemove, setConfirmRemove] = useState<PlayerData | null>(null);
+  const [tempMuteTarget, setTempMuteTarget] = useState<string | null>(null);
+  const [tempMuteMinutes, setTempMuteMinutes] = useState("30");
   const [isPending, startTransition] = useTransition();
 
   const willingCount = players.filter((p) => p.willingToModerate).length;
@@ -61,6 +66,34 @@ export default function PlayerRoster({ players, currentUserId, isCurrentUserAdmi
       const result = await removeUser(confirmRemove.id);
       if (result.error) alert(result.error);
       setConfirmRemove(null);
+    });
+  }
+
+  function handleMute(userId: string) {
+    startTransition(async () => {
+      const result = await muteUser(userId);
+      if (result.error) alert(result.error);
+    });
+  }
+
+  function handleUnmute(userId: string) {
+    startTransition(async () => {
+      const result = await unmuteUser(userId);
+      if (result.error) alert(result.error);
+    });
+  }
+
+  function handleTempMute(userId: string) {
+    const mins = parseInt(tempMuteMinutes);
+    if (isNaN(mins) || mins < 1 || mins > 10080) {
+      alert("Enter 1–10080 minutes");
+      return;
+    }
+    startTransition(async () => {
+      const result = await tempMuteUser(userId, mins);
+      if (result.error) alert(result.error);
+      setTempMuteTarget(null);
+      setTempMuteMinutes("30");
     });
   }
 
@@ -203,6 +236,13 @@ export default function PlayerRoster({ players, currentUserId, isCurrentUserAdmi
                         {!player.isAdmin && !player.isModerator && !player.isOwner && (
                           <Badge variant="neutral">Member</Badge>
                         )}
+                        {isUserMuted(player) && (
+                          <Badge variant="danger">
+                            {player.mutedUntil && new Date(player.mutedUntil) > new Date()
+                              ? `Muted ${formatMuteRemaining(player.mutedUntil)}`
+                              : "Muted"}
+                          </Badge>
+                        )}
                         {player.willingToModerate && (
                           <Badge variant="warning">Willing to Mod</Badge>
                         )}
@@ -212,36 +252,88 @@ export default function PlayerRoster({ players, currentUserId, isCurrentUserAdmi
                     {/* Actions */}
                     <td className="py-3">
                       {!isSelf && !player.isOwner && isCurrentUserAdmin && (
-                        <div className="flex gap-2 sm:opacity-0 sm:transition sm:group-hover:opacity-100">
-                          {!player.isAdmin && (
+                        <>
+                          <div className="flex flex-wrap gap-2 sm:opacity-0 sm:transition sm:group-hover:opacity-100">
+                            {!player.isAdmin && (
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                disabled={isPending}
+                                onClick={() => handleCycleRole(player.id, "promote")}
+                              >
+                                Promote
+                              </Button>
+                            )}
+                            {(player.isAdmin || player.isModerator) && (
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                disabled={isPending}
+                                onClick={() => handleCycleRole(player.id, "demote")}
+                              >
+                                Demote
+                              </Button>
+                            )}
                             <Button
                               size="sm"
-                              variant="ghost"
+                              variant="danger"
                               disabled={isPending}
-                              onClick={() => handleCycleRole(player.id, "promote")}
+                              onClick={() => setConfirmRemove(player)}
                             >
-                              Promote
+                              Remove
                             </Button>
+                            {isUserMuted(player) ? (
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                disabled={isPending}
+                                onClick={() => handleUnmute(player.id)}
+                              >
+                                Unmute
+                              </Button>
+                            ) : (
+                              <>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  disabled={isPending}
+                                  onClick={() => handleMute(player.id)}
+                                >
+                                  Mute
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  disabled={isPending}
+                                  onClick={() => setTempMuteTarget(tempMuteTarget === player.id ? null : player.id)}
+                                >
+                                  Temp
+                                </Button>
+                              </>
+                            )}
+                          </div>
+                          {tempMuteTarget === player.id && (
+                            <div className="mt-1 flex items-center gap-2">
+                              <input
+                                type="number"
+                                min={1}
+                                max={10080}
+                                value={tempMuteMinutes}
+                                onChange={(e) => setTempMuteMinutes(e.target.value)}
+                                className="w-20 rounded border border-border bg-surface px-2 py-1 text-xs text-foreground"
+                                placeholder="mins"
+                              />
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                disabled={isPending}
+                                onClick={() => handleTempMute(player.id)}
+                              >
+                                Apply
+                              </Button>
+                            </div>
                           )}
-                          {(player.isAdmin || player.isModerator) && (
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              disabled={isPending}
-                              onClick={() => handleCycleRole(player.id, "demote")}
-                            >
-                              Demote
-                            </Button>
-                          )}
-                          <Button
-                            size="sm"
-                            variant="danger"
-                            disabled={isPending}
-                            onClick={() => setConfirmRemove(player)}
-                          >
-                            Remove
-                          </Button>
-                        </div>
+                        </>
                       )}
                     </td>
                   </tr>

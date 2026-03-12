@@ -10,6 +10,7 @@ import RSVPOverview from "./RSVPOverview";
 import PlayerRoster from "./PlayerRoster";
 import Insights from "./Insights";
 import SiteSettingsPanel from "./SiteSettingsPanel";
+import AdminSuggestions from "./AdminSuggestions";
 import type { SiteSettingsData } from "@/lib/settings-constants";
 
 interface GameStat {
@@ -50,6 +51,8 @@ interface PlayerData {
   isAdmin: boolean;
   isModerator: boolean;
   isOwner: boolean;
+  isMuted: boolean;
+  mutedUntil: string | null;
   willingToModerate: boolean;
   games: string[];
   availabilityDays: number[];
@@ -85,9 +88,10 @@ interface Props {
   viewerTimezone?: string;
   anchorPrimeStartHour?: number;
   anchorPrimeEndHour?: number;
+  openSuggestionCount?: number;
 }
 
-type Tab = "games" | "availability" | "rsvps" | "roster" | "insights" | "settings";
+type Tab = "games" | "availability" | "rsvps" | "roster" | "insights" | "suggestions" | "settings";
 
 const tabs: { key: Tab; label: string; adminOnly?: boolean }[] = [
   { key: "games", label: "Games" },
@@ -95,6 +99,7 @@ const tabs: { key: Tab; label: string; adminOnly?: boolean }[] = [
   { key: "rsvps", label: "RSVPs" },
   { key: "roster", label: "Roster" },
   { key: "insights", label: "Insights" },
+  { key: "suggestions", label: "Suggestions", adminOnly: true },
   { key: "settings", label: "Settings", adminOnly: true },
 ];
 
@@ -114,6 +119,7 @@ export default function AdminDashboard({
   viewerTimezone,
   anchorPrimeStartHour,
   anchorPrimeEndHour,
+  openSuggestionCount = 0,
 }: Props) {
   const [activeTab, setActiveTab] = useState<Tab>("games");
 
@@ -192,6 +198,11 @@ export default function AdminDashboard({
             }`}
           >
             {tab.label}
+            {tab.key === "suggestions" && openSuggestionCount > 0 && (
+              <span className="ml-1.5 inline-flex h-4 min-w-[16px] items-center justify-center rounded-full bg-neon text-[10px] font-bold text-background px-1">
+                {openSuggestionCount}
+              </span>
+            )}
           </button>
         ))}
       </div>
@@ -206,6 +217,7 @@ export default function AdminDashboard({
         <PlayerRoster players={players} currentUserId={currentUserId} isCurrentUserAdmin={isCurrentUserAdmin} />
       )}
       {activeTab === "insights" && <Insights />}
+      {activeTab === "suggestions" && <AdminSuggestions />}
       {activeTab === "settings" && siteSettings && (
         <SiteSettingsPanel settings={siteSettings} />
       )}

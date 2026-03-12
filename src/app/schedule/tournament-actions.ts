@@ -591,6 +591,18 @@ export async function addTournamentComment(tournamentId: string, text: string) {
     return { error: "Not authenticated" };
   }
 
+  // Mute check
+  const muteUser = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: { isMuted: true, mutedUntil: true },
+  });
+  if (muteUser) {
+    const { isUserMuted } = await import("@/lib/mute-utils");
+    if (isUserMuted(muteUser)) {
+      return { error: "You are currently muted" };
+    }
+  }
+
   const trimmed = text.trim();
   if (!trimmed || trimmed.length > TOURNAMENT_LIMITS.COMMENT_MAX) {
     return { error: `Comment must be 1-${TOURNAMENT_LIMITS.COMMENT_MAX} characters` };

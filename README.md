@@ -49,6 +49,12 @@ A fully customizable web app for organizing gaming communities. Sign up with Dis
 - Interest in pot / buy-in tournaments, moderating, and LAN events (Arizona) — grouped under "Tournaments & Events"
 - "Finish setting up your profile" dismissible banner on the schedule page (persists dismissal to DB, only shows if extended profile is incomplete)
 
+### Suggestions (profile page, admin panel)
+- **Member-to-admin feedback channel** — members submit ideas and feedback from their profile page, admins manage them in the admin panel. No public page or navbar link.
+- **Profile section** — inline form (title + optional description) at the bottom of the profile page. Shows the user's last 10 suggestions with status badges (Open, Noted, Planned, Done, Declined) and delete buttons. Muted users see a "muted" message instead of the form.
+- **Admin Suggestions tab** — dedicated tab in the admin panel showing all suggestions with author avatar/name, time ago, and a status dropdown to update each suggestion. Sort by newest or by status. Open count badge on the tab. Delete with confirmation.
+- Statuses: Open → Noted → Planned → Done / Declined
+
 ### Game Catalog
 Games organized by lobby format:
 
@@ -155,6 +161,7 @@ Custom games can be added via text input.
   - **Polls** — allow member-created polls, allow poll comments
   - **Tournaments** — allow member-created tournaments, max tournament size (caps slot selection in wizard), enable buy-ins (hides buy-in field when disabled)
   - **Teams** — allow team creation, max teams per user, max team size
+  - **Suggestions** — dedicated tab showing all member-submitted suggestions with author info, status dropdown (Open/Noted/Planned/Done/Declined), sort options, and delete with confirmation. Open count badge on the tab.
   - **Feature Toggles** — master switches for Tournaments, Teams, Polls, Highlights, and Stats tab. Disabled features are hidden from navigation and redirect on direct URL access.
   - **Limits** — default event duration, max events per week, max polls per week
   - **Community** — community name (used in page title, hero, signup), message of the day (MOTD)
@@ -163,7 +170,7 @@ Custom games can be added via text input.
 - Route-level protection via middleware (admins and moderators only)
 
 ### About Page (`/about`, public)
-- **Tabbed layout** — underline-style tab navigation (About | Changelog) with animated neon indicator. Defaults to the About tab.
+- **Tabbed layout** — underline-style tab navigation (About | Changelog | FAQ) with animated neon indicator. Defaults to the About tab.
 - **About tab**
   - **The Story** — short origin story of how game nights started in the friend group and why this site exists
   - **About the Organizer** — personal section with static profile image and a casual bio
@@ -172,6 +179,7 @@ Custom games can be added via text input.
 - **Changelog tab**
   - **Version History** — all releases listed with version number, date, and bullet-point changes in styled cards
   - **Roadmap** — future ideas organized by category (Discord Bot, Teams, Competitive, Community, Scheduling, Engagement, Quality of Life)
+- **FAQ tab** — accordion-style Q&A covering joining, Discord privacy, profiles, events, tournaments, teams, availability, and suggestions. Smooth expand/collapse animations via `AnimatePresence`.
 
 ### Members Page (`/members`, sign-in required)
 - **Tabbed layout** — underline-style tab navigation (Members | Games | Availability) with animated neon indicator. Defaults to the Members tab.
@@ -354,6 +362,7 @@ src/
 
 ### Settings Models
 - **SiteSettings** — singleton configuration row with 30+ fields covering branding (accentColor, communityTagline, logoUrl, faviconUrl), time windows (primeStartHour, primeEndHour, extendedStartHour, extendedEndHour, anchorTimezone), access & privacy (joinMode, requireGamertag, allowPublicProfiles, showMemberCount), events (allowMemberEvents, maxAttendeesDefault, autoArchiveDays), polls (allowMemberPolls, allowPollComments), tournaments (allowMemberTournaments, maxTournamentSize, enableBuyIns), teams (allowTeamCreation, maxTeamsPerUser, maxTeamSize), feature toggles (enableTournaments, enableTeams, enablePolls, enableHighlights, enableStats), limits (defaultEventDuration, maxEventsPerWeek, maxPollsPerWeek), and community (communityName, motd)
+- **Suggestion** — title, optional description, status (open/noted/planned/done/declined), author reference, timestamps. Displayed on the profile page for members and in the admin panel for admins.
 - **InviteCode** — code (unique alphanumeric), label, maxUses, uses count, expiresAt, isActive toggle, createdById. Used for invite-only join mode.
 
 ### Tournament Models

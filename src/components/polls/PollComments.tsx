@@ -1,9 +1,11 @@
 "use client";
 
 import { useState } from "react";
+import { useSession } from "next-auth/react";
 import { addComment, deleteComment } from "@/app/polls/actions";
 import { POLL_LIMITS } from "@/lib/constants";
 import { useSiteSettings } from "@/components/providers/SiteSettingsProvider";
+import { isUserMuted } from "@/lib/mute-utils";
 
 interface Comment {
   id: string;
@@ -18,10 +20,13 @@ interface Props {
   comments: Comment[];
   userId?: string;
   isAdmin?: boolean;
+  isMuted?: boolean;
 }
 
-export default function PollComments({ pollId, comments, userId, isAdmin }: Props) {
+export default function PollComments({ pollId, comments, userId, isAdmin, isMuted: isMutedProp }: Props) {
+  const { data: session } = useSession();
   const settings = useSiteSettings();
+  const muted = isMutedProp ?? (session?.user ? isUserMuted({ isMuted: session.user.isMuted, mutedUntil: session.user.mutedUntil }) : false);
   const commentsEnabled = settings.allowPollComments;
   const [expanded, setExpanded] = useState(false);
   const [text, setText] = useState("");
@@ -123,23 +128,27 @@ export default function PollComments({ pollId, comments, userId, isAdmin }: Prop
 
       {/* Add comment form */}
       {userId && commentsEnabled && (
-        <form onSubmit={handleSubmit} className="flex gap-2">
-          <input
-            type="text"
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-            placeholder="Add a comment..."
-            maxLength={POLL_LIMITS.COMMENT_MAX}
-            className="flex-1 rounded-lg border border-border bg-surface px-3 py-1.5 text-sm text-foreground placeholder:text-foreground/30 focus:border-neon focus:outline-none"
-          />
-          <button
-            type="submit"
-            disabled={submitting || !text.trim()}
-            className="shrink-0 rounded-lg bg-neon/10 px-3 py-1.5 text-sm font-medium text-neon transition hover:bg-neon/20 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {submitting ? "..." : "Post"}
-          </button>
-        </form>
+        muted ? (
+          <p className="text-sm text-foreground/40">You are currently muted.</p>
+        ) : (
+          <form onSubmit={handleSubmit} className="flex gap-2">
+            <input
+              type="text"
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              placeholder="Add a comment..."
+              maxLength={POLL_LIMITS.COMMENT_MAX}
+              className="flex-1 rounded-lg border border-border bg-surface px-3 py-1.5 text-sm text-foreground placeholder:text-foreground/30 focus:border-neon focus:outline-none"
+            />
+            <button
+              type="submit"
+              disabled={submitting || !text.trim()}
+              className="shrink-0 rounded-lg bg-neon/10 px-3 py-1.5 text-sm font-medium text-neon transition hover:bg-neon/20 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {submitting ? "..." : "Post"}
+            </button>
+          </form>
+        )
       )}
 
       {error && <p className="mt-1 text-xs text-danger">{error}</p>}
