@@ -1,6 +1,6 @@
 # Caplan's Game Night
 
-**v2.4.0**
+**v0.6.0**
 
 A web app for organizing weekly gaming events with the boys. Sign up with Discord, pick your games, set your availability, RSVP to game nights, build persistent teams, and run full tournament brackets.
 
@@ -235,7 +235,12 @@ Hosted on GitHub: [carsonxdd/gamenight](https://github.com/carsonxdd/gamenight)
    npm run dev
    ```
 
-5. Open [http://localhost:3000](http://localhost:3000)
+5. Run tests:
+   ```bash
+   npm test
+   ```
+
+6. Open [http://localhost:3000](http://localhost:3000)
 
 ### Seed Data (optional)
 
@@ -395,134 +400,61 @@ Spectator RSVP option
 
 ## Version History
 
-### v2.4.0 — 2026-03-11
-- **Reactive prime time highlighting** — the availability grid (signup + profile) now recomputes prime/extended slot highlighting client-side whenever the user changes their timezone. Previously, slots were computed once on the server with the initial timezone and never updated. Now switching from Arizona to Eastern immediately shifts the highlighted rows from 5–11 PM to 7 PM–1 AM, with the legend updating to match.
-- **Timezone-aware prime time legend** — the prime time explanation adapts based on the viewer's timezone. Arizona users see a clean "Prime time 5 PM–11 PM" label with no extra context needed. Users in other timezones see "Group prime time — 7 PM–1 AM your time" with an explanation: "Most of the group is in Arizona, so prime time is based on 5 PM–11 PM Arizona — shown here in your timezone."
-- **Heatmap prime time legend** — the availability heatmap (Members page + Admin panel) now shows the same timezone-aware prime time context. Arizona viewers see "Prime time 5 PM–11 PM"; other timezone viewers see their converted range with the anchor timezone noted (e.g. "Prime time 7 PM–1 AM your time (5 PM–11 PM Arizona)").
+### v0.6.0 — 2026-03-11
+- **Admin site settings panel** — new Settings tab for configuring prime/extended time window hours, anchor timezone, default event duration, max events/polls per week, community name, and MOTD. Visual preview bar shows the prime vs extended range. Settings stored as a singleton `SiteSettings` model.
+- **Prime/extended time windows** — availability grids and heatmaps visually distinguish between prime time (bright neon) and extended hours (dimmed/muted). Guides players toward recommended hours without restricting selection. Time windows automatically convert to each viewer's local timezone.
+- **Reactive prime time highlighting** — the availability grid recomputes prime/extended slot highlighting client-side whenever the user changes their timezone in the form. Switching from Arizona to Eastern immediately shifts the highlighted rows with the legend updating to match.
+- **Timezone-aware prime time legends** — prime time explanation adapts to the viewer's timezone. Local users see "Prime time 5 PM–11 PM"; remote users see "Group prime time — 7 PM–1 AM your time" with anchor timezone context. Grid and heatmap share the same `getPrimeTimeLegendInfo()` utility.
+- **Prime time off-by-one fix** — fixed bug in `computeTimeSlotsForViewer` that excluded the 23:00 slot from prime highlighting.
+- **Heatmap timezone fixes** — cross-midnight availability entries split into correct day segments, time slots dynamically computed instead of hardcoded, duplicate player counting prevented via Set deduplication.
+- **Lint cleanup** — resolved all 23 ESLint errors across 7 components. Zero errors remain.
+- **Comprehensive seed data** — 13 test users across 7 US timezones, 20 events, 6 teams, 8 polls, 7 tournaments, 3 invite groups. All times properly UTC-converted. Re-runnable.
+- **Test infrastructure** — added Vitest with 17 tests covering timezone conversion, prime time slot computation, and legend formatting.
 
-### v2.3.0 — 2026-03-11
-- **Prime time tooltip on availability grid** — the availability grid (signup + profile) now shows a visual legend with colored swatches explaining group prime time vs extended hours. Displays the admin-configured prime window in the anchor timezone (e.g. "5 PM–11 PM Arizona"), dynamically converted to the viewer's local timezone. Non-Arizona users immediately understand when the group primarily plays.
-- **11 PM prime time fix** — fixed off-by-one in `computeTimeSlotsForViewer` that excluded the 23:00 (11 PM) slot from prime highlighting. The `:30` slot is correctly excluded (23:30 is past prime).
-- **Diverse seed data** — added 3 new test users: 2 in Hawaii (`Pacific/Honolulu`) and 1 in Alaska (`America/Anchorage`), bringing total to 13 users across 7 US timezones. All user availability now properly targets Phoenix prime time (5–11 PM MST) expressed in each user's local timezone — e.g. Hawaii users are available 2–8 PM HST, Eastern users 7 PM–1 AM ET. Some users include extended-hour availability outside prime for realism. All availability converted to UTC via a new `localAvailabilityToUtc()` helper that handles day-of-week shifts across midnight.
-- **Lint cleanup** — resolved all 23 ESLint errors: fixed conditional React hooks in MembersCarousel and RankSelector, fixed setState-in-effect violations across 7 components (InfoBubble, ScheduleView, TeamDraftModal, CreateTournamentModal, RegisterTeamModal, CreateTeamModal, EditTeamModal), removed unused imports/variables, escaped JSX entities, replaced `<a>` with Next.js patterns. Zero errors remain (25 warnings, all `<img>` → `next/image` suggestions for Discord avatar URLs).
-- **Continuous carousel** — home page members carousel no longer pauses on hover/touch, scrolling smoothly at all times.
+### v0.5.0 — 2026-03-09
+- **Persistent teams** — new `/teams` page for creating and managing teams that exist outside tournaments. Each team has a unique tag, game affiliation, bio, avatar, and configurable roster size. One team per game per player.
+- **Team roles and invites** — Captain, Co-Captain, Member, Sub. Captains can promote/demote, remove members, and transfer captaincy. Invite system with accept/decline, 7-day expiry, and navbar badge.
+- **Team detail page** — `/teams/[id]` with W–L record, roster grid with role management, tournament history, and disband confirmation.
+- **Team tags across the site** — `[TAG]` shown next to player names on event lists, detail modals, attendance, and member cards. Game-context-aware. Clickable links to team page.
+- **Tournament integration** — register premade teams for tournaments. Roster snapshot preserves bracket integrity. Team tags baked into display names.
+- **Timezone normalization** — all times stored in UTC internally, converted to each viewer's timezone for display. DST-safe via `Intl.DateTimeFormat` with IANA timezone names.
+- **Cross-timezone event display** — event times shown in the viewer's timezone with host timezone context when different (e.g. "4:00 PM PST (7:00 PM MST)").
+- **Correct availability overlap** — heatmap now detects real cross-timezone overlap instead of treating same-number times as identical.
+- **Timezone in session** — user's IANA timezone included in NextAuth JWT/session, eliminating extra DB queries.
 
-### v2.2.0 — 2026-03-10
-- **Prime/extended time windows** — availability grids (signup, profile) and heatmaps (admin, members) now visually distinguish between prime time (default 5–11 PM Phoenix, bright neon) and extended hours (default 2 PM–1 AM, dimmed/muted). Guides players toward recommended hours without restricting selection. Time windows automatically convert to each viewer's local timezone.
-- **Admin site settings panel** — new Settings tab (admin-only) for configuring prime/extended time window hours, anchor timezone, default event duration, max events/polls per week, community name, and message of the day. Visual preview bar shows the prime vs extended range. Settings stored as a singleton `SiteSettings` model.
-- **Availability heatmap timezone fix** — fixed three bugs from the timezone normalization update: cross-midnight availability entries are now split into correct day segments, time slots are dynamically computed instead of hardcoded to 5–11 PM, and duplicate player counting after entry splitting is prevented via Set deduplication.
-- **Comprehensive seed data** — `prisma/seed-test-users.ts` now creates 13 test users across 7 US timezones (Phoenix, Eastern, Central, Mountain, Pacific, Hawaii, Alaska) with full profiles, 20 events (varied US timezones, Phoenix prime time aligned, 3 late night events), 6 teams, 8 polls, 7 tournaments (single/double elim, round robin, swiss, draft), 3 invite groups, and team invites. All event and availability times properly UTC-converted for correct cross-timezone display. Re-runnable (cleanly replaces seed data).
+### v0.4.0 — 2026-03-07
+- **Tournament system** — new Tournaments tab on the Schedule page with a 6-step creation wizard (title, game, format, bracket type, seeding, schedule, slots, buy-in, player selection).
+- **6 bracket types** — Single Elimination (with byes), Double Elimination (winners + losers + grand finals), Round Robin, Swiss (on-demand rounds, rematch avoidance), Constellation (main + consolation brackets), Free-for-All (point-based).
+- **Solo and team formats** — 1v1 or team tournaments with configurable sizes. Game-specific presets. Three seeding modes: Random, Ranked, Balanced Random.
+- **Live snake draft** — real-time captain draft with snake ordering, 3-second polling, auto-fill. Three captain selection modes.
+- **Match reporting** — participants report scores, opponents/admins confirm. Auto-advancement with correct routing for double elimination and constellation brackets.
+- **Pick'ems, comments, buy-in** — predict match winners with a standings leaderboard. Comment thread per tournament. Optional buy-in with prize pool display.
+- **Templates and sharing** — save/load bracket configurations. Share links and Discord-formatted bracket summaries.
+- **Friday-to-Thursday calendar** — weekends front and center. Two-week desktop view, one-week mobile with a two-row grid day selector.
+- **Event detail modal** — read-only detail view with RSVP lists, approve/reject, and attendance. Edit button for hosts/mods/admins only.
+- **Edit permissions overhaul** — hosts can edit their own events. Owner role added to all authorization checks.
+- **Mobile responsiveness pass** — form grids stack, touch targets enlarged, action buttons always visible, tab gaps adjust.
+- **Optimistic RSVP updates** — instant UI feedback without waiting for server round-trip.
+- **Smooth transitions** — scroll-to-top on navigation, fade transitions between schedule tabs, modal exit animations.
 
-### v2.1.0 — 2026-03-09
-- **Timezone normalization** — all times are now stored in UTC internally and converted to each viewer's timezone for display. Users create events and set availability in their own local time; conversion is automatic and DST-safe (uses `Intl.DateTimeFormat` with IANA timezone names, no external dependencies).
-- **Cross-timezone event display** — event times are shown in the viewer's timezone. When the viewer and host are in different timezones, both are shown (e.g. "4:00 PM PST (7:00 PM MST)"). Each event records the host's timezone at creation for context.
-- **Correct availability overlap** — the availability heatmap on the Admin and Members pages now correctly detects real cross-timezone overlap. A 5 PM slot for an Eastern user and a 5 PM slot for a Pacific user no longer incorrectly appear as the same time.
-- **Timezone in session** — the user's IANA timezone is now included in the NextAuth JWT/session, eliminating extra DB queries for timezone lookups throughout the app.
-- **Non-nullable timezone** — `User.timezone` is now required (defaults to "America/Phoenix"). The availability grid shows a timezone hint label so users know times are in their selected timezone. The create event modal notes "Times are in your timezone."
-- **Data migration** — existing availability and event data migrated from assumed Phoenix local time to UTC via `prisma/migrate-timezone.ts`.
+### v0.3.0 — 2026-03-06
+- **Members page** — searchable card grid with Discord avatars, game tags, rank badges, and social link icons. Tabbed view: Members | Games | Availability.
+- **Social links** — Twitter/X, Twitch, YouTube, and custom link fields on profiles and member cards.
+- **Roles** — Moderator role (admin panel access, event management), Owner role (gold glow, protected from changes). Visual role indicators on member cards and carousel. Role ladder system (Member → Moderator → Admin).
+- **Polls** — `/polls` page with single/multi-select voting, animated result bars, game tags, comment threads, pin/close/delete. Rate limited for regular users.
+- **User-created events** — any user can create events; regular events require mod approval. Approval workflow with Approve/Reject buttons and status badges. Event statuses: pending, scheduled, cancelled, rejected.
+- **Invite-only events** — visibility toggle, auto-schedule without approval, member picker with quick-select groups. Rate limiting and input validation for non-admins.
+- **Recurring events** — admin/mod only, configurable 2–12 week count, delete entire series.
+- **Quick-select groups** — named groups of friends on the profile page, used as toggle buttons in the member picker.
+- **Admin Insights tab** — 8 on-demand analytics queries: Best Time for Game, Peak Availability, Squad Finder, Lonely Games, Inactive Members, Schedule Gaps, RSVP Stats, Game Night History.
+- **Event host and attendance** — designated host per event. Post-event attendance confirmation checklist. Attendance nudge banner in admin panel.
+- **About page tabs** — About | Changelog with styled version history cards and Roadmap section.
+- **Privacy notice** — reassurance on signup and About page explaining Discord OAuth2 scope.
+- **Active nav highlighting** — current page link turns neon green with bold text.
 
-### v2.0.0 — 2026-03-09
-- **Persistent teams** — new `/teams` page for creating and managing teams (clans/squads) that exist outside tournaments. Each team has a unique tag, game affiliation, bio, avatar, and configurable roster size. One team per game per player.
-- **Team roles** — Captain (full control), Co-Captain (can invite), Member, Sub. Captains can promote/demote, remove members, and transfer captaincy.
-- **Invite system** — captains and co-captains send invites to members. Pending invites shown as a banner on the Teams page with accept/decline. Invites expire after 7 days. Navbar shows a neon badge with pending invite count (desktop and mobile).
-- **Team detail page** — full detail view at `/teams/[id]` with avatar, name, tag, game badge, W–L record from tournament matches, roster grid with role management, tournament history with placement, and disband (two-click confirmation).
-- **3-step creation wizard** — Name/Tag/Game → Bio/Avatar → Review. Live tag uniqueness check with debounce.
-- **Team tags across the site** — `[TAG]` shown next to player names on event lists, event detail modals, attendance modals, and member cards. Tags are game-context-aware (only shown when the event's game matches the team's game). Member card tags are clickable links to the team page.
-- **Tournament integration** — captains can register their team for open tournaments matching the team's game via a "Register for Tournament" button. Registration snapshots the current roster into TournamentTeam + TournamentEntrant records, preserving bracket integrity. Team tags baked into tournament display names at join time. CreateTournamentModal Step 6 explains premade teams vs live draft options.
-
-### v1.9.1 — 2026-03-07
-- **Smooth scroll-to-top on navigation** — switching between any page (Schedule, About, Highlights, Members, Profile, etc.) now smoothly scrolls to the top instead of staying at the previous scroll position. Handled globally in the PageTransition component so every route change is covered.
-- **Smooth schedule tab transitions** — switching between Calendar, Events, and Tournaments sub-tabs now fades smoothly with a 150ms opacity transition instead of instant swaps. Tournaments tab no longer stutters on load (removed per-card Framer Motion layout animations that were causing expensive layout recalculations on mount).
-- **Schedule tab scroll reset** — switching sub-tabs within the schedule page also smooth-scrolls to the top.
-
-### v1.9.0 — 2026-03-07
-- **Tournament system** — new Tournaments tab on the Schedule page for creating and managing full tournament brackets. 6-step creation wizard with title, game, format, bracket type, seeding, schedule, slots, buy-in, and player selection.
-- **6 bracket types** — Single Elimination (power-of-2 with byes), Double Elimination (winners + losers brackets + grand finals), Round Robin (circle method), Swiss (on-demand round generation with rematch avoidance), Constellation (main bracket + consolation brackets), and Free-for-All (point-based rounds with cumulative scoring).
-- **Solo and team formats** — solo 1v1 tournaments or team tournaments with configurable team sizes. Game-specific presets (5v5 for LoL/Dota, 6v6 for OW). Three seeding modes: Random, Ranked, and Balanced Random.
-- **Live snake draft** — team tournaments feature a real-time captain draft with snake ordering. Three captain selection modes (by rank, manual, random). 3-second polling for live updates. Auto-fill to randomly assign remaining players. Captains can rename teams.
-- **Match reporting and confirmation** — participants report scores, opponents or admins confirm. Auto-advancement feeds winners into the next bracket round with correct routing for double elimination losers bracket and constellation consolation brackets.
-- **Pick'ems** — predict match winners before the tournament starts. Predictions lock when the bracket is generated. Color-coded results and prediction standings leaderboard.
-- **Tournament discussion** — comment thread per tournament for trash talk and coordination.
-- **Buy-in and prize pool** — optional buy-in with calculated prize pool display (buy-in × max slots).
-- **Tournament templates** — save and load bracket configurations for quick tournament creation.
-- **Bracket sharing** — "Share Link" copies a direct URL that auto-opens the tournament detail modal. "Copy for Discord" generates a text-formatted bracket summary for pasting.
-- **Multi-session tournaments** — tournaments can span multiple game nights with per-session dates or weekly frequency.
-- **Best-of options** — Bo1 and Bo3 match formats with per-match score tracking.
-
-### v1.8.0 — 2026-03-07
-- **Friday-to-Thursday calendar** — calendar weeks now run Friday through Thursday, putting weekends front and center. Desktop retains the two-week (14-day) view with ±14 day navigation; mobile shows one week (7 days) with ±7 day navigation.
-- **Mobile day selector redesign** — replaced horizontal scrolling day pills with a two-row grid: 3 wider weekend cards on top (Fri/Sat/Sun) and 4 weekday cards below (Mon–Thu). Event count badges, today dot indicator, and clean neon highlight on the selected day.
-- **Responsive default view** — mobile users now default to Event List view, desktop users default to Calendar view. Toggle remains available on all devices.
-- **Event detail modal** — clicking any event now opens a read-only detail view showing title, game, date, time, host, description, and RSVP lists (Going and Maybe). RSVP button, approve/reject, and mark attendance actions in-context. "Edit Settings" button visible only to the host, moderator, admin, or owner.
-- **Edit permissions overhaul** — hosts can now edit their own events. Owner role added to all schedule authorization checks. Regular users see read-only details. Edit modal now shows full RSVP breakdown (Going, Maybe, Declined) with color-coded badges.
-- **Compact calendar cards** — events in the calendar grid now show only game name and time for a cleaner look. Full details available via the detail modal.
-- **Info bubble** — replaced the static info banner with a dismissable tutorial bubble for signed-in users. Glows on page load, collapses to an "i" icon when dismissed, persists across sessions via localStorage.
-- **Navbar reorder** — signed-in nav order is now Home, Schedule, Polls, Members, Highlights, About, Admin, Profile.
-- **Willing to Mod roster indicator** — players who opted to moderate show a "Willing to Mod" badge in the admin roster. Filter toggle with count pill to quickly surface moderation candidates.
-- **Members carousel overhaul** — replaced CSS `@keyframes` animation with `requestAnimationFrame`-driven loop for seamless, glitch-free infinite scrolling. Pauses on hover and touch. Responsive card sizing.
-- **Optimistic RSVP updates** — changing your RSVP instantly highlights the new choice and updates the Going/Maybe lists in the detail modal without waiting for the server round-trip.
-- **Smooth modal transitions** — detail-to-edit modal transition waits for the exit animation to complete before opening the next modal, eliminating the flash. Info bubble uses height/opacity transitions instead of conditional rendering for fluid expand/collapse.
-- **Mobile responsiveness pass** — form grids stack on small screens, touch targets enlarged for availability grids and heatmaps, action buttons always visible on mobile (no hover-only), tab gaps adjust for small screens.
-
-### v1.7.0 — 2026-03-06
-- **Members page tabs** — added underline-style tab navigation (Members | Games | Availability) with animated neon indicator. Games tab reuses the Game Popularity component and Availability tab reuses the Availability Heatmap component from the admin panel, giving all members visibility into game stats and scheduling overlap without needing admin access.
-- **About page tabs** — added underline-style tab navigation (About | Changelog). Changelog tab displays the full version history as styled cards with neon version badges, plus a Roadmap section grouping future ideas by category.
-- **Admin Insights tab** — new interactive analytics tab in the admin panel with 8 on-demand queries: Best Time for Game, Peak Availability, Squad Finder, Lonely Games, Inactive Members, Schedule Gaps, RSVP Stats, and Game Night History. Click a card to run the query, results appear inline with expandable player tags. Game-based insights have a dropdown selector and Run button. Visible to both admins and moderators.
-- **Event host** — each event now has a designated host (defaults to creator). Host selector dropdown in create and edit modals. Host name displayed on event cards in both calendar and list views.
-- **Attendance confirmation** — after an event's date passes, the host, creator, or any admin/mod can mark who actually showed up via a checklist modal. Pre-populated from RSVPs with select-all/clear. Confirmed events show a green checkmark badge. RSVP Stats insight now shows "showed" and "no-show" counts alongside RSVP data.
-- **Attendance nudge** — admin panel shows a warning banner listing past events with unconfirmed attendance, prompting mods/admins to go to the schedule page and complete the roll call.
-
-### v1.6.0 — 2026-03-06
-- **Polls** — new `/polls` page where any authenticated user can create polls to gauge interest in plans (e.g. "Should we kill the Ender Dragon?" or "Which WoW raid this weekend?"). Single-select or multi-select voting with animated result bars. Optional game tag from the catalog. Comment thread under each poll (3 preview, expandable) for clarifications. Creators/admins can close or delete polls. Admins/mods can pin polls to the top. Rate limited to 5 polls per week for regular users.
-- **Active nav highlighting** — the current page link in the navbar now turns neon green with bold text, so you always know which tab you're on. Works on both desktop and mobile menus.
-- **Bold profile name** — the gamertag/username in the navbar is now bold for better visibility
-
-### v1.5.0 — 2026-03-06
-- **Role ladder** — replaced separate Promote/Mod buttons with a single role ladder system (Member → Moderator → Admin). Promote steps up one level, Demote steps down. Owners are protected from role changes.
-- **Moderator restrictions** — moderators can view the admin panel but can no longer promote, demote, or remove users. All user management actions are admin-only (enforced in both UI and server actions).
-- **Availability game filter** — the availability heatmap now has a game dropdown filter. Select a game to see only the availability of players who play that game. Useful for finding the best time to schedule a specific title.
-- **Test user availability** — seed script now includes availability slots (17:00–23:00 range) for all 5 test users
-
-### v1.4.0 — 2026-03-06
-- **Invite-only events** — new visibility toggle (Public / Invite-Only) in the create event modal. Invite-only events auto-schedule without mod approval and are only visible to the creator and invitees. Creators can edit and delete their own invite-only events.
-- **Member picker component** — searchable checkbox list with avatar, gamertag, and real name. Used in both event creation/editing and group management. Quick-select group buttons toggle all group members at once.
-- **Invite guardrails** — rate limiting and input validation for non-admin users: 50-char title, 200-char description, no past dates, max 10 invitees, max 5 invite-only events per rolling 7 days, no self-invites. Admins bypass all limits.
-- **Quick-select groups** — new "Quick-Select Groups" section on the profile page. Create, edit, and delete named groups of friends (max 10 groups, 10 members each). Groups appear as toggle buttons in the member picker for fast invites. Independent CRUD with per-group save buttons.
-- **Visibility-aware query filtering** — schedule page queries now respect event visibility. Unauthenticated users only see public events. Regular users see public events plus invite-only events where they are creator or invitee. Admins/mods see everything.
-- **Invite-Only badge** — shown on event cards in both calendar and list views
-- **Creator editing** — creators of invite-only events can click their events to edit (not just admin/mod). Edit modal shows member picker for updating invitees. Status and recurring controls remain admin-only.
-- **Invited members display** — invite-only events show the invited members list on event cards
-- **Test seed script** — `prisma/seed-test-users.ts` for populating the database with realistic test data for development/testing
-
-### v1.3.0 — 2026-03-06
-- **User-created events** — any logged-in user can now create game night events. Regular user events require moderator/admin approval (status: "pending") before appearing publicly. Admin/mod events are auto-approved.
-- **Approval workflow** — admins and moderators see pending events with Approve/Reject buttons. Pending events have dashed warning borders and badges; rejected events have danger styling. "Submitted by [name]" shown on pending events.
-- **Recurring events improvements** — recurring is now admin/mod only. Configurable week count (2–12 weeks) replaces the old fixed 4-week limit. Day-of-week derived from selected date instead of a separate dropdown. All events in a recurring series linked by a shared group ID.
-- **Delete recurring series** — "Delete All in Series" button in the edit modal lets admins/mods remove an entire recurring series at once.
-- **Date bug fix** — events now land on the correct day regardless of timezone. Previously, selecting Wednesday could create events on Tuesday due to UTC midnight parsing.
-- **Event status expansion** — status field now supports pending, scheduled, cancelled, and rejected. Edit modal dropdown updated to include all four. RSVP buttons only shown for scheduled events.
-
-### v1.2.1 — 2026-03-06
-- **Event descriptions** — admins and moderators can add an optional description when creating or editing game nights. Displayed to all users in both the calendar and event list views.
-
-### v1.2.0 — 2026-03-06
-- **Moderator role** — moderators can access the admin panel and create/edit/delete game nights
-- **Owner role** — dedicated role for the site owner with gold glowing border on member cards
-- **Visual role indicators** — dark red glowing border and "Mod" badge for moderators, gold glowing border and "Owner" badge for owner, visible on both member cards and home page carousel
-- **Moderator management** — admins can toggle moderator status from the Player Roster
-- **Schedule info banner** — tells members to reach out to moderators to suggest events
-- **Privacy notice** — reassurance on the signup page and a full Privacy & Security section on the About page explaining Discord OAuth2 scope
-
-### v1.1.0 — 2026-03-06
-- **Members page** — searchable card grid with Discord avatars, game tags, rank badges, and social link icons
-- **Social links** — Twitter/X, Twitch, YouTube, and custom link fields on profiles and member cards
-- **Event titles** — optional custom titles for game nights
-- **Admin event editing** — click any event in calendar or list view to edit title, time, game, status, or delete
-- **Recurring events** — "Recurring weekly" option auto-creates 4 weeks of events
-
-### v1.0.0 — 2026-03-05
+### v0.2.0 — 2026-03-05
 - **Discord OAuth** authentication with JWT sessions
-- **Player profiles** — gamertag, interactive US timezone map, categorized game selection with sub-modes, drag-select availability grid
+- **Player profiles** — gamertag, interactive US timezone map (SVG with real state outlines, hover glow, Arizona carved out, Alaska/Hawaii insets), categorized game selection with collapsible sub-modes, drag-select availability grid
 - **Extended profiles** — favorite games, visual rank selector with tier colors, social links, tournament/LAN interest
 - **Scheduling** — two-week calendar view, event list view, RSVP system (confirmed/maybe/declined)
 - **Admin panel** — game popularity, availability heatmap, RSVP overview, player roster with promote/demote/remove

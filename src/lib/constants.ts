@@ -271,8 +271,8 @@ export function generateTimeSlots(startHour: number, endHour: number): string[] 
 
 /**
  * Check if a time slot falls within the prime (recommended) window.
- * Times are in the viewer's local timezone but we compare against
- * the Phoenix-anchored prime window (also converted to viewer tz).
+ * Times are in the viewer's local timezone; primeSlots is already
+ * converted from the anchor timezone via computeTimeSlotsForViewer().
  */
 export function isSlotInPrimeWindow(
   slot: string,

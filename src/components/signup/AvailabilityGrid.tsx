@@ -2,25 +2,7 @@
 
 import { useState, useCallback, useRef, useEffect, useMemo } from "react";
 import { DAYS_OF_WEEK, formatTime, generateTimeSlots, DEFAULT_EXTENDED_START, DEFAULT_EXTENDED_END, DEFAULT_PRIME_START, DEFAULT_PRIME_END } from "@/lib/constants";
-
-const TIMEZONE_LABELS: Record<string, string> = {
-  "America/Phoenix": "Arizona",
-  "America/New_York": "Eastern",
-  "America/Chicago": "Central",
-  "America/Denver": "Mountain",
-  "America/Los_Angeles": "Pacific",
-  "America/Anchorage": "Alaska",
-  "Pacific/Honolulu": "Hawaii",
-};
-
-function formatSlotTo12Hr(slot: string): string {
-  const [hStr, mStr] = slot.split(":");
-  let h = parseInt(hStr, 10);
-  const suffix = h >= 12 ? "PM" : "AM";
-  if (h === 0) h = 12;
-  else if (h > 12) h -= 12;
-  return mStr === "00" ? `${h} ${suffix}` : `${h}:${mStr} ${suffix}`;
-}
+import { getPrimeTimeLegendInfo } from "@/lib/prime-time-utils";
 
 interface AvailabilityGridProps {
   selected: Set<string>;
@@ -149,22 +131,20 @@ export default function AvailabilityGrid({
         )}
       </p>
       <div className="mb-3 space-y-1">
-        {(() => {
-          const isLocal = viewerTimezone === anchorTimezone;
-          const fmtHour = (h: number) => {
-            const h12 = h > 12 ? h - 12 : h === 0 ? 12 : h;
-            return `${h12} ${h >= 12 ? "PM" : "AM"}`;
-          };
-          const anchorLabel = anchorTimezone
-            ? TIMEZONE_LABELS[anchorTimezone] || anchorTimezone.split("/").pop()?.replace(/_/g, " ") || anchorTimezone
-            : "";
+        {anchorTimezone && viewerTimezone && anchorPrimeStartHour != null && anchorPrimeEndHour != null && (() => {
+          const legend = getPrimeTimeLegendInfo({
+            primeSlots: primeSlotsArr || [],
+            anchorTimezone,
+            viewerTimezone,
+            anchorPrimeStartHour,
+            anchorPrimeEndHour,
+          });
 
-          if (isLocal && anchorPrimeStartHour != null && anchorPrimeEndHour != null) {
-            // Arizona user — simple label
+          if (legend.isLocal) {
             return (
               <p className="text-xs text-foreground/30">
                 <span className="inline-block w-2 h-2 rounded-sm bg-neon/40 border border-neon/60 mr-1 align-middle" />
-                <span className="text-neon/60">Prime time {fmtHour(anchorPrimeStartHour)}–{fmtHour(anchorPrimeEndHour)}</span>
+                <span className="text-neon/60">Prime time {legend.primeStartFormatted}–{legend.primeEndFormatted}</span>
                 <span className="mx-1.5">&middot;</span>
                 <span className="inline-block w-2 h-2 rounded-sm bg-foreground/20 border border-foreground/30 mr-1 align-middle" />
                 Extended hours (still selectable)
@@ -172,26 +152,19 @@ export default function AvailabilityGrid({
             );
           }
 
-          // Non-local user — show their converted range + explain why
           return (
             <>
               <p className="text-xs text-foreground/30">
                 <span className="inline-block w-2 h-2 rounded-sm bg-neon/40 border border-neon/60 mr-1 align-middle" />
                 <span className="text-neon/60">Group prime time</span>
-                {primeSlotsArr && primeSlotsArr.length > 0 && (() => {
-                  const firstPrime = formatSlotTo12Hr(primeSlotsArr[0]);
-                  const lastPrime = formatSlotTo12Hr(primeSlotsArr[primeSlotsArr.length - 1]);
-                  return <span className="text-neon/50"> — {firstPrime}–{lastPrime} your time</span>;
-                })()}
+                <span className="text-neon/50"> — {legend.primeStartFormatted}–{legend.primeEndFormatted} your time</span>
                 <span className="mx-1.5">&middot;</span>
                 <span className="inline-block w-2 h-2 rounded-sm bg-foreground/20 border border-foreground/30 mr-1 align-middle" />
                 Extended hours (still selectable)
               </p>
-              {anchorTimezone && anchorPrimeStartHour != null && anchorPrimeEndHour != null && (
-                <p className="text-xs text-foreground/20">
-                  Most of the group is in {anchorLabel}, so prime time is based on {fmtHour(anchorPrimeStartHour)}–{fmtHour(anchorPrimeEndHour)} {anchorLabel} — shown here in your timezone
-                </p>
-              )}
+              <p className="text-xs text-foreground/20">
+                Most of the group is in {legend.anchorLabel}, so prime time is based on {legend.anchorPrimeStartFormatted}–{legend.anchorPrimeEndFormatted} {legend.anchorLabel} — shown here in your timezone
+              </p>
             </>
           );
         })()}

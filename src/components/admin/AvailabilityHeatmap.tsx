@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { fadeIn } from "@/lib/animations";
 import { DAYS_OF_WEEK, formatTime, generateTimeSlots, DEFAULT_EXTENDED_START, DEFAULT_EXTENDED_END } from "@/lib/constants";
+import { getPrimeTimeLegendInfo } from "@/lib/prime-time-utils";
 import Card from "@/components/ui/Card";
 
 interface AvailabilityEntry {
@@ -27,13 +28,11 @@ interface Props {
 function getIntensityClass(ratio: number, isPrime: boolean): string {
   if (ratio === 0) return isPrime ? "bg-surface-light" : "bg-surface-light/50";
   if (!isPrime) {
-    // Muted/dimmed versions for extended hours
     if (ratio <= 0.25) return "bg-foreground/5";
     if (ratio <= 0.5) return "bg-foreground/8";
     if (ratio <= 0.75) return "bg-foreground/12";
     return "bg-foreground/15";
   }
-  // Full neon for prime hours
   if (ratio <= 0.2) return "bg-neon/10";
   if (ratio <= 0.4) return "bg-neon/20";
   if (ratio <= 0.6) return "bg-neon/30";
@@ -46,25 +45,6 @@ function slotCovered(slot: string, start: string, end: string): boolean {
     return slot >= start && slot < end;
   }
   return slot >= start || slot < end;
-}
-
-const TIMEZONE_LABELS: Record<string, string> = {
-  "America/Phoenix": "Arizona",
-  "America/New_York": "Eastern",
-  "America/Chicago": "Central",
-  "America/Denver": "Mountain",
-  "America/Los_Angeles": "Pacific",
-  "America/Anchorage": "Alaska",
-  "Pacific/Honolulu": "Hawaii",
-};
-
-function formatSlotTo12Hr(slot: string): string {
-  const [hStr, mStr] = slot.split(":");
-  let h = parseInt(hStr, 10);
-  const suffix = h >= 12 ? "PM" : "AM";
-  if (h === 0) h = 12;
-  else if (h > 12) h -= 12;
-  return mStr === "00" ? `${h} ${suffix}` : `${h}:${mStr} ${suffix}`;
 }
 
 export default function AvailabilityHeatmap({ availability, primeSlots: primeSlotsArr, extendedSlots: extendedSlotsArr, anchorTimezone, viewerTimezone, anchorPrimeStartHour, anchorPrimeEndHour }: Props) {
@@ -141,32 +121,27 @@ export default function AvailabilityHeatmap({ availability, primeSlots: primeSlo
               <option key={g} value={g}>{g}</option>
             ))}
           </select>
-          {primeSlotsArr && primeSlotsArr.length > 0 && (() => {
-            const isLocal = viewerTimezone === anchorTimezone;
-            const fmtHour = (h: number) => {
-              const h12 = h > 12 ? h - 12 : h === 0 ? 12 : h;
-              return `${h12} ${h >= 12 ? "PM" : "AM"}`;
-            };
-            const anchorLabel = anchorTimezone
-              ? TIMEZONE_LABELS[anchorTimezone] || anchorTimezone.split("/").pop()?.replace(/_/g, " ") || anchorTimezone
-              : "";
+          {primeSlotsArr && primeSlotsArr.length > 0 && anchorTimezone && viewerTimezone && anchorPrimeStartHour != null && anchorPrimeEndHour != null && (() => {
+            const legend = getPrimeTimeLegendInfo({
+              primeSlots: primeSlotsArr,
+              anchorTimezone,
+              viewerTimezone,
+              anchorPrimeStartHour,
+              anchorPrimeEndHour,
+            });
 
-            if (isLocal && anchorPrimeStartHour != null && anchorPrimeEndHour != null) {
+            if (legend.isLocal) {
               return (
                 <span className="text-xs text-foreground/30">
-                  Prime time {fmtHour(anchorPrimeStartHour)}–{fmtHour(anchorPrimeEndHour)} · Dimmed = extended hours
+                  Prime time {legend.primeStartFormatted}–{legend.primeEndFormatted} · Dimmed = extended hours
                 </span>
               );
             }
 
-            const firstPrime = primeSlotsArr[0] ? formatSlotTo12Hr(primeSlotsArr[0]) : "";
-            const lastPrime = primeSlotsArr.length > 0 ? formatSlotTo12Hr(primeSlotsArr[primeSlotsArr.length - 1]) : "";
             return (
               <span className="text-xs text-foreground/30">
-                Prime time {firstPrime}–{lastPrime} your time
-                {anchorTimezone && anchorPrimeStartHour != null && anchorPrimeEndHour != null && (
-                  <span className="text-foreground/20"> ({fmtHour(anchorPrimeStartHour)}–{fmtHour(anchorPrimeEndHour)} {anchorLabel})</span>
-                )}
+                Prime time {legend.primeStartFormatted}–{legend.primeEndFormatted} your time
+                <span className="text-foreground/20"> ({legend.anchorPrimeStartFormatted}–{legend.anchorPrimeEndFormatted} {legend.anchorLabel})</span>
                 {" · Dimmed = extended hours"}
               </span>
             );
