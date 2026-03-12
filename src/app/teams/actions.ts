@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { TAG_REGEX, TEAM_LIMITS, getTeamSizeLimits } from "@/lib/team-constants";
 import { getSiteSettings } from "@/app/admin/settings-actions";
+import { logAudit } from "@/lib/audit";
 
 // ─── Create Team ─────────────────────────────────────────────────────
 
@@ -96,6 +97,7 @@ export async function createTeam(data: {
     });
 
     revalidatePath("/teams");
+    logAudit({ action: "TEAM_CREATED", entityType: "Team", entityId: team.id, actorId: session.user.id, metadata: { name, tag, game: data.game } });
     return { success: true, id: team.id };
   } catch {
     return { error: "Failed to create team" };
@@ -186,6 +188,7 @@ export async function disbandTeam(teamId: string) {
     });
     revalidatePath("/teams");
     revalidatePath(`/teams/${teamId}`);
+    logAudit({ action: "TEAM_DISBANDED", entityType: "Team", entityId: teamId, actorId: session.user.id, metadata: { name: team.name, tag: team.tag } });
     return { success: true };
   } catch {
     return { error: "Failed to disband team" };

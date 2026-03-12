@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { POLL_LIMITS } from "@/lib/constants";
 import { getSiteSettings } from "@/app/admin/settings-actions";
+import { logAudit } from "@/lib/audit";
 
 export async function createPoll(data: {
   title: string;
@@ -67,7 +68,7 @@ export async function createPoll(data: {
   }
 
   try {
-    await prisma.poll.create({
+    const poll = await prisma.poll.create({
       data: {
         title,
         description,
@@ -80,6 +81,7 @@ export async function createPoll(data: {
       },
     });
     revalidatePath("/polls");
+    logAudit({ action: "POLL_CREATED", entityType: "Poll", entityId: poll.id, actorId: session.user.id, metadata: { title } });
     return { success: true };
   } catch {
     return { error: "Failed to create poll" };
@@ -192,6 +194,7 @@ export async function closePoll(pollId: string) {
       data: { status: "closed", closedAt: new Date() },
     });
     revalidatePath("/polls");
+    logAudit({ action: "POLL_CLOSED", entityType: "Poll", entityId: pollId, actorId: session.user.id, metadata: { title: poll.title } });
     return { success: true };
   } catch {
     return { error: "Failed to close poll" };
@@ -215,6 +218,7 @@ export async function deletePoll(pollId: string) {
   try {
     await prisma.poll.delete({ where: { id: pollId } });
     revalidatePath("/polls");
+    logAudit({ action: "POLL_DELETED", entityType: "Poll", entityId: pollId, actorId: session.user.id, metadata: { title: poll.title } });
     return { success: true };
   } catch {
     return { error: "Failed to delete poll" };

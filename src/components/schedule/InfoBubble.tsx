@@ -13,7 +13,6 @@ export default function InfoBubble() {
 
   useEffect(() => {
     const wasDismissed = localStorage.getItem(STORAGE_KEY) === "true";
-    // Use requestAnimationFrame to avoid synchronous setState in effect
     requestAnimationFrame(() => {
       setExpanded(!wasDismissed);
       setReady(true);
@@ -40,17 +39,38 @@ export default function InfoBubble() {
     setExpanded(true);
   };
 
-  // Don't render until we've read localStorage
-  if (!ready) return <div className="mb-6 h-9" />;
+  if (!ready) return null;
 
   return (
-    <div className="mb-6">
+    <>
+      {/* Inline "i" button — visible when collapsed, sits in the subtitle row via parent flex */}
+      <button
+        onClick={handleOpen}
+        className={`shrink-0 flex h-7 w-7 items-center justify-center rounded-full border bg-surface text-neon transition-all duration-300 hover:bg-neon/10 ${
+          expanded ? "pointer-events-none opacity-0" : "opacity-100"
+        } ${
+          glowing
+            ? "border-neon/50 shadow-[0_0_12px_rgba(0,255,65,0.25)]"
+            : "border-border"
+        }`}
+        aria-label="Show info"
+      >
+        <svg className="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
+          <path
+            fillRule="evenodd"
+            d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+            clipRule="evenodd"
+          />
+        </svg>
+      </button>
+
+      {/* Expandable card — renders below the subtitle row */}
       <div
-        className={`overflow-hidden rounded-xl border bg-surface transition-all duration-400 ease-[cubic-bezier(0.25,0.1,0.25,1)] ${
+        className={`w-full overflow-hidden rounded-xl border bg-surface transition-all duration-400 ease-[cubic-bezier(0.25,0.1,0.25,1)] ${
           glowing
             ? "border-neon/50 shadow-[0_0_15px_rgba(0,255,65,0.2)]"
             : "border-border"
-        } ${expanded ? "p-4" : "p-0 border-transparent bg-transparent"}`}
+        } ${expanded ? "p-4 mb-0" : "p-0 border-transparent bg-transparent mb-0"}`}
         style={{
           maxHeight: expanded ? `${contentHeight + 32}px` : "0px",
           opacity: expanded ? 1 : 0,
@@ -93,31 +113,6 @@ export default function InfoBubble() {
           </div>
         </div>
       </div>
-
-      {/* Info icon — visible when collapsed */}
-      <div
-        className={`flex justify-end transition-all duration-400 ease-[cubic-bezier(0.25,0.1,0.25,1)] ${
-          expanded ? "mt-0 max-h-0 opacity-0 pointer-events-none" : "mt-0 max-h-12 opacity-100"
-        }`}
-      >
-        <button
-          onClick={handleOpen}
-          className={`flex h-9 w-9 items-center justify-center rounded-full border bg-surface text-neon transition-all duration-300 hover:bg-neon/10 ${
-            glowing
-              ? "border-neon/50 shadow-[0_0_12px_rgba(0,255,65,0.25)]"
-              : "border-border"
-          }`}
-          aria-label="Show info"
-        >
-          <svg className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-            <path
-              fillRule="evenodd"
-              d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
-              clipRule="evenodd"
-            />
-          </svg>
-        </button>
-      </div>
-    </div>
+    </>
   );
 }

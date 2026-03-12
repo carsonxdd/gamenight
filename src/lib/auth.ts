@@ -1,6 +1,11 @@
 import { NextAuthOptions } from "next-auth";
 import DiscordProvider from "next-auth/providers/discord";
 import { prisma } from "./prisma";
+import { logAudit } from "./audit";
+
+// Throttle lastSeenAt writes: max once per 5 minutes per user
+const lastSeenCache = new Map<string, number>();
+const LAST_SEEN_THROTTLE_MS = 5 * 60 * 1000;
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -25,10 +30,10 @@ export const authOptions: NextAuthOptions = {
         });
 
         if (existing) {
-          // Update name/avatar for returning users
+          // Update name/avatar and lastSeenAt for returning users
           await prisma.user.update({
             where: { discordId: account.providerAccountId },
-            data: { name: user.name || "Unknown", avatar: user.image },
+            data: { name: user.name || "Unknown", avatar: user.image, lastSeenAt: new Date() },
           });
         } else {
           // New user — check joinMode for approval status
@@ -39,13 +44,22 @@ export const authOptions: NextAuthOptions = {
           // For approval mode, create with "pending" status
           const approvalStatus = joinMode === "approval" ? "pending" : null;
 
-          await prisma.user.create({
+          const newUser = await prisma.user.create({
             data: {
               discordId: account.providerAccountId,
               name: user.name || "Unknown",
               avatar: user.image,
               approvalStatus,
+              lastSeenAt: new Date(),
             },
+          });
+
+          logAudit({
+            action: "USER_JOINED",
+            entityType: "User",
+            entityId: newUser.id,
+            actorId: newUser.id,
+            metadata: { name: newUser.name },
           });
         }
       }
@@ -70,6 +84,19 @@ export const authOptions: NextAuthOptions = {
           token.approvalStatus = dbUser.approvalStatus;
           token.isMuted = dbUser.isMuted;
           token.mutedUntil = dbUser.mutedUntil?.toISOString() ?? null;
+
+          // Throttled lastSeenAt update
+          const now = Date.now();
+          const lastUpdate = lastSeenCache.get(dbUser.id) ?? 0;
+          if (now - lastUpdate > LAST_SEEN_THROTTLE_MS) {
+            lastSeenCache.set(dbUser.id, now);
+            prisma.user
+              .update({
+                where: { id: dbUser.id },
+                data: { lastSeenAt: new Date() },
+              })
+              .catch(() => {});
+          }
         }
       }
       return token;

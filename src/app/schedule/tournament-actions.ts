@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { TOURNAMENT_LIMITS } from "@/lib/tournament-constants";
 import { getSiteSettings } from "@/app/admin/settings-actions";
+import { logAudit } from "@/lib/audit";
 import {
   seedEntrants,
   generateSingleElimMatches,
@@ -181,6 +182,7 @@ export async function createTournament(data: {
     }
 
     revalidatePath("/schedule");
+    logAudit({ action: "TOURNAMENT_CREATED", entityType: "Tournament", entityId: tournament.id, actorId: session.user.id, metadata: { title, game: data.game } });
     return { success: true, tournamentId: tournament.id };
   } catch {
     return { error: "Failed to create tournament" };
@@ -225,6 +227,7 @@ export async function updateTournamentStatus(tournamentId: string, status: strin
     });
 
     revalidatePath("/schedule");
+    logAudit({ action: "TOURNAMENT_STATUS_CHANGED", entityType: "Tournament", entityId: tournamentId, actorId: session.user.id, metadata: { status } });
     return { success: true };
   } catch {
     return { error: "Failed to update tournament status" };
@@ -647,6 +650,7 @@ export async function deleteTournament(tournamentId: string) {
   try {
     await prisma.tournament.delete({ where: { id: tournamentId } });
     revalidatePath("/schedule");
+    logAudit({ action: "TOURNAMENT_DELETED", entityType: "Tournament", entityId: tournamentId, actorId: session.user.id });
     return { success: true };
   } catch {
     return { error: "Failed to delete tournament" };

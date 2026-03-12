@@ -29,11 +29,12 @@ interface Props {
   players: PlayerData[];
   currentUserId: string;
   isCurrentUserAdmin: boolean;
+  isCurrentUserModerator?: boolean;
 }
 
 const dayAbbrevs = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
 
-export default function PlayerRoster({ players, currentUserId, isCurrentUserAdmin }: Props) {
+export default function PlayerRoster({ players, currentUserId, isCurrentUserAdmin, isCurrentUserModerator = false }: Props) {
   const [search, setSearch] = useState("");
   const [showModOnly, setShowModOnly] = useState(false);
   const [confirmRemove, setConfirmRemove] = useState<PlayerData | null>(null);
@@ -292,6 +293,54 @@ export default function PlayerRoster({ players, currentUserId, isCurrentUserAdmi
                                 Unmute
                               </Button>
                             ) : (
+                              <>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  disabled={isPending}
+                                  onClick={() => handleMute(player.id)}
+                                >
+                                  Mute
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  disabled={isPending}
+                                  onClick={() => setTempMuteTarget(tempMuteTarget === player.id ? null : player.id)}
+                                >
+                                  Temp
+                                </Button>
+                              </>
+                            )}
+                          </div>
+                          {tempMuteTarget === player.id && (
+                            <div className="mt-1 flex items-center gap-2">
+                              <input
+                                type="number"
+                                min={1}
+                                max={10080}
+                                value={tempMuteMinutes}
+                                onChange={(e) => setTempMuteMinutes(e.target.value)}
+                                className="w-20 rounded border border-border bg-surface px-2 py-1 text-xs text-foreground"
+                                placeholder="mins"
+                              />
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                disabled={isPending}
+                                onClick={() => handleTempMute(player.id)}
+                              >
+                                Apply
+                              </Button>
+                            </div>
+                          )}
+                        </>
+                      )}
+                      {/* Mod-only actions: mute regular members only */}
+                      {!isSelf && !player.isOwner && !isCurrentUserAdmin && isCurrentUserModerator && !player.isAdmin && !player.isModerator && (
+                        <>
+                          <div className="flex flex-wrap gap-2 sm:opacity-0 sm:transition sm:group-hover:opacity-100">
+                            {!isUserMuted(player) && (
                               <>
                                 <Button
                                   size="sm"

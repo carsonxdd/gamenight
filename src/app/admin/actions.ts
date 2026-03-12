@@ -4,6 +4,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
+import { logAudit } from "@/lib/audit";
 
 export async function cycleRole(userId: string, direction: "promote" | "demote") {
   const session = await getServerSession(authOptions);
@@ -39,6 +40,7 @@ export async function cycleRole(userId: string, direction: "promote" | "demote")
 
     await prisma.user.update({ where: { id: userId }, data });
     revalidatePath("/admin");
+    logAudit({ action: "ROLE_CHANGED", entityType: "User", entityId: userId, actorId: session.user.id, metadata: { targetName: user.gamertag || user.name, direction } });
     return { success: true };
   } catch {
     return { error: "Failed to update role" };
@@ -47,8 +49,8 @@ export async function cycleRole(userId: string, direction: "promote" | "demote")
 
 export async function muteUser(userId: string) {
   const session = await getServerSession(authOptions);
-  if (!session?.user?.isAdmin) {
-    return { error: "Admin only" };
+  if (!session?.user?.isAdmin && !session?.user?.isModerator) {
+    return { error: "Admin or moderator only" };
   }
   if (session.user.id === userId) {
     return { error: "Cannot mute yourself" };
@@ -58,12 +60,17 @@ export async function muteUser(userId: string) {
     const user = await prisma.user.findUnique({ where: { id: userId } });
     if (!user) return { error: "User not found" };
     if (user.isOwner) return { error: "Cannot mute owner" };
+    // Mods can only mute regular members, not admins or other mods
+    if (session.user.isModerator && !session.user.isAdmin && (user.isAdmin || user.isModerator)) {
+      return { error: "Moderators can only mute regular members" };
+    }
 
     await prisma.user.update({
       where: { id: userId },
       data: { isMuted: true, mutedUntil: null },
     });
     revalidatePath("/admin");
+    logAudit({ action: "USER_MUTED", entityType: "User", entityId: userId, actorId: session.user.id, metadata: { targetName: user.gamertag || user.name } });
     return { success: true };
   } catch {
     return { error: "Failed to mute user" };
@@ -82,6 +89,7 @@ export async function unmuteUser(userId: string) {
       data: { isMuted: false, mutedUntil: null },
     });
     revalidatePath("/admin");
+    logAudit({ action: "USER_UNMUTED", entityType: "User", entityId: userId, actorId: session.user.id });
     return { success: true };
   } catch {
     return { error: "Failed to unmute user" };
@@ -90,8 +98,8 @@ export async function unmuteUser(userId: string) {
 
 export async function tempMuteUser(userId: string, minutes: number) {
   const session = await getServerSession(authOptions);
-  if (!session?.user?.isAdmin) {
-    return { error: "Admin only" };
+  if (!session?.user?.isAdmin && !session?.user?.isModerator) {
+    return { error: "Admin or moderator only" };
   }
   if (session.user.id === userId) {
     return { error: "Cannot mute yourself" };
@@ -105,6 +113,10 @@ export async function tempMuteUser(userId: string, minutes: number) {
     const user = await prisma.user.findUnique({ where: { id: userId } });
     if (!user) return { error: "User not found" };
     if (user.isOwner) return { error: "Cannot mute owner" };
+    // Mods can only mute regular members, not admins or other mods
+    if (session.user.isModerator && !session.user.isAdmin && (user.isAdmin || user.isModerator)) {
+      return { error: "Moderators can only mute regular members" };
+    }
 
     const mutedUntil = new Date(Date.now() + minutes * 60000);
     await prisma.user.update({
@@ -130,6 +142,7 @@ export async function removeUser(userId: string) {
   try {
     await prisma.user.delete({ where: { id: userId } });
     revalidatePath("/admin");
+    logAudit({ action: "USER_REMOVED", entityType: "User", entityId: userId, actorId: session.user.id });
     return { success: true };
   } catch {
     return { error: "Failed to remove user" };

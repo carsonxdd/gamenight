@@ -7,6 +7,7 @@ import { revalidatePath } from "next/cache";
 import { INVITE_LIMITS } from "@/lib/constants";
 import { localDateTimeToUtc, DEFAULT_TIMEZONE } from "@/lib/timezone-utils";
 import { getSiteSettings } from "@/app/admin/settings-actions";
+import { logAudit } from "@/lib/audit";
 
 function parseLocalDate(dateStr: string): Date {
   const [year, month, day] = dateStr.split("-").map(Number);
@@ -169,6 +170,7 @@ export async function createGameNight(data: {
     }
 
     revalidatePath("/schedule");
+    logAudit({ action: "EVENT_CREATED", entityType: "GameNight", actorId: session.user.id, metadata: { title: data.title || data.game, game: data.game } });
     return { success: true };
   } catch {
     return { error: "Failed to create game night" };
@@ -364,6 +366,7 @@ export async function cancelGameNight(id: string) {
       data: { status: "cancelled" },
     });
     revalidatePath("/schedule");
+    logAudit({ action: "EVENT_CANCELLED", entityType: "GameNight", entityId: id, actorId: session.user.id });
     return { success: true };
   } catch {
     return { error: "Failed to cancel game night" };
@@ -428,6 +431,7 @@ export async function deleteGameNight(id: string) {
   try {
     await prisma.gameNight.delete({ where: { id } });
     revalidatePath("/schedule");
+    logAudit({ action: "EVENT_DELETED", entityType: "GameNight", entityId: id, actorId: session.user.id });
     return { success: true };
   } catch {
     return { error: "Failed to delete game night" };

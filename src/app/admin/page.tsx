@@ -36,10 +36,20 @@ export default async function AdminPage() {
   ]);
 
   // Summary stats — unique games across all user profiles
-  const uniqueGameCount = await prisma.userGame.findMany({
-    select: { gameName: true },
-    distinct: ["gameName"],
-  });
+  const [uniqueGameCount, activeUsersCount, recentAuditLogs] = await Promise.all([
+    prisma.userGame.findMany({
+      select: { gameName: true },
+      distinct: ["gameName"],
+    }),
+    prisma.user.count({
+      where: { lastSeenAt: { gte: new Date(Date.now() - 15 * 60 * 1000) } },
+    }),
+    prisma.auditLog.findMany({
+      take: 50,
+      orderBy: { createdAt: "desc" },
+      include: { actor: { select: { id: true, name: true, gamertag: true, avatar: true } } },
+    }),
+  ]);
   const totalRSVPs = gameNights.reduce((sum, gn) => sum + gn.attendees.length, 0);
 
   const stats = {
@@ -47,6 +57,7 @@ export default async function AdminPage() {
     uniqueGames: uniqueGameCount.length,
     gameNightCount: gameNights.length,
     totalRSVPs,
+    activeUsersCount,
   };
 
   // Game popularity
@@ -177,6 +188,18 @@ export default async function AdminPage() {
     willingToModerate: u.willingToModerate,
   }));
 
+  // Serialize audit logs for client
+  const serializedAuditLogs = recentAuditLogs.map((log) => ({
+    id: log.id,
+    action: log.action,
+    entityType: log.entityType,
+    entityId: log.entityId,
+    actorName: log.actor.gamertag || log.actor.name,
+    actorAvatar: log.actor.avatar,
+    metadata: log.metadata,
+    createdAt: log.createdAt.toISOString(),
+  }));
+
   // Site settings for the settings panel — settings already typed as SiteSettingsData
   const siteSettingsData = settings;
 
@@ -203,6 +226,7 @@ export default async function AdminPage() {
         anchorPrimeStartHour={settings.primeStartHour}
         anchorPrimeEndHour={settings.primeEndHour}
         openSuggestionCount={openSuggestionCount}
+        auditLogs={serializedAuditLogs}
       />
     </div>
   );

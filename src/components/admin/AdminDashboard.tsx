@@ -11,6 +11,7 @@ import PlayerRoster from "./PlayerRoster";
 import Insights from "./Insights";
 import SiteSettingsPanel from "./SiteSettingsPanel";
 import AdminSuggestions from "./AdminSuggestions";
+import AuditLogFeed from "./AuditLogFeed";
 import type { SiteSettingsData } from "@/lib/settings-constants";
 
 interface GameStat {
@@ -67,12 +68,24 @@ interface PendingAttendanceEvent {
   attendeeCount: number;
 }
 
+export interface AuditLogEntry {
+  id: string;
+  action: string;
+  entityType: string;
+  entityId: string | null;
+  actorName: string;
+  actorAvatar: string | null;
+  metadata: string | null;
+  createdAt: string;
+}
+
 interface Props {
   stats: {
     playerCount: number;
     uniqueGames: number;
     gameNightCount: number;
     totalRSVPs: number;
+    activeUsersCount: number;
   };
   gameStats: GameStat[];
   availability: AvailabilityEntry[];
@@ -89,9 +102,10 @@ interface Props {
   anchorPrimeStartHour?: number;
   anchorPrimeEndHour?: number;
   openSuggestionCount?: number;
+  auditLogs?: AuditLogEntry[];
 }
 
-type Tab = "games" | "availability" | "rsvps" | "roster" | "insights" | "suggestions" | "settings";
+type Tab = "games" | "availability" | "rsvps" | "roster" | "insights" | "activity" | "suggestions" | "settings";
 
 const tabs: { key: Tab; label: string; adminOnly?: boolean }[] = [
   { key: "games", label: "Games" },
@@ -99,7 +113,8 @@ const tabs: { key: Tab; label: string; adminOnly?: boolean }[] = [
   { key: "rsvps", label: "RSVPs" },
   { key: "roster", label: "Roster" },
   { key: "insights", label: "Insights" },
-  { key: "suggestions", label: "Suggestions", adminOnly: true },
+  { key: "activity", label: "Activity" },
+  { key: "suggestions", label: "Suggestions" },
   { key: "settings", label: "Settings", adminOnly: true },
 ];
 
@@ -120,11 +135,13 @@ export default function AdminDashboard({
   anchorPrimeStartHour,
   anchorPrimeEndHour,
   openSuggestionCount = 0,
+  auditLogs = [],
 }: Props) {
   const [activeTab, setActiveTab] = useState<Tab>("games");
 
   const statCards = [
     { label: "Players", value: stats.playerCount },
+    { label: "Active Now", value: stats.activeUsersCount },
     { label: "Unique Games", value: stats.uniqueGames },
     { label: "Game Nights", value: stats.gameNightCount },
     { label: "Total RSVPs", value: stats.totalRSVPs },
@@ -173,7 +190,7 @@ export default function AdminDashboard({
       {/* Summary Stats */}
       <motion.div
         {...fadeIn}
-        className="mb-8 grid grid-cols-2 gap-4 md:grid-cols-4"
+        className="mb-8 grid grid-cols-2 gap-4 md:grid-cols-5"
       >
         {statCards.map((stat) => (
           <Card key={stat.label} glow>
@@ -184,14 +201,14 @@ export default function AdminDashboard({
       </motion.div>
 
       {/* Tab Navigation */}
-      <div className="mb-6 flex rounded-lg border border-border bg-surface p-1">
+      <div className="mb-6 grid grid-cols-4 gap-1 rounded-lg border border-border bg-surface p-1 md:flex">
         {tabs
           .filter((tab) => !tab.adminOnly || isCurrentUserAdmin)
           .map((tab) => (
           <button
             key={tab.key}
             onClick={() => setActiveTab(tab.key)}
-            className={`flex-1 rounded-md px-4 py-1.5 text-sm transition ${
+            className={`rounded-md px-2 py-1.5 text-xs transition md:flex-1 md:px-4 md:text-sm ${
               activeTab === tab.key
                 ? "bg-neon/10 text-neon"
                 : "text-foreground/50 hover:text-foreground"
@@ -214,10 +231,11 @@ export default function AdminDashboard({
       )}
       {activeTab === "rsvps" && <RSVPOverview gameNights={gameNights} />}
       {activeTab === "roster" && (
-        <PlayerRoster players={players} currentUserId={currentUserId} isCurrentUserAdmin={isCurrentUserAdmin} />
+        <PlayerRoster players={players} currentUserId={currentUserId} isCurrentUserAdmin={isCurrentUserAdmin} isCurrentUserModerator={!isCurrentUserAdmin} />
       )}
       {activeTab === "insights" && <Insights />}
-      {activeTab === "suggestions" && <AdminSuggestions />}
+      {activeTab === "activity" && <AuditLogFeed logs={auditLogs} />}
+      {activeTab === "suggestions" && <AdminSuggestions isAdmin={isCurrentUserAdmin} />}
       {activeTab === "settings" && siteSettings && (
         <SiteSettingsPanel settings={siteSettings} />
       )}

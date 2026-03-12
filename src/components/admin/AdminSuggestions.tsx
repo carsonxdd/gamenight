@@ -22,7 +22,7 @@ interface SuggestionItem {
 
 type SortMode = "newest" | "status";
 
-export default function AdminSuggestions() {
+export default function AdminSuggestions({ isAdmin = true }: { isAdmin?: boolean }) {
   const [suggestions, setSuggestions] = useState<SuggestionItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [sortMode, setSortMode] = useState<SortMode>("newest");
@@ -186,59 +186,69 @@ export default function AdminSuggestions() {
                         </p>
                       </div>
 
-                      {/* Actions */}
-                      <div className="flex shrink-0 items-center gap-2">
-                        <select
-                          value={s.status}
-                          onChange={(e) => handleStatusChange(s.id, e.target.value)}
-                          className="rounded-md border border-border bg-background px-2 py-1 text-xs text-foreground outline-none transition focus:border-neon"
-                        >
-                          {SUGGESTION_STATUSES.map((st) => (
-                            <option key={st} value={st}>
-                              {SUGGESTION_STATUS_CONFIG[st].label}
-                            </option>
-                          ))}
-                        </select>
-
-                        {confirmDeleteId === s.id ? (
-                          <div className="flex items-center gap-1">
-                            <Button
-                              size="sm"
-                              variant="danger"
-                              onClick={() => handleDelete(s.id)}
-                            >
-                              Confirm
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={() => setConfirmDeleteId(null)}
-                            >
-                              Cancel
-                            </Button>
-                          </div>
-                        ) : (
-                          <button
-                            onClick={() => setConfirmDeleteId(s.id)}
-                            className="rounded p-1 text-foreground/30 transition hover:bg-danger/10 hover:text-danger"
-                            title="Delete"
+                      {/* Actions — admin only */}
+                      {isAdmin ? (
+                        <div className="flex shrink-0 items-center gap-2">
+                          <select
+                            value={s.status}
+                            onChange={(e) => handleStatusChange(s.id, e.target.value)}
+                            className="rounded-md border border-border bg-background px-2 py-1 text-xs text-foreground outline-none transition focus:border-neon"
                           >
-                            <svg
-                              className="h-4 w-4"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
+                            {SUGGESTION_STATUSES.map((st) => (
+                              <option key={st} value={st}>
+                                {SUGGESTION_STATUS_CONFIG[st].label}
+                              </option>
+                            ))}
+                          </select>
+
+                          {confirmDeleteId === s.id ? (
+                            <div className="flex items-center gap-1">
+                              <Button
+                                size="sm"
+                                variant="danger"
+                                onClick={() => handleDelete(s.id)}
+                              >
+                                Confirm
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => setConfirmDeleteId(null)}
+                              >
+                                Cancel
+                              </Button>
+                            </div>
+                          ) : (
+                            <button
+                              onClick={() => setConfirmDeleteId(s.id)}
+                              className="rounded p-1 text-foreground/30 transition hover:bg-danger/10 hover:text-danger"
+                              title="Delete"
                             >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                              />
-                            </svg>
-                          </button>
-                        )}
-                      </div>
+                              <svg
+                                className="h-4 w-4"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                                />
+                              </svg>
+                            </button>
+                          )}
+                        </div>
+                      ) : (
+                        <div className="flex shrink-0 items-center">
+                          {statusConfig && (
+                            <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${statusConfig.color}`}>
+                              {statusConfig.label}
+                            </span>
+                          )}
+                        </div>
+                      )}
                     </div>
                   </Card>
                 </motion.div>

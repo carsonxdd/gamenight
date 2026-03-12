@@ -179,12 +179,12 @@ export default function SiteSettingsPanel({ settings }: Props) {
   return (
     <motion.div {...fadeIn}>
       {/* Mobile tabs */}
-      <div className="mb-4 flex gap-1 overflow-x-auto md:hidden">
+      <div className="mb-4 grid grid-cols-4 gap-1 rounded-lg border border-border bg-surface p-1 md:hidden">
         {SETTINGS_SECTIONS.map((s) => (
           <button
             key={s.key}
             onClick={() => setSection(s.key)}
-            className={`shrink-0 rounded-lg px-3 py-1.5 text-xs transition ${
+            className={`rounded-lg px-2 py-1.5 text-xs text-center transition ${
               section === s.key
                 ? "bg-neon/10 text-neon font-medium"
                 : "text-foreground/50 hover:text-foreground"

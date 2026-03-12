@@ -224,11 +224,12 @@ export default async function SchedulePage({
     <div className="mx-auto max-w-6xl px-4 py-12">
       {showProfileBanner && <ProfileBanner />}
       <h1 className="mb-2 text-3xl font-bold text-foreground">Schedule</h1>
-      <p className="mb-6 text-foreground/50">
-        Upcoming game nights and events
-      </p>
-
-      {session?.user?.id && <InfoBubble />}
+      <div className="mb-6 flex flex-wrap items-center gap-x-3 gap-y-3">
+        <p className="text-foreground/50">
+          Upcoming game nights and events
+        </p>
+        {session?.user?.id && <InfoBubble />}
+      </div>
 
       <ScheduleView
         gameNights={serialized}

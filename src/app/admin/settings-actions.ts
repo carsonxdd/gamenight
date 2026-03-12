@@ -5,6 +5,7 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import type { SiteSettingsData } from "@/lib/settings-constants";
+import { logAudit } from "@/lib/audit";
 
 export async function getSiteSettings(): Promise<SiteSettingsData> {
   let settings = await prisma.siteSettings.findUnique({
@@ -91,6 +92,7 @@ export async function updateSiteSettings(data: Partial<SiteSettingsData>) {
     revalidatePath("/polls");
     revalidatePath("/teams");
     revalidatePath("/highlights");
+    logAudit({ action: "SETTINGS_UPDATED", entityType: "SiteSettings", actorId: session.user.id, metadata: { fields: Object.keys(data) } });
     return { success: true };
   } catch {
     return { error: "Failed to update settings" };

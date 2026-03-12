@@ -31,6 +31,7 @@ model User {
   dismissedProfileBanner Boolean             @default(false)
   usedInviteCodeId       String?
   usedInviteCode         InviteCode?         @relation("UsedInviteCode", fields: [usedInviteCodeId], references: [id])
+  lastSeenAt             DateTime?
   createdAt              DateTime            @default(now())
   updatedAt              DateTime            @updatedAt
   games                  UserGame[]
@@ -60,6 +61,8 @@ model User {
   createdInviteCodes       InviteCode[]     @relation("InviteCodeCreator")
   // Suggestions
   suggestions              Suggestion[]     @relation("SuggestionAuthor")
+  // Audit
+  auditLogs                AuditLog[]       @relation("AuditActor")
 }
 
 model InviteCode {
@@ -487,4 +490,17 @@ model Suggestion {
   user        User                @relation("SuggestionAuthor", fields: [userId], references: [id], onDelete: Cascade)
   createdAt   DateTime            @default(now())
   updatedAt   DateTime            @updatedAt
+}
+
+// ─── Audit Log ──────────────────────────────────────────────────────
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  action     String   // e.g. "EVENT_CREATED", "TOURNAMENT_DELETED"
+  entityType String   // e.g. "GameNight", "Tournament", "Team", "Poll"
+  entityId   String?  // ID of the affected entity (nullable for settings)
+  actorId    String   // userId who performed the action
+  actor      User     @relation("AuditActor", fields: [actorId], references: [id])
+  metadata   String?  // JSON string with extra details
+  createdAt  DateTime @default(now())
 }

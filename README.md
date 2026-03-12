@@ -1,6 +1,6 @@
 # Caplan's Game Night
 
-**v0.8.1**
+**v0.9.0**
 
 A fully customizable web app for organizing gaming communities. Sign up with Discord, pick your games, set your availability, RSVP to game nights, build persistent teams, and run full tournament brackets. Admin-configurable branding, access controls, and feature toggles make it ready for any community.
 
@@ -76,7 +76,7 @@ Custom games can be added via text input.
 - **Compact calendar cards** — events in the calendar grid show game name and time only. Click to open the full detail view.
 - **Event detail modal** — read-only modal showing title, game, date, time range, host, description, and RSVP lists (Going and Maybe with gamertags). RSVP button, approve/reject, and mark attendance actions available in-context. "Edit Settings" button visible only to the host, moderator, admin, or owner — opens the edit modal.
 - **Edit permissions** — hosts can edit their own events (not just admins/mods). Owners are now included in all authorization checks. Regular users see a read-only detail view. Edit modal shows full RSVP breakdown (Going, Maybe, Declined) with color-coded badges.
-- **Info bubble** — dismissable tutorial hint for signed-in users explaining how to create events. Glows on page load, collapses to an "i" icon when dismissed. Clicking the icon reopens the bubble. Dismissed state persists across sessions via localStorage.
+- **Info bubble** — dismissable tutorial hint for signed-in users explaining how to create events. Glows on page load, collapses to a compact "i" icon inline with the page subtitle (no extra vertical space). Clicking the icon expands the info card between the subtitle and the tab bar. Dismissed state persists across sessions via localStorage.
 - Event list view with tab navigation
 - **User-created events with approval** — any logged-in user can create a game night event. Regular user events are set to "pending" and require moderator/admin approval before appearing publicly. Admin/mod events are auto-approved. Users can see their own pending/rejected events; other users cannot.
 - **Event approval workflow** — admins and moderators see pending events with "Approve" and "Reject" buttons in both calendar and list views. Pending events styled with dashed warning borders; rejected events styled with danger borders. Status badges shown on all non-scheduled events.
@@ -135,9 +135,9 @@ Custom games can be added via text input.
 - **Browse and filter** — "All Teams" and "My Teams" tabs, search by name/tag, filter by game. Create Team button for authenticated users.
 
 ### Roles & Permissions
-- **Owner** (CarsonXD) — full access, gold glowing border on member cards
-- **Admin** — full access including user management (role ladder promote/demote, remove users)
-- **Moderator** — access to admin panel (view-only roster, no user management), can create/edit/delete all game nights. Dark red glowing border on member cards
+- **Owner** (CarsonXD) — full access, cannot be muted/demoted/removed. Gold glowing border on member cards
+- **Admin** — full access including user management (promote/demote roles, remove users, unmute), site settings, and suggestion management
+- **Moderator** — access to admin panel with content moderation powers. Can create/edit/delete all game nights, approve pending events, manage polls, mute/temp-mute regular members (not admins or other mods), and view audit log and suggestions (read-only). Cannot promote/demote roles, remove users, unmute, or change site settings. Dark red glowing border on member cards
 - **Member** — default role, can RSVP, manage own profile, and edit events they host
 - Role badges displayed on member cards in both the members page and home page carousel
 
@@ -145,7 +145,7 @@ Custom games can be added via text input.
 - **Game Popularity** — ranked by player count with expandable player lists
 - **Availability Heatmap** — aggregated grid showing player overlap with click-to-reveal names; filterable by game to see who's available for a specific title. **Prime/extended visual distinction** — prime time rows use neon intensity gradients, extended rows use muted foreground intensity. Cross-timezone availability entries that span midnight are automatically split into correct day segments. **Timezone-aware legend** — Arizona viewers see "Prime time 5 PM–11 PM"; other timezone viewers see the converted range with the anchor timezone noted (e.g. "Prime time 7 PM–1 AM your time (5 PM–11 PM Arizona)").
 - **RSVP Overview** — game night cards with status badge counts
-- **Player Roster** — searchable table with role ladder promote/demote (Member → Moderator → Admin), owner/admin/mod badges, and remove with confirmation. User management actions restricted to admins only; moderators can view the roster but cannot promote, demote, or remove anyone. "Willing to Mod" badge shown next to players who opted in, with a filter toggle button and count pill to quickly find moderation candidates.
+- **Player Roster** — searchable table with role ladder promote/demote (Member → Moderator → Admin), owner/admin/mod badges, and remove with confirmation. Admins see full management actions (promote, demote, remove, mute, unmute). Moderators see mute/temp-mute buttons for regular members only (cannot target admins, other mods, or owner). "Willing to Mod" badge shown next to players who opted in, with a filter toggle button and count pill to quickly find moderation candidates.
 - **Insights** — interactive analytics tab with 8 on-demand queries. Click a card to run it, click again to collapse. Game-based insights (Best Time, Squad Finder) have a game dropdown and Run button. All results are expandable with player name tags.
   - **Best Time for Game** — top 10 time slots where the most players of a selected game overlap
   - **Peak Availability** — busiest time slots across all players regardless of game
@@ -155,8 +155,11 @@ Custom games can be added via text input.
   - **Schedule Gaps** — days with available players but no upcoming events in the next 2 weeks
   - **RSVP Stats** — per-player breakdown of confirmed / maybe / declined counts, plus attended and no-show totals from post-event attendance confirmation
   - **Game Night History** — most-scheduled games with event counts, total RSVPs, and average attendance
+- **Active Now** — stat card showing users seen in the last 15 minutes, based on throttled `lastSeenAt` tracking (updated at most once per 5 minutes per user via JWT callback).
+- **Activity** — chronological audit log feed showing the last 50 high-impact actions, visible to admins and moderators. Each entry displays an icon by entity type, human-readable action label, actor name, optional metadata detail, and relative timestamp. Tracks: event create/cancel/delete, tournament create/status change/delete, team create/disband, poll create/close/delete, role changes, user mute/unmute/remove, settings updates, and new user joins.
 - **Attendance nudge** — banner at the top of the admin panel listing past events that still need attendance confirmation, with links to the schedule page. Shows host name and RSVP count for each event.
-- **Site Settings** (admin-only) — comprehensive settings panel with a **left sidebar** (desktop) / **horizontal scrollable tabs** (mobile) layout. 8 configurable sections:
+- **Responsive tab navigation** — admin panel tabs (Games, Availability, RSVPs, Roster, Insights, Activity, Suggestions, Settings) display as a **4×2 grid** on mobile so all tabs are visible without scrolling, and as a single flex row on desktop.
+- **Site Settings** (admin-only) — comprehensive settings panel with a **left sidebar** (desktop) / **4×2 grid tabs** (mobile) layout. 8 configurable sections:
   - **Branding** — accent color (12 presets + custom hex with live preview), community tagline (hero subtitle), logo URL, favicon URL
   - **Availability** — prime start/end hours (default 5–11 PM) and extended start/end hours (default 2 PM–1 AM), anchored to a configurable timezone. Visual preview bar shows the prime vs extended range. Constrained dropdowns prevent invalid ranges.
   - **Access & Privacy** — join mode (open/invite-only/approval), require gamertag toggle, allow public profiles, show member count. When invite-only: **Invite Codes Panel** for generating/managing codes. When approval: **Approval Queue Panel** for approving/rejecting pending users.
@@ -164,7 +167,7 @@ Custom games can be added via text input.
   - **Polls** — allow member-created polls, allow poll comments
   - **Tournaments** — allow member-created tournaments, max tournament size (caps slot selection in wizard), enable buy-ins (hides buy-in field when disabled)
   - **Teams** — allow team creation, max teams per user, max team size
-  - **Suggestions & Bugs** — dedicated tab showing all member-submitted suggestions and bug reports with type badge, author info, status dropdown (Open/Noted/Planned/Done/Declined), sort options, and delete with confirmation. Open count badge on the tab.
+  - **Suggestions & Bugs** — dedicated tab showing all member-submitted suggestions and bug reports with type badge, author info, sort options, and open count badge on the tab. Admins see the full management UI with status dropdown (Open/Noted/Planned/Done/Declined) and delete with confirmation. Moderators see the same list read-only (status badges displayed but no controls).
   - **Feature Toggles** — master switches for Tournaments, Teams, Polls, Highlights, and Stats tab. Disabled features are hidden from navigation and redirect on direct URL access.
   - **Limits** — default event duration, max events per week, max polls per week
   - **Community** — community name (used in page title, hero, signup), message of the day (MOTD)
@@ -350,7 +353,7 @@ src/
 ## Database Schema
 
 ### Core Models
-- **User** — gamertag, timezone (IANA, non-nullable, default "America/Phoenix"), Discord ID, avatar, role flags (isAdmin, isModerator, isOwner), willingToModerate preference, buy-in/LAN interest, favorite games (JSON), social links (Twitter, Twitch, YouTube, custom), profile banner dismissal, approvalStatus (pending/approved/rejected for approval join mode), usedInviteCodeId (tracks which invite code was redeemed)
+- **User** — gamertag, timezone (IANA, non-nullable, default "America/Phoenix"), Discord ID, avatar, role flags (isAdmin, isModerator, isOwner), willingToModerate preference, buy-in/LAN interest, favorite games (JSON), social links (Twitter, Twitch, YouTube, custom), profile banner dismissal, approvalStatus (pending/approved/rejected for approval join mode), usedInviteCodeId (tracks which invite code was redeemed), lastSeenAt (throttled timestamp for active user tracking)
 - **UserGame** — games a user plays, with optional mode selections (JSON)
 - **UserGameRank** — competitive rank per game per user
 - **UserAvailability** — 30-min time slot preferences per day of week (stored in UTC, converted to user's local timezone for display)
@@ -368,6 +371,7 @@ src/
 - **SiteSettings** — singleton configuration row with 30+ fields covering branding (accentColor, communityTagline, logoUrl, faviconUrl), time windows (primeStartHour, primeEndHour, extendedStartHour, extendedEndHour, anchorTimezone), access & privacy (joinMode, requireGamertag, allowPublicProfiles, showMemberCount), events (allowMemberEvents, maxAttendeesDefault, autoArchiveDays), polls (allowMemberPolls, allowPollComments), tournaments (allowMemberTournaments, maxTournamentSize, enableBuyIns), teams (allowTeamCreation, maxTeamsPerUser, maxTeamSize), feature toggles (enableTournaments, enableTeams, enablePolls, enableHighlights, enableStats), limits (defaultEventDuration, maxEventsPerWeek, maxPollsPerWeek), and community (communityName, motd)
 - **Suggestion** — type (suggestion/bug_report), title, optional description, status (open/noted/planned/done/declined), author reference, timestamps. Displayed on the About page Feedback tab for members and in the admin panel for admins.
 - **InviteCode** — code (unique alphanumeric), label, maxUses, uses count, expiresAt, isActive toggle, createdById. Used for invite-only join mode.
+- **AuditLog** — action (e.g. EVENT_CREATED, TOURNAMENT_DELETED), entityType, entityId, actorId, metadata (JSON), createdAt. Tracks high-impact admin and user actions for the Activity feed.
 
 ### Tournament Models
 - **Tournament** — title, description, game, bracketType, format (solo/team), teamSize, bestOf, maxSlots, seedingMode, captainMode, status (draft/open/in_progress/completed/archived), buyIn, isMultiSession, draftStatus, draftOrder (JSON), currentPickIndex
@@ -435,7 +439,18 @@ Quality of Life
 Event templates for recurring game nights
 Spectator RSVP option
 
+Authentication
+
+Email/password sign-in as an alternative to Discord OAuth
+Custom profile picture upload for non-Discord users
+Admin toggle under Access & Privacy: Discord Only / Discord + Email / Email Only
+
 ## Version History
+
+### v0.9.0 — 2026-03-12
+- **Last Seen tracking** — `lastSeenAt` timestamp on User model, updated on sign-in and throttled to once per 5 minutes via JWT callback. New "Active Now" stat card on the admin dashboard shows users seen in the last 15 minutes.
+- **Audit log** — new `AuditLog` model tracking high-impact, infrequent actions across the site. Fire-and-forget `logAudit()` utility writes entries without blocking server actions. Covers event create/cancel/delete, tournament create/status change/delete, team create/disband, poll create/close/delete, role changes, user mute/unmute/remove, settings updates, and new user joins.
+- **Activity tab** — admin-only tab in the admin dashboard showing a chronological feed of the last 50 audit log entries. Each entry displays an entity-type icon with color coding, human-readable action label, actor name, metadata detail (e.g. event title, target user), and relative timestamp.
 
 ### v0.8.1 — 2026-03-12
 - **Feedback type field** — suggestions now have a type (Suggestion or Bug Report) with distinct icons and color badges across the submission form, user history, and admin panel.
