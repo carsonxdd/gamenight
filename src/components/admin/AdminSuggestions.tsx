@@ -6,11 +6,12 @@ import { fadeIn } from "@/lib/animations";
 import Card from "@/components/ui/Card";
 import Button from "@/components/ui/Button";
 import { getAllSuggestions, updateSuggestionStatus, deleteSuggestion } from "@/app/suggestions/actions";
-import { SUGGESTION_STATUSES, SUGGESTION_STATUS_CONFIG } from "@/lib/suggestion-constants";
-import type { SuggestionStatus } from "@/lib/suggestion-constants";
+import { SUGGESTION_STATUSES, SUGGESTION_STATUS_CONFIG, SUGGESTION_TYPE_CONFIG } from "@/lib/suggestion-constants";
+import type { SuggestionStatus, SuggestionType } from "@/lib/suggestion-constants";
 
 interface SuggestionItem {
   id: string;
+  type: string;
   title: string;
   description: string | null;
   status: string;
@@ -88,7 +89,7 @@ export default function AdminSuggestions() {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <h3 className="text-lg font-semibold text-foreground">
-            Suggestions
+            Suggestions & Bugs
           </h3>
           {openCount > 0 && (
             <span className="rounded-full bg-neon/15 px-2.5 py-0.5 text-xs font-semibold text-neon">
@@ -130,6 +131,7 @@ export default function AdminSuggestions() {
           <AnimatePresence initial={false}>
             {sorted.map((s) => {
               const statusConfig = SUGGESTION_STATUS_CONFIG[s.status as SuggestionStatus];
+              const typeConfig = SUGGESTION_TYPE_CONFIG[(s.type || "suggestion") as SuggestionType];
               return (
                 <motion.div
                   key={s.id}
@@ -156,6 +158,13 @@ export default function AdminSuggestions() {
                       {/* Content */}
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2 flex-wrap">
+                          {typeConfig && (
+                            <span
+                              className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold ${typeConfig.color}`}
+                            >
+                              {typeConfig.icon} {typeConfig.label}
+                            </span>
+                          )}
                           <p className="text-sm font-medium text-foreground">
                             {s.title}
                           </p>

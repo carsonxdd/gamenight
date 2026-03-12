@@ -5,7 +5,6 @@ import { prisma } from "@/lib/prisma";
 import ProfilePageClient from "@/components/signup/ProfilePageClient";
 import { utcToLocalTime, DEFAULT_TIMEZONE } from "@/lib/timezone-utils";
 import { getSiteSettings } from "@/app/admin/settings-actions";
-import { getMyRecentSuggestions } from "@/app/suggestions/actions";
 
 export default async function ProfilePage() {
   const session = await getServerSession(authOptions);
@@ -68,10 +67,7 @@ export default async function ProfilePage() {
     memberIds: g.members.map((m) => m.userId),
   }));
 
-  const [settings, mySuggestions] = await Promise.all([
-    getSiteSettings(),
-    getMyRecentSuggestions(),
-  ]);
+  const settings = await getSiteSettings();
 
   return (
     <ProfilePageClient
@@ -95,8 +91,6 @@ export default async function ProfilePage() {
       extendedStartHour={settings.extendedStartHour}
       extendedEndHour={settings.extendedEndHour}
       anchorTimezone={settings.anchorTimezone}
-      mySuggestions={mySuggestions}
-      isMuted={session.user.isMuted}
     />
   );
 }

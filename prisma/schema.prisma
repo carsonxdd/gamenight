@@ -479,6 +479,7 @@ model TeamInvite {
 
 model Suggestion {
   id          String              @id @default(cuid())
+  type        String              @default("suggestion") // suggestion, bug_report
   title       String
   description String?
   status      String              @default("open") // open, noted, planned, done, declined

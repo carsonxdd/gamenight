@@ -4,10 +4,10 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
-import { SUGGESTION_LIMITS, SUGGESTION_STATUSES } from "@/lib/suggestion-constants";
+import { SUGGESTION_LIMITS, SUGGESTION_STATUSES, SUGGESTION_TYPES } from "@/lib/suggestion-constants";
 import { isUserMuted } from "@/lib/mute-utils";
 
-export async function createSuggestion(title: string, description?: string) {
+export async function createSuggestion(title: string, description?: string, type?: string) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) {
     return { error: "Not authenticated" };
@@ -32,15 +32,20 @@ export async function createSuggestion(title: string, description?: string) {
     return { error: `Description must be ${SUGGESTION_LIMITS.DESCRIPTION_MAX} characters or less` };
   }
 
+  const suggestionType = type && SUGGESTION_TYPES.includes(type as typeof SUGGESTION_TYPES[number])
+    ? type
+    : "suggestion";
+
   try {
     await prisma.suggestion.create({
       data: {
         title: trimmedTitle,
         description: trimmedDesc,
+        type: suggestionType,
         userId: session.user.id,
       },
     });
-    revalidatePath("/profile");
+    revalidatePath("/about");
     revalidatePath("/admin");
     return { success: true };
   } catch {
@@ -64,7 +69,7 @@ export async function updateSuggestionStatus(suggestionId: string, status: strin
       data: { status },
     });
     revalidatePath("/admin");
-    revalidatePath("/profile");
+    revalidatePath("/about");
     return { success: true };
   } catch {
     return { error: "Failed to update status" };
@@ -88,7 +93,7 @@ export async function deleteSuggestion(suggestionId: string) {
 
   try {
     await prisma.suggestion.delete({ where: { id: suggestionId } });
-    revalidatePath("/profile");
+    revalidatePath("/about");
     revalidatePath("/admin");
     return { success: true };
   } catch {
@@ -108,6 +113,7 @@ export async function getMyRecentSuggestions() {
     take: 10,
     select: {
       id: true,
+      type: true,
       title: true,
       description: true,
       status: true,
@@ -136,6 +142,7 @@ export async function getAllSuggestions() {
 
   return suggestions.map((s) => ({
     id: s.id,
+    type: s.type,
     title: s.title,
     description: s.description,
     status: s.status,
