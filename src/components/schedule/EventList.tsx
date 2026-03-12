@@ -109,7 +109,7 @@ export default function EventList({ gameNights, userId, isAdmin, onViewEvent, on
                 </p>
               )}
               {confirmed.length > 0 && (
-                <p className="mt-1 text-xs text-neon">
+                <p className="mt-1 text-xs text-neon line-clamp-2">
                   {confirmed.map((a) => formatWithTag(a.user.gamertag || a.user.name, a.userId, teamTagMap, gn.game)).join(", ")}
                   {maxAttendees > 0 && (
                     <span className="text-foreground/30"> ({confirmed.length}/{maxAttendees})</span>

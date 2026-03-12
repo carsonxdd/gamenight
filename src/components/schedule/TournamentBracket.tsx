@@ -541,7 +541,7 @@ function MatchCard({
   return (
     <div
       onClick={canReport ? onClick : undefined}
-      className={`${compact ? "w-full" : "w-56"} rounded-lg border p-2 transition ${
+      className={`${compact ? "w-full" : "w-full sm:w-56"} rounded-lg border p-2 transition ${
         m.status === "completed"
           ? "border-neon/20 bg-neon/5"
           : m.status === "bye"

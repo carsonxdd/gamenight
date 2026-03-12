@@ -11,12 +11,16 @@ import { updateProfile } from "@/app/profile/actions";
 import { updateExtendedProfile } from "@/app/profile/actions";
 import InviteGroupManager from "@/components/profile/InviteGroupManager";
 import { InvitableMember } from "@/components/schedule/ScheduleView";
+import AchievementsTab from "@/components/badges/AchievementsTab";
+import type { BadgeItem, StreakData } from "@/components/badges/AchievementsTab";
 import Link from "next/link";
 
 interface RankData {
   gameName: string;
   rank: string;
 }
+
+type ProfileTab = "Profile" | "Preferences" | "Groups" | "Achievements";
 
 interface ProfilePageClientProps {
   defaultName: string;
@@ -39,6 +43,9 @@ interface ProfilePageClientProps {
   extendedStartHour?: number;
   extendedEndHour?: number;
   anchorTimezone?: string;
+  enableBadges?: boolean;
+  badges?: BadgeItem[];
+  streaks?: StreakData;
 }
 
 export default function ProfilePageClient({
@@ -62,6 +69,9 @@ export default function ProfilePageClient({
   extendedStartHour,
   extendedEndHour,
   anchorTimezone,
+  enableBadges = false,
+  badges = [],
+  streaks = { attendance: { currentCount: 0, longestCount: 0 }, weekly: { currentCount: 0, longestCount: 0 } },
 }: ProfilePageClientProps) {
   const profileRef = useRef<ProfileFormHandle>(null);
   const extendedRef = useRef<ExtendedProfileFormHandle>(null);
@@ -74,6 +84,11 @@ export default function ProfilePageClient({
   const [profileDirty, setProfileDirty] = useState(false);
   const [extendedDirty, setExtendedDirty] = useState(false);
   const isDirty = profileDirty || extendedDirty;
+
+  const allTabs: ProfileTab[] = enableBadges
+    ? ["Profile", "Preferences", "Groups", "Achievements"]
+    : ["Profile", "Preferences", "Groups"];
+  const [activeTab, setActiveTab] = useState<ProfileTab>("Profile");
 
   const handleGamesChange = useCallback((games: GameSelection[]) => {
     setCurrentGames(games.map((g) => g.name));
@@ -126,10 +141,43 @@ export default function ProfilePageClient({
           <h1 className="mb-2 text-center text-3xl font-bold text-foreground">
             Your Profile
           </h1>
-          <p className="mb-8 text-center text-foreground/50">
+          <p className="mb-6 text-center text-foreground/50">
             Update your preferences
           </p>
 
+          {/* Tab Navigation */}
+          <div className="flex gap-3 border-b border-border sm:gap-6 mb-8">
+            {allTabs.map((tab) => (
+              <button
+                key={tab}
+                onClick={() => setActiveTab(tab)}
+                className={`relative pb-3 text-sm font-medium transition ${
+                  activeTab === tab
+                    ? "text-neon"
+                    : "text-foreground/40 hover:text-foreground/70"
+                }`}
+              >
+                {tab}
+                {activeTab === tab && (
+                  <motion.div
+                    layoutId="profile-tab-indicator"
+                    className="absolute bottom-0 left-0 right-0 h-0.5 bg-neon"
+                    transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                  />
+                )}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Profile tab — hidden via CSS to preserve refs, fade on reveal */}
+        <motion.div
+          className={activeTab !== "Profile" ? "hidden" : undefined}
+          key="profile-content"
+          initial={false}
+          animate={{ opacity: activeTab === "Profile" ? 1 : 0, y: activeTab === "Profile" ? 0 : 8 }}
+          transition={{ duration: 0.2 }}
+        >
           <Card className="p-6 sm:p-8">
             <ProfileForm
               ref={profileRef}
@@ -150,16 +198,16 @@ export default function ProfilePageClient({
               anchorTimezone={anchorTimezone}
             />
           </Card>
-        </div>
+        </motion.div>
 
-        <div>
-          <h2 className="mb-2 text-center text-2xl font-bold text-foreground">
-            Extended Profile
-          </h2>
-          <p className="mb-4 text-center text-foreground/50">
-            Ranks, tournaments, and events
-          </p>
-
+        {/* Preferences tab — hidden via CSS to preserve refs, fade on reveal */}
+        <motion.div
+          className={activeTab !== "Preferences" ? "hidden" : undefined}
+          key="preferences-content"
+          initial={false}
+          animate={{ opacity: activeTab === "Preferences" ? 1 : 0, y: activeTab === "Preferences" ? 0 : 8 }}
+          transition={{ duration: 0.2 }}
+        >
           <Card className="p-6 sm:p-8">
             <ExtendedProfileForm
               ref={extendedRef}
@@ -177,34 +225,49 @@ export default function ProfilePageClient({
               hideSubmit
             />
           </Card>
-        </div>
+        </motion.div>
 
-        <div>
-          <h2 className="mb-2 text-center text-2xl font-bold text-foreground">
-            Quick-Select Groups
-          </h2>
-          <p className="mb-4 text-center text-foreground/50">
-            Save groups of friends for quick event invites
-          </p>
+        {/* Groups & Achievements — conditional render with AnimatePresence */}
+        <AnimatePresence mode="wait">
+          {activeTab === "Groups" && (
+            <motion.div
+              key="groups-content"
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.2 }}
+              className="space-y-8"
+            >
+              <Card className="p-6 sm:p-8">
+                <InviteGroupManager groups={groups} members={members} />
+              </Card>
 
-          <Card className="p-6 sm:p-8">
-            <InviteGroupManager groups={groups} members={members} />
-          </Card>
-        </div>
+              <Link
+                href="/about?tab=Feedback"
+                className="group block rounded-xl border border-border bg-surface p-5 text-center transition hover:border-neon/40"
+              >
+                <p className="text-sm font-semibold text-foreground group-hover:text-neon transition">
+                  Have a suggestion or found a bug?
+                </p>
+                <p className="mt-1 text-xs text-foreground/40">
+                  Submit feedback on the About page &rarr;
+                </p>
+              </Link>
+            </motion.div>
+          )}
 
-        <div>
-          <Link
-            href="/about?tab=Feedback"
-            className="group block rounded-xl border border-border bg-surface p-5 text-center transition hover:border-neon/40"
-          >
-            <p className="text-sm font-semibold text-foreground group-hover:text-neon transition">
-              Have a suggestion or found a bug?
-            </p>
-            <p className="mt-1 text-xs text-foreground/40">
-              Submit feedback on the About page &rarr;
-            </p>
-          </Link>
-        </div>
+          {activeTab === "Achievements" && enableBadges && (
+            <motion.div
+              key="achievements-content"
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.2 }}
+            >
+              <AchievementsTab badges={badges} streaks={streaks} />
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
       {/* Sticky bottom save bar — slides in when dirty */}

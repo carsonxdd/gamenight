@@ -23,6 +23,13 @@ const ACTION_LABELS: Record<string, string> = {
   USER_UNMUTED: "unmuted a user",
   SETTINGS_UPDATED: "updated site settings",
   USER_JOINED: "joined the site",
+  BADGE_AWARDED: "awarded a badge",
+  BADGE_REVOKED: "revoked a badge",
+  BADGE_CREATED: "created a badge",
+  BADGE_UPDATED: "updated a badge",
+  BADGE_DELETED: "deleted a badge",
+  BADGE_ENABLED: "enabled a badge",
+  BADGE_DISABLED: "disabled a badge",
 };
 
 const ENTITY_ICONS: Record<string, string> = {
@@ -32,6 +39,7 @@ const ENTITY_ICONS: Record<string, string> = {
   Poll: "📊",
   User: "👤",
   SiteSettings: "⚙️",
+  Badge: "🏅",
 };
 
 const ENTITY_COLORS: Record<string, string> = {
@@ -41,6 +49,7 @@ const ENTITY_COLORS: Record<string, string> = {
   Poll: "text-emerald-400",
   User: "text-neon",
   SiteSettings: "text-orange-400",
+  Badge: "text-amber-400",
 };
 
 function formatRelativeTime(dateStr: string): string {

@@ -56,6 +56,7 @@ export const FEATURE_TOGGLES = [
   { key: "enableTeams", label: "Teams", description: "Persistent teams with rosters" },
   { key: "enableHighlights", label: "Highlights", description: "Highlights page" },
   { key: "enableStats", label: "Stats", description: "Stats tab on Members page" },
+  { key: "enableBadges", label: "Badges & Streaks", description: "Achievement badges and streak tracking" },
 ] as const;
 
 // Type for all site settings
@@ -103,4 +104,5 @@ export interface SiteSettingsData {
   enablePolls: boolean;
   enableHighlights: boolean;
   enableStats: boolean;
+  enableBadges: boolean;
 }

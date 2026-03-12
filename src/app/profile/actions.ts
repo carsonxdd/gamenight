@@ -106,6 +106,12 @@ export async function updateProfile(data: ProfileData) {
       });
     });
 
+    // Badge: profile_complete + games_added
+    import("@/lib/badges/engine").then(async ({ evaluateBadges, checkProfileComplete }) => {
+      await checkProfileComplete(session.user.id).catch(() => {});
+      await evaluateBadges(session.user.id, "games_added").catch(() => {});
+    });
+
     return { success: true };
   } catch {
     return { error: "Failed to save profile" };

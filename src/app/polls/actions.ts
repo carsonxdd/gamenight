@@ -82,6 +82,10 @@ export async function createPoll(data: {
     });
     revalidatePath("/polls");
     logAudit({ action: "POLL_CREATED", entityType: "Poll", entityId: poll.id, actorId: session.user.id, metadata: { title } });
+    // Badge: polls_created
+    import("@/lib/badges/engine").then(({ evaluateBadges }) =>
+      evaluateBadges(session.user.id, "polls_created").catch(() => {})
+    );
     return { success: true };
   } catch {
     return { error: "Failed to create poll" };
@@ -123,6 +127,10 @@ export async function votePoll(pollId: string, optionIds: string[]) {
         })),
       });
     });
+    // Badge: poll_votes
+    import("@/lib/badges/engine").then(({ evaluateBadges }) =>
+      evaluateBadges(session.user.id, "poll_votes").catch(() => {})
+    );
     revalidatePath("/polls");
     return { success: true };
   } catch {
@@ -167,6 +175,10 @@ export async function addComment(pollId: string, text: string) {
         text: trimmed,
       },
     });
+    // Badge: comments
+    import("@/lib/badges/engine").then(({ evaluateBadges }) =>
+      evaluateBadges(session.user.id, "comments").catch(() => {})
+    );
     revalidatePath("/polls");
     return { success: true };
   } catch {

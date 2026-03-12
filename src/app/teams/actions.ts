@@ -98,6 +98,11 @@ export async function createTeam(data: {
 
     revalidatePath("/teams");
     logAudit({ action: "TEAM_CREATED", entityType: "Team", entityId: team.id, actorId: session.user.id, metadata: { name, tag, game: data.game } });
+    // Badge: team_captain + team_joined
+    import("@/lib/badges/engine").then(({ evaluateBadges }) => {
+      evaluateBadges(session.user.id, "team_captain").catch(() => {});
+      evaluateBadges(session.user.id, "team_joined").catch(() => {});
+    });
     return { success: true, id: team.id };
   } catch {
     return { error: "Failed to create team" };
@@ -368,6 +373,10 @@ export async function respondToInvite(inviteId: string, accept: boolean) {
         },
       }),
     ]);
+    // Badge: team_joined
+    import("@/lib/badges/engine").then(({ evaluateBadges }) =>
+      evaluateBadges(session.user.id, "team_joined").catch(() => {})
+    );
     revalidatePath("/teams");
     revalidatePath(`/teams/${invite.teamId}`);
     return { success: true };

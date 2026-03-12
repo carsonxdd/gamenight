@@ -420,6 +420,22 @@ export async function reportMatchResult(
 
       // Advance winner to next round
       await advanceWinner(matchId);
+
+      // Badge: tournament_wins (check if tournament now completed)
+      import("@/lib/badges/engine").then(async ({ evaluateBadges }) => {
+        const winnerEntrant = await prisma.tournamentEntrant.findUnique({
+          where: { id: data.winnerId },
+          select: { userId: true, team: { select: { members: { select: { userId: true } } } } },
+        });
+        if (winnerEntrant) {
+          const userIds = winnerEntrant.userId
+            ? [winnerEntrant.userId]
+            : (winnerEntrant.team?.members.map((m) => m.userId) ?? []);
+          for (const uid of userIds) {
+            evaluateBadges(uid, "tournament_wins").catch(() => {});
+          }
+        }
+      }).catch(() => {});
     } else {
       // Participant reports — needs confirmation
       await prisma.tournamentMatch.update({
@@ -489,6 +505,22 @@ export async function confirmMatchResult(matchId: string) {
     // Score predictions
     if (updatedMatch.winnerEntrantId) {
       await scorePredictions(matchId, updatedMatch.winnerEntrantId);
+
+      // Badge: tournament_wins
+      import("@/lib/badges/engine").then(async ({ evaluateBadges }) => {
+        const winnerEntrant = await prisma.tournamentEntrant.findUnique({
+          where: { id: updatedMatch.winnerEntrantId! },
+          select: { userId: true, team: { select: { members: { select: { userId: true } } } } },
+        });
+        if (winnerEntrant) {
+          const userIds = winnerEntrant.userId
+            ? [winnerEntrant.userId]
+            : (winnerEntrant.team?.members.map((m) => m.userId) ?? []);
+          for (const uid of userIds) {
+            evaluateBadges(uid, "tournament_wins").catch(() => {});
+          }
+        }
+      }).catch(() => {});
     }
 
     await advanceWinner(matchId);
@@ -546,6 +578,11 @@ export async function joinTournament(tournamentId: string) {
         displayName: displayNameWithTag(user?.gamertag || user?.name || "Unknown", tag),
       },
     });
+
+    // Badge: tournaments_joined
+    import("@/lib/badges/engine").then(({ evaluateBadges }) =>
+      evaluateBadges(session.user.id, "tournaments_joined").catch(() => {})
+    );
 
     revalidatePath("/schedule");
     return { success: true };

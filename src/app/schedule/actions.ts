@@ -509,6 +509,12 @@ export async function markAttendance(gameNightId: string, attendedUserIds: strin
   }
 
   try {
+    // Get all confirmed RSVPs to detect no-shows
+    const allConfirmedRsvps = await prisma.gameNightAttendee.findMany({
+      where: { gameNightId, status: "confirmed" },
+      select: { userId: true },
+    });
+
     await prisma.$transaction(async (tx) => {
       // Reset all attendees to not attended
       await tx.gameNightAttendee.updateMany({
@@ -530,6 +536,21 @@ export async function markAttendance(gameNightId: string, attendedUserIds: strin
         data: { attendanceConfirmed: true },
       });
     });
+
+    // Badge evaluation: attendance streaks + events_attended (fire-and-forget)
+    const { evaluateBadges } = await import("@/lib/badges/engine");
+    const { updateAttendanceStreak, resetAttendanceStreak } = await import("@/lib/badges/streaks");
+    const confirmedUserIds = new Set(allConfirmedRsvps.map((r) => r.userId));
+    for (const uid of attendedUserIds) {
+      evaluateBadges(uid, "events_attended").catch(() => {});
+      updateAttendanceStreak(uid, gameNightId).catch(() => {});
+    }
+    // Reset streak for no-shows (confirmed RSVP but not in attendedUserIds)
+    for (const uid of confirmedUserIds) {
+      if (!attendedUserIds.includes(uid)) {
+        resetAttendanceStreak(uid).catch(() => {});
+      }
+    }
 
     revalidatePath("/schedule");
     revalidatePath("/admin");

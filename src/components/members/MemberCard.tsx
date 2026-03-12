@@ -1,7 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import { Flame } from "lucide-react";
 import type { MemberData } from "./MembersGrid";
+import BadgeIcon from "@/components/badges/BadgeIcon";
+import type { BadgeTier } from "@/lib/badges/constants";
 
 const MAX_VISIBLE_GAMES = 6;
 
@@ -48,6 +51,11 @@ export default function MemberCard({ member }: { member: MemberData }) {
             {member.isModerator && !member.isOwner && (
               <span className="shrink-0 rounded-full bg-red-900/15 px-2 py-0.5 text-[10px] font-bold uppercase text-red-400">Mod</span>
             )}
+            {member.streakCount && member.streakCount > 0 ? (
+              <span className="shrink-0 flex items-center gap-0.5 text-xs text-orange-400">
+                <Flame size={14} />{member.streakCount}
+              </span>
+            ) : null}
           </div>
         </div>
       </div>
@@ -104,7 +112,7 @@ export default function MemberCard({ member }: { member: MemberData }) {
         </div>
       )}
 
-      {/* Social Links */}
+      {/* Social Links + Badges */}
       <div className="mt-3 flex items-center gap-2">
         {/* Discord — always shown, copies username */}
         <button
@@ -187,6 +195,21 @@ export default function MemberCard({ member }: { member: MemberData }) {
               <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
             </svg>
           </a>
+        )}
+
+        {/* Showcased Badges — right-aligned */}
+        {member.showcasedBadges && member.showcasedBadges.length > 0 && (
+          <div className="ml-auto flex items-center gap-1">
+            {member.showcasedBadges.map((b) => (
+              <BadgeIcon
+                key={b.id}
+                icon={b.icon}
+                tier={b.tier as BadgeTier}
+                size={20}
+                tooltip={`${b.name} — ${b.description}`}
+              />
+            ))}
+          </div>
         )}
       </div>
     </div>

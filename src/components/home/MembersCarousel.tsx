@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRef, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
+import { Flame } from "lucide-react";
 
 interface MemberData {
   name: string;
@@ -11,6 +12,7 @@ interface MemberData {
   topRank: { gameName: string; rank: string; color: string } | null;
   isModerator: boolean;
   isOwner: boolean;
+  streakCount?: number;
 }
 
 function InitialsAvatar({ name }: { name: string }) {
@@ -29,7 +31,7 @@ function MemberCardComponent({ member }: { member: MemberData }) {
       : "border-border hover:border-neon/30";
 
   return (
-    <div className={`flex-shrink-0 w-60 sm:w-72 rounded-xl border bg-surface p-4 sm:p-5 transition ${borderClass}`}>
+    <div className={`flex-shrink-0 w-48 sm:w-60 md:w-72 rounded-xl border bg-surface p-4 sm:p-5 transition ${borderClass}`}>
       <div className="flex items-center gap-3">
         {member.avatar ? (
           <img
@@ -48,6 +50,11 @@ function MemberCardComponent({ member }: { member: MemberData }) {
           {member.isModerator && !member.isOwner && (
             <span className="shrink-0 rounded-full bg-red-900/15 px-1.5 py-0.5 text-[9px] font-bold uppercase text-red-400">Mod</span>
           )}
+          {member.streakCount && member.streakCount > 0 ? (
+            <span className="shrink-0 flex items-center gap-0.5 text-xs text-orange-400">
+              <Flame size={14} />{member.streakCount}
+            </span>
+          ) : null}
         </div>
       </div>
       <div className="mt-3 flex flex-wrap gap-1.5">

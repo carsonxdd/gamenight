@@ -41,6 +41,27 @@ export default async function MembersPage() {
     userTeamTags[tm.userId].push({ tag: tm.team.tag, game: tm.team.game, teamId: tm.team.id });
   }
 
+  // Fetch showcased badges and attendance streaks for all users
+  const [allShowcasedBadges, allStreaks] = await Promise.all([
+    prisma.userBadge.findMany({
+      where: { showcased: true, suppressAutoAward: false },
+      include: { badge: { select: { id: true, name: true, description: true, icon: true, tier: true } } },
+    }),
+    prisma.userStreak.findMany({
+      where: { type: "attendance", currentCount: { gt: 0 } },
+      select: { userId: true, currentCount: true },
+    }),
+  ]);
+  const userShowcasedMap: Record<string, typeof allShowcasedBadges> = {};
+  for (const ub of allShowcasedBadges) {
+    if (!userShowcasedMap[ub.userId]) userShowcasedMap[ub.userId] = [];
+    userShowcasedMap[ub.userId].push(ub);
+  }
+  const userStreakMap: Record<string, number> = {};
+  for (const s of allStreaks) {
+    userStreakMap[s.userId] = s.currentCount;
+  }
+
   const dbUsers = await prisma.user.findMany({
     where: { gamertag: { not: null } },
     select: {
@@ -89,6 +110,14 @@ export default async function MembersPage() {
       customLink: user.customLink,
       isModerator: user.isModerator,
       isOwner: user.isOwner,
+      showcasedBadges: (userShowcasedMap[user.id] || []).map((ub) => ({
+        id: ub.badge.id,
+        name: ub.badge.name,
+        description: ub.badge.description,
+        icon: ub.badge.icon,
+        tier: ub.badge.tier,
+      })),
+      streakCount: userStreakMap[user.id] || 0,
     };
   });
 

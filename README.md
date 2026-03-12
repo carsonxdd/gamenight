@@ -1,6 +1,6 @@
 # Caplan's Game Night
 
-**v0.9.0**
+**v0.10.1**
 
 A fully customizable web app for organizing gaming communities. Sign up with Discord, pick your games, set your availability, RSVP to game nights, build persistent teams, and run full tournament brackets. Admin-configurable branding, access controls, and feature toggles make it ready for any community.
 
@@ -35,6 +35,7 @@ A fully customizable web app for organizing gaming communities. Sign up with Dis
 - **Access guard** — centralized `checkAccessOrRedirect()` utility enforces approval status and gamertag requirements across all protected pages.
 
 ### Player Profiles (`/profile`)
+- **Tabbed layout** — Profile, Preferences, Groups, and Achievements tabs with animated Framer Motion underline indicator. Profile and Preferences tabs stay mounted (CSS hidden) to preserve form refs and dirty state across tab switches. Groups and Achievements tabs conditionally render with fade/slide transitions. Achievements tab auto-hidden when badges feature is disabled.
 - Custom gamertag
 - **Interactive US timezone map** — SVG map with real state outlines, colored by timezone region. Hover highlights all states in a zone with a neon glow effect and shows the timezone label + live local time in a tooltip. Arizona is carved out as its own clickable zone (MST, no DST). Alaska and Hawaii shown as insets. Falls back to an animated dropdown on mobile. During onboarding the map is open; on the profile page it collapses behind a button with a smooth expand/collapse animation.
 - Categorized game selection with collapsible sub-modes — auto-expand options on first pick during onboarding, collapsed with a +button to expand in edit mode
@@ -70,13 +71,13 @@ Custom games can be added via text input.
 ### Scheduling
 - **Timezone-aware scheduling** — all times are stored in UTC internally and converted to each viewer's timezone for display. Events show times in the viewer's timezone; if the viewer and host are in different timezones, both are shown (e.g. "4:00 PM PST (7:00 PM MST)"). Each event records the host's timezone for context. The availability heatmap correctly detects real overlap across timezones. Users create events and set availability in their own local time — conversion is automatic. Uses the `Intl.DateTimeFormat` API for DST-safe conversions with no external dependencies.
 - **Friday-to-Thursday calendar** — weeks run Friday through Thursday to keep weekends front and center. Desktop shows two stacked week grids (14 days), mobile shows one week (7 days) with separate navigation step sizes (±14 desktop, ±7 mobile).
-- **Three-tab layout** — Calendar, Events, and Tournaments views with a shared tab toggle. Mobile defaults to Events, desktop defaults to Calendar. Tabs switch with a smooth fade transition and auto-scroll to the top of the page.
+- **Three-tab layout** — Calendar, Events, and Tournaments views with a shared tab toggle. Mobile defaults to Events, desktop defaults to Calendar. Tabs switch with a smooth fade transition and auto-scroll to the top of the page. Navigating between bi-weeks (prev/next) smoothly fades the calendar content and date range label.
 - **Responsive default view** — mobile defaults to Event List, desktop defaults to Calendar. Users can toggle between views on any device.
 - **Mobile day selector** — two-row layout: weekend days (Fri/Sat/Sun) on top as wider cards (`grid-cols-3`), weekdays (Mon–Thu) on the bottom (`grid-cols-4`). Both rows span full width. Selected day highlighted in neon, today gets a subtle dot indicator. Event count badges on days with events.
 - **Compact calendar cards** — events in the calendar grid show game name and time only. Click to open the full detail view.
 - **Event detail modal** — read-only modal showing title, game, date, time range, host, description, and RSVP lists (Going and Maybe with gamertags). RSVP button, approve/reject, and mark attendance actions available in-context. "Edit Settings" button visible only to the host, moderator, admin, or owner — opens the edit modal.
 - **Edit permissions** — hosts can edit their own events (not just admins/mods). Owners are now included in all authorization checks. Regular users see a read-only detail view. Edit modal shows full RSVP breakdown (Going, Maybe, Declined) with color-coded badges.
-- **Info bubble** — dismissable tutorial hint for signed-in users explaining how to create events. Glows on page load, collapses to a compact "i" icon inline with the page subtitle (no extra vertical space). Clicking the icon expands the info card between the subtitle and the tab bar. Dismissed state persists across sessions via localStorage.
+- **Info bubble** — dismissable tutorial hint for signed-in users explaining how to create events. Glows on page load using the configured accent color, collapses to a compact "i" icon inline with the page subtitle (no extra vertical space). Clicking the icon expands the info card between the subtitle and the tab bar. Dismissed state persists across sessions via localStorage.
 - Event list view with tab navigation
 - **User-created events with approval** — any logged-in user can create a game night event. Regular user events are set to "pending" and require moderator/admin approval before appearing publicly. Admin/mod events are auto-approved. Users can see their own pending/rejected events; other users cannot.
 - **Event approval workflow** — admins and moderators see pending events with "Approve" and "Reject" buttons in both calendar and list views. Pending events styled with dashed warning borders; rejected events styled with danger borders. Status badges shown on all non-scheduled events.
@@ -134,6 +135,19 @@ Custom games can be added via text input.
 - **Tournament integration** — captains can register their team for open tournaments matching the team's game. Registration snapshots the current roster into a TournamentTeam + TournamentEntrant records, preserving bracket integrity even if the real team changes later. Team tags are baked into tournament display names at join time.
 - **Browse and filter** — "All Teams" and "My Teams" tabs, search by name/tag, filter by game. Create Team button for authenticated users.
 
+### Badges & Streaks
+- **Achievement system** — 18 system badges across 7 categories (attendance, competition, community, engagement, profile, special, custom) with 5 tiers (standard, bronze, silver, gold, diamond). Badges use Lucide vector icons with tier-colored ring borders.
+- **Automatic awarding** — badge engine evaluates metrics after every qualifying action (attendance, poll votes, comments, tournament joins/wins, team joins, profile updates). Threshold badges are awarded instantly when the count is met.
+- **Attendance streaks** — tracks consecutive attended events per user. Resets on no-shows (RSVP'd confirmed but didn't attend). Streak count displayed inline next to player names on member cards and carousel cards with a flame icon.
+- **Weekly activity streaks** — evaluated on each visit (gated to once per hour), increments when any qualifying action occurred in the current ISO week. Resets on week gaps.
+- **Showcased badges** — users opt in to showcase up to 3 earned badges from their profile Achievements section. Badges are never auto-showcased on earn — users must click to pin. Showcased badges appear as compact icon row right-aligned next to social links on member cards, with hover tooltips showing badge name and description.
+- **Profile Achievements section** — streak counters (current + longest for attendance and weekly), badge grid grouped by category. Earned badges show full color with tier glow; unearned badges appear as grayed silhouettes. Expanded hover tooltip on every badge shows tier-colored name, description, earned date, and showcase hint. Click any earned badge to toggle showcase directly — no confirmation dialog.
+- **Admin badge management** — Badges tab in admin panel with stats row (total badges, total awarded, most common), filterable table with enable/disable toggles, custom badge creation (manual or threshold trigger), and manual award/revoke flow with user search.
+- **Soft-delete revocation** — revoked badges use `suppressAutoAward` flag to prevent the engine from auto-re-awarding them. Manual re-award by admin overrides the suppression.
+- **Toast notifications** — layout-level toast provider shows "Achievement Unlocked!" slide-in toasts with tier-colored neon border and auto-dismiss countdown when badges are earned.
+- **Feature toggle** — `enableBadges` in site settings hides all badge UI and disables the engine when off.
+- **Backfill script** — `prisma/backfill-badges.ts` retroactively awards badges and computes attendance streaks for all existing users. Auto-showcases top 3 highest-tier badges per user. Idempotent and safe to re-run.
+
 ### Roles & Permissions
 - **Owner** (CarsonXD) — full access, cannot be muted/demoted/removed. Gold glowing border on member cards
 - **Admin** — full access including user management (promote/demote roles, remove users, unmute), site settings, and suggestion management
@@ -145,7 +159,7 @@ Custom games can be added via text input.
 - **Game Popularity** — ranked by player count with expandable player lists
 - **Availability Heatmap** — aggregated grid showing player overlap with click-to-reveal names; filterable by game to see who's available for a specific title. **Prime/extended visual distinction** — prime time rows use neon intensity gradients, extended rows use muted foreground intensity. Cross-timezone availability entries that span midnight are automatically split into correct day segments. **Timezone-aware legend** — Arizona viewers see "Prime time 5 PM–11 PM"; other timezone viewers see the converted range with the anchor timezone noted (e.g. "Prime time 7 PM–1 AM your time (5 PM–11 PM Arizona)").
 - **RSVP Overview** — game night cards with status badge counts
-- **Player Roster** — searchable table with role ladder promote/demote (Member → Moderator → Admin), owner/admin/mod badges, and remove with confirmation. Admins see full management actions (promote, demote, remove, mute, unmute). Moderators see mute/temp-mute buttons for regular members only (cannot target admins, other mods, or owner). "Willing to Mod" badge shown next to players who opted in, with a filter toggle button and count pill to quickly find moderation candidates.
+- **Player Roster** — searchable table with role ladder promote/demote (Member → Moderator → Admin), owner/admin/mod badges, and remove with confirmation. Admins see full management actions (promote, demote, remove, mute, unmute). Moderators see mute/temp-mute buttons for regular members only (cannot target admins, other mods, or owner). "Willing to Mod" badge shown next to players who opted in (hidden if the player is already a mod, admin, or owner), with a filter toggle button and count pill to quickly find moderation candidates.
 - **Insights** — interactive analytics tab with 8 on-demand queries. Click a card to run it, click again to collapse. Game-based insights (Best Time, Squad Finder) have a game dropdown and Run button. All results are expandable with player name tags.
   - **Best Time for Game** — top 10 time slots where the most players of a selected game overlap
   - **Peak Availability** — busiest time slots across all players regardless of game
@@ -158,7 +172,8 @@ Custom games can be added via text input.
 - **Active Now** — stat card showing users seen in the last 15 minutes, based on throttled `lastSeenAt` tracking (updated at most once per 5 minutes per user via JWT callback).
 - **Activity** — chronological audit log feed showing the last 50 high-impact actions, visible to admins and moderators. Each entry displays an icon by entity type, human-readable action label, actor name, optional metadata detail, and relative timestamp. Tracks: event create/cancel/delete, tournament create/status change/delete, team create/disband, poll create/close/delete, role changes, user mute/unmute/remove, settings updates, and new user joins.
 - **Attendance nudge** — banner at the top of the admin panel listing past events that still need attendance confirmation, with links to the schedule page. Shows host name and RSVP count for each event.
-- **Responsive tab navigation** — admin panel tabs (Games, Availability, RSVPs, Roster, Insights, Activity, Suggestions, Settings) display as a **4×2 grid** on mobile so all tabs are visible without scrolling, and as a single flex row on desktop.
+- **Badges** (admin-only) — badge management tab with stats row (total badges, total awarded, most common), filterable table of all badge definitions showing icon, name, category, tier, earned count, and enable/disable toggle. "Create Custom Badge" modal for manual or threshold-triggered badges. "Award Badge" modal with user search and badge picker, showing current award status with award/revoke buttons. System badges cannot be deleted; custom badges can be hard-deleted.
+- **Responsive tab navigation** — admin panel tabs (Games, Availability, RSVPs, Roster, Insights, Activity, Suggestions, Badges, Settings) display as a **2-column grid** on small phones, **4-column grid** on larger mobile, and a single flex row on desktop.
 - **Site Settings** (admin-only) — comprehensive settings panel with a **left sidebar** (desktop) / **4×2 grid tabs** (mobile) layout. 8 configurable sections:
   - **Branding** — accent color (12 presets + custom hex with live preview), community tagline (hero subtitle), logo URL, favicon URL
   - **Availability** — prime start/end hours (default 5–11 PM) and extended start/end hours (default 2 PM–1 AM), anchored to a configurable timezone. Visual preview bar shows the prime vs extended range. Constrained dropdowns prevent invalid ranges.
@@ -168,7 +183,7 @@ Custom games can be added via text input.
   - **Tournaments** — allow member-created tournaments, max tournament size (caps slot selection in wizard), enable buy-ins (hides buy-in field when disabled)
   - **Teams** — allow team creation, max teams per user, max team size
   - **Suggestions & Bugs** — dedicated tab showing all member-submitted suggestions and bug reports with type badge, author info, sort options, and open count badge on the tab. Admins see the full management UI with status dropdown (Open/Noted/Planned/Done/Declined) and delete with confirmation. Moderators see the same list read-only (status badges displayed but no controls).
-  - **Feature Toggles** — master switches for Tournaments, Teams, Polls, Highlights, and Stats tab. Disabled features are hidden from navigation and redirect on direct URL access.
+  - **Feature Toggles** — master switches for Tournaments, Teams, Polls, Highlights, Stats tab, and Badges & Streaks. Disabled features are hidden from navigation and redirect on direct URL access.
   - **Limits** — default event duration, max events per week, max polls per week
   - **Community** — community name (used in page title, hero, signup), message of the day (MOTD)
   - Save button only appears when settings have been changed (dirty-state tracking via shallow key comparison against initial values). Animates in/out with `AnimatePresence`.
@@ -191,8 +206,8 @@ Custom games can be added via text input.
 ### Members Page (`/members`, sign-in required)
 - **Tabbed layout** — underline-style tab navigation (Members | Games | Availability) with animated neon indicator. Defaults to the Members tab.
 - **Members tab** — searchable card grid, responsive layout (3 columns desktop, 2 tablet, 1 mobile) showing all community members
-- **Full member cards** — large Discord avatar (or initials fallback), gamertag, game tags (up to 6 with "+X more"), all rank badges with game-accurate tier colors. Owner cards have a glowing gold border; moderator cards have a dark red glowing border with role badges.
-- **Social links** — Discord (copies username to clipboard with checkmark feedback), Twitter/X, Twitch, YouTube, and custom link icons. Only rendered for socials the user has linked.
+- **Full member cards** — large Discord avatar (or initials fallback), gamertag with inline streak flame, game tags (up to 6 with "+X more"), all rank badges with game-accurate tier colors. Owner cards have a glowing gold border; moderator cards have a dark red glowing border with role badges.
+- **Social links + badges row** — Discord (copies username to clipboard with checkmark feedback), Twitter/X, Twitch, YouTube, and custom link icons on the left. Showcased badges (up to 3) right-aligned on the same row with hover tooltips. Only rendered for socials the user has linked.
 - **Filtering** — search by name and filter by game via dropdown
 - **Games tab** — reuses the Game Popularity component from the admin panel, showing games ranked by player count with expandable player lists
 - **Availability tab** — reuses the Availability Heatmap component from the admin panel, showing aggregated player availability with click-to-reveal names and game filtering. Includes the same timezone-aware prime time legend — Arizona users see simple "5–11 PM" labeling, while users in other timezones see the converted range with anchor timezone context.
@@ -201,19 +216,19 @@ Custom games can be added via text input.
 - **Hero section** — animated grid background with neon glow orb, staggered text/button entrance. Community name and optional tagline pulled from site settings. Grid uses the configured accent color.
 - **Introduction** — short casual description with spacing to keep it off the hero
 - **Social proof stats** — real-time member count (toggleable via `showMemberCount` setting), events hosted, and games available pulled from the database
-- **Members carousel** — `requestAnimationFrame`-driven infinite scroll of member cards built from real user data. Cards show Discord avatar (or initials fallback), gamertag, up to 3 favorite games, and highest-tier rank badge with color. Owner/moderator cards display glowing borders and role badges. Pauses on hover and touch. Responsive card sizing. Duplicates cards to fill the viewport for seamless looping. "View All Members" link to the full members page.
+- **Members carousel** — `requestAnimationFrame`-driven infinite scroll of member cards built from real user data. Cards show Discord avatar (or initials fallback), gamertag with inline attendance streak flame, up to 3 favorite games, and highest-tier rank badge with color. Owner/moderator cards display glowing borders and role badges. Pauses on hover and touch. Responsive card sizing. Duplicates cards to fill the viewport for seamless looping. "View All Members" link to the full members page.
 - **Highlight cards** — feature callouts for the app
 
 ### UI/UX
 - Dark cyberpunk theme with **admin-configurable accent color** — 12 presets (Neon Green, Electric Blue, Purple, Hot Pink, Orange, Gold, Red, Teal, Lime, Ice Blue, Coral, Lavender) or custom hex. Accent drives all neon highlights, glows, borders, and buttons via CSS custom properties (`--accent-color`, `--accent-dim`, `--accent-dark`, `--neon-rgb`)
 - Smooth page transitions and animated sub-option panels
-- **Mobile-first responsive design** — hamburger menu, stacking form grids on small screens, larger touch targets for availability grids and heatmaps, always-visible action buttons (no hover-only on touch), responsive tab gaps, and adaptive card sizing
+- **Mobile-first responsive design** — hamburger menu, stacking form grids on small screens, larger touch targets for availability grids and heatmaps, always-visible action buttons (no hover-only on touch), responsive tab gaps, adaptive card sizing, tighter modal padding on mobile, single-letter day abbreviations in heatmaps on small screens, 2-column admin tab grid on phones, line-clamped attendee lists, and `break-words` on poll options
 - **Smooth scroll-to-top on navigation** — navigating between any page (Schedule, About, Highlights, Members, etc.) smoothly scrolls to the top of the new page instead of preserving the previous scroll position. Handled globally via the PageTransition component on route changes.
 - **Active nav highlighting** — current page link turns neon green with bold text in both desktop and mobile nav. Uses pathname matching (exact for Home, prefix for all other routes).
 - **Nav order** — signed-in: Home, Schedule, Polls, Members, Teams, Highlights, About, Admin (if mod/admin), Profile. Guest: Home, Schedule, Highlights, About, Join. Nav links for Polls, Teams, Highlights, and Tournaments are **conditionally rendered** based on feature toggle settings — disabled features are hidden from navigation and redirect to home on direct URL access.
 - **Custom logo** — navbar shows an uploaded logo image when `logoUrl` is set, falling back to "GN" text. Custom favicon via `faviconUrl`. Dynamic page title uses `communityName`.
 - Signed-in users see their **bold** gamertag as a profile link in the navbar; signup/join buttons hidden
-- **Members carousel** — `requestAnimationFrame`-driven infinite scroll (no CSS animation glitches). Pauses on hover and touch. Responsive card sizing (`w-60` mobile, `w-72` desktop). Seamless loop by measuring actual scroll width and resetting position at the midpoint.
+- **Members carousel** — `requestAnimationFrame`-driven infinite scroll (no CSS animation glitches). Pauses on hover and touch. Responsive card sizing (`w-48` small mobile, `w-60` mobile, `w-72` desktop). Seamless loop by measuring actual scroll width and resetting position at the midpoint.
 
 ## Live Site
 
@@ -284,7 +299,16 @@ npx tsx prisma/seed-test-users.ts
 
 This creates 15 test users with full profiles (games, ranks, availability, social links, favorite games), 20 game night events (spread across US timezones, aligned to Phoenix prime time 5–11 PM with late night events), 6 persistent teams with rosters, 8 polls with votes and comments, 7 tournaments (open, in-progress, and completed across multiple bracket types), 3 invite groups, and team invites. All event times are properly UTC-converted so they display correctly in each viewer's timezone. Running the script again cleanly replaces all seed data.
 
-> **WARNING:** Do NOT run the seed script on the production Pi — it will wipe all real user data. This is for local development only.
+Seed badge definitions and backfill awards for existing users:
+
+```bash
+npx tsx prisma/seed-badges.ts      # upserts 18 system badge definitions
+npx tsx prisma/backfill-badges.ts   # awards badges + computes streaks for all users
+```
+
+Both scripts are idempotent and safe to re-run.
+
+> **WARNING:** Do NOT run the seed script on the production Pi — it will wipe all real user data. This is for local development only. The badge seed and backfill scripts are safe for production.
 
 ### First Admin
 
@@ -368,7 +392,7 @@ src/
 - **PollComment** — short comment thread per poll (max 300 chars, cascade delete)
 
 ### Settings Models
-- **SiteSettings** — singleton configuration row with 30+ fields covering branding (accentColor, communityTagline, logoUrl, faviconUrl), time windows (primeStartHour, primeEndHour, extendedStartHour, extendedEndHour, anchorTimezone), access & privacy (joinMode, requireGamertag, allowPublicProfiles, showMemberCount), events (allowMemberEvents, maxAttendeesDefault, autoArchiveDays), polls (allowMemberPolls, allowPollComments), tournaments (allowMemberTournaments, maxTournamentSize, enableBuyIns), teams (allowTeamCreation, maxTeamsPerUser, maxTeamSize), feature toggles (enableTournaments, enableTeams, enablePolls, enableHighlights, enableStats), limits (defaultEventDuration, maxEventsPerWeek, maxPollsPerWeek), and community (communityName, motd)
+- **SiteSettings** — singleton configuration row with 30+ fields covering branding (accentColor, communityTagline, logoUrl, faviconUrl), time windows (primeStartHour, primeEndHour, extendedStartHour, extendedEndHour, anchorTimezone), access & privacy (joinMode, requireGamertag, allowPublicProfiles, showMemberCount), events (allowMemberEvents, maxAttendeesDefault, autoArchiveDays), polls (allowMemberPolls, allowPollComments), tournaments (allowMemberTournaments, maxTournamentSize, enableBuyIns), teams (allowTeamCreation, maxTeamsPerUser, maxTeamSize), feature toggles (enableTournaments, enableTeams, enablePolls, enableHighlights, enableStats, enableBadges), limits (defaultEventDuration, maxEventsPerWeek, maxPollsPerWeek), and community (communityName, motd)
 - **Suggestion** — type (suggestion/bug_report), title, optional description, status (open/noted/planned/done/declined), author reference, timestamps. Displayed on the About page Feedback tab for members and in the admin panel for admins.
 - **InviteCode** — code (unique alphanumeric), label, maxUses, uses count, expiresAt, isActive toggle, createdById. Used for invite-only join mode.
 - **AuditLog** — action (e.g. EVENT_CREATED, TOURNAMENT_DELETED), entityType, entityId, actorId, metadata (JSON), createdAt. Tracks high-impact admin and user actions for the Activity feed.
@@ -383,6 +407,11 @@ src/
 - **TournamentPrediction** — user's predicted winner for a match, with correct boolean scored on match completion
 - **TournamentComment** — discussion thread per tournament (cascade delete)
 - **TournamentTemplate** — saved tournament configuration (bracket type, team size, best-of, seeding, captain mode) for reuse
+
+### Badge Models
+- **BadgeDefinition** — key (unique slug), name, description, icon (Lucide icon name), category, tier (binary/bronze/silver/gold/diamond), source (system/custom), triggerConfig (JSON with type, metric, value for threshold badges or check function for special badges), isEnabled toggle
+- **UserBadge** — links user to badge with showcased flag, suppressAutoAward (soft-delete for revoked badges), optional awardedBy (admin user ID for manual awards), awardedAt timestamp. Unique on userId + badgeId.
+- **UserStreak** — type (attendance/weekly_activity), currentCount, longestCount, lastEventId (prevents double-counting attendance), lastWeekKey (ISO week string for weekly dedup). Unique on userId + type.
 
 ### Team Models
 - **Team** — name, unique tag (2–5 chars), game, captainId, bio, avatarUrl, isActive, minSize, maxSize, timestamps
@@ -447,10 +476,40 @@ Admin toggle under Access & Privacy: Discord Only / Discord + Email / Email Only
 
 ## Version History
 
+### v0.10.1 — Profile Page Tabs
+- **Tabbed profile layout** — Profile, Preferences, Groups, and Achievements organized into tabs with animated Framer Motion underline indicator and smooth fade/slide content transitions.
+- Profile and Preferences tabs stay mounted via CSS `hidden` to preserve form refs, dirty state, and `currentGames` flow across tab switches.
+- Groups and Achievements tabs conditionally render with `AnimatePresence` enter/exit animations.
+- Sticky save bar remains visible on all tabs when dirty — reminds users of unsaved changes regardless of active tab.
+- Achievements tab auto-hidden when `enableBadges` site setting is off.
+
+### v0.10.0 — Badges & Streaks
+- **Achievement system** — 18 system badges across 7 categories (attendance, competition, community, engagement, profile, special, custom) with 5 tiers (standard, bronze, silver, gold, diamond). Badges rendered as Lucide vector icons with tier-colored ring borders.
+- **Badge engine** — automatic evaluation after qualifying actions (attendance, poll votes, comments, tournament joins/wins, team joins, profile updates). Optimized LIKE queries on triggerConfig to find matching badges without loading all definitions.
+- **Attendance streaks** — tracks consecutive attended events per user. Resets on confirmed no-shows. Flame icon displayed inline next to player names on member cards and home carousel.
+- **Weekly activity streaks** — piggybacks on lastSeenAt throttle, evaluates once per hour. Increments when any qualifying action occurred in the current ISO week.
+- **Showcased badges on member cards** — up to 3 user-pinned badges shown right-aligned on the social links row with hover tooltips. Badges are never auto-showcased on earn — users opt in by clicking.
+- **Profile Achievements section** — streak counters, full badge grid grouped by category with earned/unearned states. Expanded hover tooltips show tier-colored name, description, earned date, and showcase hint. Click earned badges to toggle showcase directly — no popup or confirmation dialog.
+- **Admin Badges tab** — stats, filterable table, enable/disable toggles, custom badge creation (manual or threshold), manual award/revoke with user search and soft-delete revocation.
+- **Toast notifications** — layout-level provider shows "Achievement Unlocked!" slide-in toasts with tier-colored border and progress countdown.
+- **Backfill script** — `prisma/backfill-badges.ts` retroactively awards badges and computes streaks for existing users, auto-showcases top 3 per user.
+- **Feature toggle** — `enableBadges` setting hides all badge UI and disables engine when off.
+- **Schema** — 3 new models: BadgeDefinition, UserBadge (with suppressAutoAward soft-delete), UserStreak.
+
+### v0.9.1-dev
+- **Admin feedback tab rename** — "Suggestions" tab in admin panel renamed to "Feedback" for consistency with the About page tab. Header and empty state text updated.
+- **Server-side feedback prefetch** — feedback data now fetched server-side alongside other admin data, eliminating the loading flash when switching to the Feedback tab. Removed client-side `useEffect` fetch.
+- **Expandable changelog** — version entries on the About page are now collapsible accordions with summary titles. All open on first visit; subsequent visits default to latest 3 open. User preferences persisted in localStorage.
+
 ### v0.9.0 — 2026-03-12
 - **Last Seen tracking** — `lastSeenAt` timestamp on User model, updated on sign-in and throttled to once per 5 minutes via JWT callback. New "Active Now" stat card on the admin dashboard shows users seen in the last 15 minutes.
 - **Audit log** — new `AuditLog` model tracking high-impact, infrequent actions across the site. Fire-and-forget `logAudit()` utility writes entries without blocking server actions. Covers event create/cancel/delete, tournament create/status change/delete, team create/disband, poll create/close/delete, role changes, user mute/unmute/remove, settings updates, and new user joins.
 - **Activity tab** — admin-only tab in the admin dashboard showing a chronological feed of the last 50 audit log entries. Each entry displays an entity-type icon with color coding, human-readable action label, actor name, metadata detail (e.g. event title, target user), and relative timestamp.
+- **Mobile responsiveness pass** — smaller carousel cards on narrow phones (`w-48`), full-width tournament match cards on mobile, 2-column admin tab grid on small screens, tighter modal padding, single-letter day abbreviations in availability heatmaps, line-clamped attendee lists in event cards, `break-words` on poll options, and stacking Teams page header on mobile.
+
+### v0.8.2 — 2026-03-12
+- **Removed email scope** — Discord OAuth now only requests `identify` scope. Email is never requested or stored.
+- **Updated privacy notices** — signup page and About page privacy sections clarified to reflect minimal OAuth scope.
 
 ### v0.8.1 — 2026-03-12
 - **Feedback type field** — suggestions now have a type (Suggestion or Bug Report) with distinct icons and color badges across the submission form, user history, and admin panel.
@@ -518,7 +577,7 @@ Admin toggle under Access & Privacy: Discord Only / Discord + Email / Email Only
 - **Friday-to-Thursday calendar** — weekends front and center. Two-week desktop view, one-week mobile with a two-row grid day selector.
 - **Event detail modal** — read-only detail view with RSVP lists, approve/reject, and attendance. Edit button for hosts/mods/admins only.
 - **Edit permissions overhaul** — hosts can edit their own events. Owner role added to all authorization checks.
-- **Mobile responsiveness pass** — form grids stack, touch targets enlarged, action buttons always visible, tab gaps adjust.
+- **Mobile responsiveness pass** — form grids stack, touch targets enlarged, action buttons always visible, tab gaps adjust, adaptive carousel/modal/bracket sizing, single-letter heatmap days, 2-col admin tabs on phones.
 - **Optimistic RSVP updates** — instant UI feedback without waiting for server round-trip.
 - **Smooth transitions** — scroll-to-top on navigation, fade transitions between schedule tabs, modal exit animations.
 

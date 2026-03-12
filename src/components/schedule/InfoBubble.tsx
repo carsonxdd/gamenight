@@ -50,7 +50,7 @@ export default function InfoBubble() {
           expanded ? "pointer-events-none opacity-0" : "opacity-100"
         } ${
           glowing
-            ? "border-neon/50 shadow-[0_0_12px_rgba(0,255,65,0.25)]"
+            ? "border-neon/50 shadow-[0_0_12px_rgba(var(--neon-rgb,0,255,65),0.25)]"
             : "border-border"
         }`}
         aria-label="Show info"
@@ -68,7 +68,7 @@ export default function InfoBubble() {
       <div
         className={`w-full overflow-hidden rounded-xl border bg-surface transition-all duration-400 ease-[cubic-bezier(0.25,0.1,0.25,1)] ${
           glowing
-            ? "border-neon/50 shadow-[0_0_15px_rgba(0,255,65,0.2)]"
+            ? "border-neon/50 shadow-[0_0_15px_rgba(var(--neon-rgb,0,255,65),0.2)]"
             : "border-border"
         } ${expanded ? "p-4 mb-0" : "p-0 border-transparent bg-transparent mb-0"}`}
         style={{

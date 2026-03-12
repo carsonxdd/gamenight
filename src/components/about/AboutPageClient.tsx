@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { staggerContainer, staggerItem } from "@/lib/animations";
 import FeedbackBox from "@/components/suggestions/FeedbackBox";
@@ -179,7 +179,28 @@ function AboutContent() {
 
 const VERSION_HISTORY = [
   {
+    version: "v0.9.0",
+    title: "Audit Log & Admin Polish",
+    date: "2026-03-12",
+    changes: [
+      "Audit log — tracks high-impact actions across the site (events, tournaments, teams, polls, roles, settings)",
+      "Activity tab — admin feed showing the last 50 audit entries with icons, actors, and timestamps",
+      "Last Seen tracking — \"Active Now\" stat card shows users seen in the last 15 minutes",
+      "Mobile responsiveness pass — smaller carousel cards, full-width tournament matches, 2-col admin tabs, tighter modals",
+    ],
+  },
+  {
+    version: "v0.8.2",
+    title: "Privacy Tightening",
+    date: "2026-03-12",
+    changes: [
+      "Removed email scope — Discord OAuth now only requests identify (username + avatar)",
+      "Updated privacy notices on signup and About page to reflect minimal scope",
+    ],
+  },
+  {
     version: "v0.8.1",
+    title: "Feedback Improvements",
     date: "2026-03-12",
     changes: [
       "Suggestions & bug reports — new type field (Suggestion / Bug Report) with icons and color badges",
@@ -190,6 +211,7 @@ const VERSION_HISTORY = [
   },
   {
     version: "v0.8.0",
+    title: "Feedback System & Muting",
     date: "2026-03-12",
     changes: [
       "Suggestions rework — profile-based submission form, admin management tab with status workflow, mute enforcement",
@@ -200,15 +222,16 @@ const VERSION_HISTORY = [
   },
   {
     version: "v0.7.1",
+    title: "Save Button Polish",
     date: "2026-03-12",
     changes: [
       "Conditional save buttons — profile and admin settings only show save when dirty",
       "Fix accent color flash — server-side inline styles eliminate green flash before hydration",
-      "Archived completed plan files",
     ],
   },
   {
     version: "v0.7.0",
+    title: "White-Label Settings",
     date: "2026-03-12",
     changes: [
       "Site settings expansion — 8-section admin panel with branding, access controls, feature toggles",
@@ -220,19 +243,19 @@ const VERSION_HISTORY = [
   },
   {
     version: "v0.6.0",
+    title: "Prime Time & Settings",
     date: "2026-03-11",
     changes: [
       "Admin site settings panel — configure prime/extended time windows, anchor timezone, event/poll limits, community name, and MOTD",
       "Prime/extended time windows — availability grids and heatmaps visually distinguish prime time (bright neon) from extended hours (dimmed/muted), auto-converted to each viewer's timezone",
       "Reactive prime time highlighting — grid recomputes when user changes timezone in the form, with timezone-aware legends shared between grid and heatmap",
       "Heatmap timezone fixes — cross-midnight splitting, dynamic time slots, duplicate player deduplication",
-      "Lint cleanup — resolved all ESLint errors across 7 components",
       "Test infrastructure — Vitest with 17 tests covering timezone conversion, prime time slots, and legend formatting",
-      "Comprehensive seed data — 13 users across 7 US timezones, 20 events, 6 teams, 8 polls, 7 tournaments",
     ],
   },
   {
     version: "v0.5.0",
+    title: "Teams & Timezones",
     date: "2026-03-09",
     changes: [
       "Persistent teams — /teams page for creating clans/squads with unique tags, game affiliation, bio, avatar, and configurable roster size",
@@ -242,11 +265,11 @@ const VERSION_HISTORY = [
       "Tournament integration — register premade teams, roster snapshot preserves bracket integrity",
       "Timezone normalization — all times stored in UTC, converted to each viewer's timezone. DST-safe via Intl.DateTimeFormat",
       "Cross-timezone event display — dual timezone shown when viewer and host differ (e.g. \"4:00 PM PST (7:00 PM MST)\")",
-      "Correct availability overlap — heatmap detects real cross-timezone overlap instead of matching by clock time",
     ],
   },
   {
     version: "v0.4.0",
+    title: "Tournaments & Brackets",
     date: "2026-03-07",
     changes: [
       "Tournament system — new Tournaments tab with 6-step creation wizard, 6 bracket types (Single Elim, Double Elim, Round Robin, Swiss, Constellation, FFA)",
@@ -256,12 +279,12 @@ const VERSION_HISTORY = [
       "Pick'ems, tournament comments, buy-in/prize pool, templates, bracket sharing, multi-session scheduling",
       "Friday-to-Thursday calendar — weekends front and center, two-week desktop view, one-week mobile with grid day selector",
       "Event detail modal — read-only view with RSVP lists, host info, edit permissions for hosts/mods/admins",
-      "Mobile responsiveness pass — stacking grids, larger touch targets, always-visible action buttons",
       "Optimistic RSVP updates, smooth page transitions, and scroll-to-top on navigation",
     ],
   },
   {
     version: "v0.3.0",
+    title: "Members, Polls & Events",
     date: "2026-03-06",
     changes: [
       "Members page — searchable card grid with avatars, game tags, rank badges, social links. Tabbed: Members | Games | Availability",
@@ -271,13 +294,12 @@ const VERSION_HISTORY = [
       "Invite-only events — visibility toggle, member picker with quick-select groups, rate limiting",
       "Recurring events — admin/mod only, 2–12 week count, delete entire series",
       "Admin Insights tab — 8 on-demand analytics queries (Best Time for Game, Squad Finder, RSVP Stats, etc.)",
-      "Event host and attendance — designated host per event, post-event attendance confirmation checklist",
       "About page tabs with version history cards and Roadmap section",
-      "Privacy notice on signup and About page",
     ],
   },
   {
     version: "v0.2.0",
+    title: "Profiles & Scheduling",
     date: "2026-03-05",
     changes: [
       "Discord OAuth authentication with JWT sessions",
@@ -286,11 +308,11 @@ const VERSION_HISTORY = [
       "Scheduling — two-week calendar, event list, RSVP system (confirmed/maybe/declined)",
       "Admin panel — game popularity, availability heatmap, RSVP overview, player roster",
       "Landing page — hero, social proof stats, members carousel, highlight cards",
-      "About page — origin story, organizer bio, Discord/GitHub links",
     ],
   },
   {
     version: "v0.1.0",
+    title: "Project Kickoff",
     date: "2026-03-04",
     changes: ["Initial Next.js scaffold"],
   },
@@ -345,32 +367,113 @@ const FUTURE_IDEAS = [
   },
 ];
 
+const CHANGELOG_STORAGE_KEY = "changelog-collapsed";
+const CHANGELOG_VISITED_KEY = "changelog-visited";
+const DEFAULT_OPEN_COUNT = 3;
+
+function getInitialCollapsed(): Set<string> {
+  if (typeof window === "undefined") return new Set();
+  try {
+    const visited = localStorage.getItem(CHANGELOG_VISITED_KEY);
+    const saved = localStorage.getItem(CHANGELOG_STORAGE_KEY);
+
+    // If user has manually interacted before, use their saved preferences
+    if (saved) {
+      return new Set(JSON.parse(saved) as string[]);
+    }
+
+    // First visit — all open
+    if (!visited) {
+      return new Set();
+    }
+
+    // Returning visitor with no manual overrides — collapse older entries
+    const allVersions = VERSION_HISTORY.map((r) => r.version);
+    return new Set(allVersions.slice(DEFAULT_OPEN_COUNT));
+  } catch {
+    return new Set();
+  }
+}
+
 function ChangelogContent() {
+  const [collapsed, setCollapsed] = useState<Set<string>>(() => getInitialCollapsed());
+
+  // Mark as visited when this component mounts (i.e., user clicked Changelog tab)
+  useEffect(() => {
+    try {
+      localStorage.setItem(CHANGELOG_VISITED_KEY, "true");
+    } catch { /* ignore */ }
+  }, []);
+
+  const toggleVersion = useCallback((version: string) => {
+    setCollapsed((prev) => {
+      const next = new Set(prev);
+      if (next.has(version)) {
+        next.delete(version);
+      } else {
+        next.add(version);
+      }
+      try {
+        localStorage.setItem(CHANGELOG_STORAGE_KEY, JSON.stringify([...next]));
+      } catch { /* ignore */ }
+      return next;
+    });
+  }, []);
+
   return (
     <>
       {/* Version History */}
       <motion.section variants={staggerItem}>
         <h2 className="mb-6 text-xl font-bold text-foreground">Version History</h2>
-        <div className="space-y-4">
-          {VERSION_HISTORY.map((release) => (
-            <div
-              key={release.version}
-              className="rounded-xl border border-border bg-surface p-5"
-            >
-              <div className="mb-3 flex items-baseline gap-3">
-                <span className="text-sm font-bold text-neon">{release.version}</span>
-                <span className="text-xs text-foreground/40">{release.date}</span>
+        <div className="space-y-3">
+          {VERSION_HISTORY.map((release) => {
+            const isOpen = !collapsed.has(release.version);
+            return (
+              <div
+                key={release.version}
+                className="rounded-xl border border-border bg-surface overflow-hidden"
+              >
+                <button
+                  onClick={() => toggleVersion(release.version)}
+                  className="flex w-full items-center gap-3 px-5 py-4 text-left transition hover:bg-neon/[0.03]"
+                >
+                  <span
+                    className={`shrink-0 text-foreground/30 transition-transform duration-200 ${
+                      isOpen ? "rotate-90" : ""
+                    }`}
+                  >
+                    <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6z" />
+                    </svg>
+                  </span>
+                  <span className="text-sm font-bold text-neon">{release.version}</span>
+                  <span className="text-xs text-foreground/60">&mdash;</span>
+                  <span className="text-sm font-medium text-foreground/70">{release.title}</span>
+                  <span className="ml-auto text-xs text-foreground/30">{release.date}</span>
+                </button>
+                <AnimatePresence initial={false}>
+                  {isOpen && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: "auto", opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.2 }}
+                      className="overflow-hidden"
+                    >
+                      <ul className="space-y-1.5 border-t border-border px-5 py-4">
+                        {release.changes.map((change, i) => (
+                          <li key={i} className="flex gap-2 text-sm text-foreground/70">
+                            <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-neon/40" />
+                            {change}
+                          </li>
+                        ))}
+                      </ul>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
-              <ul className="space-y-1.5">
-                {release.changes.map((change, i) => (
-                  <li key={i} className="flex gap-2 text-sm text-foreground/70">
-                    <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-neon/40" />
-                    {change}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </motion.section>
 

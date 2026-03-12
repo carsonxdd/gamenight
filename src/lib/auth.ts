@@ -85,7 +85,7 @@ export const authOptions: NextAuthOptions = {
           token.isMuted = dbUser.isMuted;
           token.mutedUntil = dbUser.mutedUntil?.toISOString() ?? null;
 
-          // Throttled lastSeenAt update
+          // Throttled lastSeenAt update + weekly streak evaluation
           const now = Date.now();
           const lastUpdate = lastSeenCache.get(dbUser.id) ?? 0;
           if (now - lastUpdate > LAST_SEEN_THROTTLE_MS) {
@@ -96,6 +96,11 @@ export const authOptions: NextAuthOptions = {
                 data: { lastSeenAt: new Date() },
               })
               .catch(() => {});
+
+            // Evaluate weekly activity streak (has its own 1hr internal gate)
+            import("@/lib/badges/streaks").then(({ evaluateWeeklyStreak }) =>
+              evaluateWeeklyStreak(dbUser.id).catch(() => {})
+            );
           }
         }
       }

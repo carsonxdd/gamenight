@@ -1,11 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { fadeIn } from "@/lib/animations";
 import Card from "@/components/ui/Card";
 import Button from "@/components/ui/Button";
-import { getAllSuggestions, updateSuggestionStatus, deleteSuggestion } from "@/app/suggestions/actions";
+import { updateSuggestionStatus, deleteSuggestion } from "@/app/suggestions/actions";
 import { SUGGESTION_STATUSES, SUGGESTION_STATUS_CONFIG, SUGGESTION_TYPE_CONFIG } from "@/lib/suggestion-constants";
 import type { SuggestionStatus, SuggestionType } from "@/lib/suggestion-constants";
 
@@ -22,18 +22,10 @@ interface SuggestionItem {
 
 type SortMode = "newest" | "status";
 
-export default function AdminSuggestions({ isAdmin = true }: { isAdmin?: boolean }) {
-  const [suggestions, setSuggestions] = useState<SuggestionItem[]>([]);
-  const [loading, setLoading] = useState(true);
+export default function AdminSuggestions({ isAdmin = true, initialSuggestions = [] }: { isAdmin?: boolean; initialSuggestions?: SuggestionItem[] }) {
+  const [suggestions, setSuggestions] = useState<SuggestionItem[]>(initialSuggestions);
   const [sortMode, setSortMode] = useState<SortMode>("newest");
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
-
-  useEffect(() => {
-    getAllSuggestions().then((data) => {
-      setSuggestions(data);
-      setLoading(false);
-    });
-  }, []);
 
   const handleStatusChange = async (id: string, newStatus: string) => {
     const result = await updateSuggestionStatus(id, newStatus);
@@ -75,21 +67,13 @@ export default function AdminSuggestions({ isAdmin = true }: { isAdmin?: boolean
 
   const openCount = suggestions.filter((s) => s.status === "open").length;
 
-  if (loading) {
-    return (
-      <div className="py-12 text-center text-foreground/40">
-        Loading suggestions...
-      </div>
-    );
-  }
-
   return (
     <motion.div {...fadeIn} className="space-y-4">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <h3 className="text-lg font-semibold text-foreground">
-            Suggestions & Bugs
+            Feedback
           </h3>
           {openCount > 0 && (
             <span className="rounded-full bg-neon/15 px-2.5 py-0.5 text-xs font-semibold text-neon">
@@ -124,7 +108,7 @@ export default function AdminSuggestions({ isAdmin = true }: { isAdmin?: boolean
       {/* List */}
       {sorted.length === 0 ? (
         <Card className="py-12 text-center">
-          <p className="text-foreground/40">No suggestions yet</p>
+          <p className="text-foreground/40">No feedback yet</p>
         </Card>
       ) : (
         <div className="space-y-2">

@@ -45,7 +45,7 @@ export default function Modal({ open, onClose, children, title, wide }: ModalPro
               damping: 30,
               mass: 0.8,
             }}
-            className={`relative w-full rounded-xl border border-border bg-surface p-6 max-h-[90vh] overflow-y-auto ${wide ? "max-w-2xl" : "max-w-lg"}`}
+            className={`relative w-full rounded-xl border border-border bg-surface p-4 sm:p-6 max-h-[90vh] overflow-y-auto ${wide ? "max-w-2xl" : "max-w-lg"}`}
           >
             {title && (
               <h2 className="mb-4 text-lg font-bold text-foreground">

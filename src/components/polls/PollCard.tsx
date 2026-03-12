@@ -171,7 +171,7 @@ export default function PollCard({ poll, userId, isAdmin }: Props) {
                       )}
                     </span>
                   )}
-                  <span className="text-foreground">{option.label}</span>
+                  <span className="text-foreground break-words">{option.label}</span>
                 </div>
                 {showResults && (
                   <span className="shrink-0 text-xs text-foreground/50">

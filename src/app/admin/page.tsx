@@ -5,7 +5,8 @@ import { prisma } from "@/lib/prisma";
 import AdminDashboard from "@/components/admin/AdminDashboard";
 import { utcToLocalTime, DEFAULT_TIMEZONE, computeTimeSlotsForViewer } from "@/lib/timezone-utils";
 import { getSiteSettings } from "./settings-actions";
-import { getOpenSuggestionCount } from "@/app/suggestions/actions";
+import { getOpenSuggestionCount, getAllSuggestions } from "@/app/suggestions/actions";
+import { getAllBadges, getAllUsersForBadgeAdmin } from "@/app/badges/actions";
 
 export default async function AdminPage() {
   const session = await getServerSession(authOptions);
@@ -13,7 +14,7 @@ export default async function AdminPage() {
     redirect("/");
   }
 
-  const [users, gameNights, settings, openSuggestionCount] = await Promise.all([
+  const [users, gameNights, settings, openSuggestionCount, allSuggestions] = await Promise.all([
     prisma.user.findMany({
       include: {
         games: true,
@@ -33,10 +34,11 @@ export default async function AdminPage() {
     }),
     getSiteSettings(),
     getOpenSuggestionCount(),
+    getAllSuggestions(),
   ]);
 
   // Summary stats — unique games across all user profiles
-  const [uniqueGameCount, activeUsersCount, recentAuditLogs] = await Promise.all([
+  const [uniqueGameCount, activeUsersCount, recentAuditLogs, badgeDefinitions, badgeUsers] = await Promise.all([
     prisma.userGame.findMany({
       select: { gameName: true },
       distinct: ["gameName"],
@@ -49,6 +51,8 @@ export default async function AdminPage() {
       orderBy: { createdAt: "desc" },
       include: { actor: { select: { id: true, name: true, gamertag: true, avatar: true } } },
     }),
+    getAllBadges(),
+    session.user.isAdmin ? getAllUsersForBadgeAdmin() : Promise.resolve([]),
   ]);
   const totalRSVPs = gameNights.reduce((sum, gn) => sum + gn.attendees.length, 0);
 
@@ -226,7 +230,10 @@ export default async function AdminPage() {
         anchorPrimeStartHour={settings.primeStartHour}
         anchorPrimeEndHour={settings.primeEndHour}
         openSuggestionCount={openSuggestionCount}
+        suggestions={allSuggestions}
         auditLogs={serializedAuditLogs}
+        badgeDefinitions={badgeDefinitions}
+        badgeUsers={badgeUsers}
       />
     </div>
   );

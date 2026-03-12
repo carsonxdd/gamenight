@@ -105,6 +105,7 @@ export default function AvailabilityHeatmap({ availability, primeSlots: primeSlo
     selected && cellData[`${selected.day}-${selected.slot}`]?.players;
 
   const dayAbbrevs = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  const dayLetters = ["S", "M", "T", "W", "T", "F", "S"];
 
   return (
     <motion.div {...fadeIn}>
@@ -156,9 +157,10 @@ export default function AvailabilityHeatmap({ availability, primeSlots: primeSlo
                 {dayAbbrevs.map((d, i) => (
                   <th
                     key={i}
-                    className="p-2 text-center text-xs font-medium text-foreground/70"
+                    className="p-1 sm:p-2 text-center text-xs font-medium text-foreground/70"
                   >
-                    {d}
+                    <span className="hidden sm:inline">{d}</span>
+                    <span className="sm:hidden">{dayLetters[i]}</span>
                   </th>
                 ))}
               </tr>

@@ -5,6 +5,7 @@ import { DAYS_OF_WEEK } from "@/lib/constants";
 import { getWeekStartFriday, addDays, isSameDay, formatRange } from "@/lib/schedule-utils";
 import { GameNightWithAttendees } from "./ScheduleView";
 import { formatEventTimeForViewer, utcToLocalDateTime, dateToUtcString } from "@/lib/timezone-utils";
+import { AnimatePresence, motion } from "framer-motion";
 
 interface Props {
   gameNights: GameNightWithAttendees[];
@@ -103,9 +104,18 @@ export default function WeeklyCalendar({
           >
             Today
           </button>
-          <div className="text-xs text-foreground/50 sm:text-sm">
-            {rangeLabel}
-          </div>
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={rangeLabel}
+              initial={{ opacity: 0, y: 4 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -4 }}
+              transition={{ duration: 0.15 }}
+              className="text-xs text-foreground/50 sm:text-sm"
+            >
+              {rangeLabel}
+            </motion.div>
+          </AnimatePresence>
         </div>
         <button
           onClick={next}
@@ -116,36 +126,45 @@ export default function WeeklyCalendar({
       </div>
 
       {/* Mobile day selector: 3 weekend + 4 weekday rows */}
-      <div className="mb-4 sm:hidden">
-        {/* Top row: Fri, Sat, Sun */}
-        <div className="mb-1.5 grid grid-cols-3 gap-1.5">
-          {mobileDays.slice(0, 3).map((day, i) => (
-            <MobileDayCard
-              key={i}
-              day={day}
-              index={i}
-              isSelected={mobileDay === i}
-              isToday={isSameDay(day, today)}
-              eventCount={getEventsForDay(day).length}
-              onClick={() => setMobileDay(i)}
-            />
-          ))}
-        </div>
-        {/* Bottom row: Mon, Tue, Wed, Thu */}
-        <div className="grid grid-cols-4 gap-1.5">
-          {mobileDays.slice(3, 7).map((day, i) => (
-            <MobileDayCard
-              key={i + 3}
-              day={day}
-              index={i + 3}
-              isSelected={mobileDay === i + 3}
-              isToday={isSameDay(day, today)}
-              eventCount={getEventsForDay(day).length}
-              onClick={() => setMobileDay(i + 3)}
-            />
-          ))}
-        </div>
-      </div>
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={weekStart.toISOString() + "-mobile-selector"}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.2 }}
+          className="mb-4 sm:hidden"
+        >
+          {/* Top row: Fri, Sat, Sun */}
+          <div className="mb-1.5 grid grid-cols-3 gap-1.5">
+            {mobileDays.slice(0, 3).map((day, i) => (
+              <MobileDayCard
+                key={i}
+                day={day}
+                index={i}
+                isSelected={mobileDay === i}
+                isToday={isSameDay(day, today)}
+                eventCount={getEventsForDay(day).length}
+                onClick={() => setMobileDay(i)}
+              />
+            ))}
+          </div>
+          {/* Bottom row: Mon, Tue, Wed, Thu */}
+          <div className="grid grid-cols-4 gap-1.5">
+            {mobileDays.slice(3, 7).map((day, i) => (
+              <MobileDayCard
+                key={i + 3}
+                day={day}
+                index={i + 3}
+                isSelected={mobileDay === i + 3}
+                isToday={isSameDay(day, today)}
+                eventCount={getEventsForDay(day).length}
+                onClick={() => setMobileDay(i + 3)}
+              />
+            ))}
+          </div>
+        </motion.div>
+      </AnimatePresence>
 
       {/* Mobile single-day view */}
       <div className="sm:hidden">
@@ -167,30 +186,39 @@ export default function WeeklyCalendar({
       </div>
 
       {/* Desktop: two stacked week grids (Fri-Thu) */}
-      <div className="hidden sm:block space-y-4">
-        <WeekGrid
-          days={week1}
-          label={formatRange(week1[0], week1[6])}
-          today={today}
-          getEventsForDay={getEventsForDay}
-          userId={userId}
-          isAdmin={isAdmin}
-          onViewEvent={onViewEvent}
-          onMarkAttendance={onMarkAttendance}
-          userTimezone={userTimezone}
-        />
-        <WeekGrid
-          days={week2}
-          label={formatRange(week2[0], week2[6])}
-          today={today}
-          getEventsForDay={getEventsForDay}
-          userId={userId}
-          isAdmin={isAdmin}
-          onViewEvent={onViewEvent}
-          onMarkAttendance={onMarkAttendance}
-          userTimezone={userTimezone}
-        />
-      </div>
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={weekStart.toISOString() + "-desktop"}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.2 }}
+          className="hidden sm:block space-y-4"
+        >
+          <WeekGrid
+            days={week1}
+            label={formatRange(week1[0], week1[6])}
+            today={today}
+            getEventsForDay={getEventsForDay}
+            userId={userId}
+            isAdmin={isAdmin}
+            onViewEvent={onViewEvent}
+            onMarkAttendance={onMarkAttendance}
+            userTimezone={userTimezone}
+          />
+          <WeekGrid
+            days={week2}
+            label={formatRange(week2[0], week2[6])}
+            today={today}
+            getEventsForDay={getEventsForDay}
+            userId={userId}
+            isAdmin={isAdmin}
+            onViewEvent={onViewEvent}
+            onMarkAttendance={onMarkAttendance}
+            userTimezone={userTimezone}
+          />
+        </motion.div>
+      </AnimatePresence>
     </div>
   );
 }

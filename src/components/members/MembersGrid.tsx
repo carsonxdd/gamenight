@@ -5,6 +5,14 @@ import { motion } from "framer-motion";
 import { staggerContainer, staggerItem } from "@/lib/animations";
 import MemberCard from "./MemberCard";
 
+export interface ShowcasedBadge {
+  id: string;
+  name: string;
+  description: string;
+  icon: string;
+  tier: string;
+}
+
 export interface MemberData {
   id: string;
   name: string;
@@ -20,6 +28,8 @@ export interface MemberData {
   customLink: string | null;
   isModerator: boolean;
   isOwner: boolean;
+  showcasedBadges?: ShowcasedBadge[];
+  streakCount?: number;
 }
 
 interface MembersGridProps {

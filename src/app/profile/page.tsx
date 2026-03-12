@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import ProfilePageClient from "@/components/signup/ProfilePageClient";
 import { utcToLocalTime, DEFAULT_TIMEZONE } from "@/lib/timezone-utils";
 import { getSiteSettings } from "@/app/admin/settings-actions";
+import { getUserBadges, getUserStreaks } from "@/app/badges/actions";
 
 export default async function ProfilePage() {
   const session = await getServerSession(authOptions);
@@ -69,6 +70,11 @@ export default async function ProfilePage() {
 
   const settings = await getSiteSettings();
 
+  // Badge data
+  const [badgeData, streakData] = settings.enableBadges
+    ? await Promise.all([getUserBadges(session.user.id), getUserStreaks(session.user.id)])
+    : [[], { attendance: { currentCount: 0, longestCount: 0 }, weekly: { currentCount: 0, longestCount: 0 } }];
+
   return (
     <ProfilePageClient
       defaultName={user.gamertag}
@@ -91,6 +97,9 @@ export default async function ProfilePage() {
       extendedStartHour={settings.extendedStartHour}
       extendedEndHour={settings.extendedEndHour}
       anchorTimezone={settings.anchorTimezone}
+      enableBadges={settings.enableBadges}
+      badges={badgeData}
+      streaks={streakData}
     />
   );
 }

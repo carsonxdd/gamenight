@@ -12,6 +12,8 @@ import Insights from "./Insights";
 import SiteSettingsPanel from "./SiteSettingsPanel";
 import AdminSuggestions from "./AdminSuggestions";
 import AuditLogFeed from "./AuditLogFeed";
+import BadgeManager from "./BadgeManager";
+import type { BadgeData, UserOption } from "./BadgeManager";
 import type { SiteSettingsData } from "@/lib/settings-constants";
 
 interface GameStat {
@@ -102,10 +104,24 @@ interface Props {
   anchorPrimeStartHour?: number;
   anchorPrimeEndHour?: number;
   openSuggestionCount?: number;
+  suggestions?: SuggestionItem[];
   auditLogs?: AuditLogEntry[];
+  badgeDefinitions?: BadgeData[];
+  badgeUsers?: UserOption[];
 }
 
-type Tab = "games" | "availability" | "rsvps" | "roster" | "insights" | "activity" | "suggestions" | "settings";
+interface SuggestionItem {
+  id: string;
+  type: string;
+  title: string;
+  description: string | null;
+  status: string;
+  userId: string;
+  user: { id: string; name: string; gamertag: string | null; avatar: string | null };
+  createdAt: string;
+}
+
+type Tab = "games" | "availability" | "rsvps" | "roster" | "insights" | "activity" | "suggestions" | "badges" | "settings";
 
 const tabs: { key: Tab; label: string; adminOnly?: boolean }[] = [
   { key: "games", label: "Games" },
@@ -114,7 +130,8 @@ const tabs: { key: Tab; label: string; adminOnly?: boolean }[] = [
   { key: "roster", label: "Roster" },
   { key: "insights", label: "Insights" },
   { key: "activity", label: "Activity" },
-  { key: "suggestions", label: "Suggestions" },
+  { key: "suggestions", label: "Feedback" },
+  { key: "badges", label: "Badges", adminOnly: true },
   { key: "settings", label: "Settings", adminOnly: true },
 ];
 
@@ -135,7 +152,10 @@ export default function AdminDashboard({
   anchorPrimeStartHour,
   anchorPrimeEndHour,
   openSuggestionCount = 0,
+  suggestions = [],
   auditLogs = [],
+  badgeDefinitions = [],
+  badgeUsers = [],
 }: Props) {
   const [activeTab, setActiveTab] = useState<Tab>("games");
 
@@ -201,7 +221,7 @@ export default function AdminDashboard({
       </motion.div>
 
       {/* Tab Navigation */}
-      <div className="mb-6 grid grid-cols-4 gap-1 rounded-lg border border-border bg-surface p-1 md:flex">
+      <div className="mb-6 grid grid-cols-2 gap-1 rounded-lg border border-border bg-surface p-1 sm:grid-cols-4 md:flex">
         {tabs
           .filter((tab) => !tab.adminOnly || isCurrentUserAdmin)
           .map((tab) => (
@@ -235,7 +255,8 @@ export default function AdminDashboard({
       )}
       {activeTab === "insights" && <Insights />}
       {activeTab === "activity" && <AuditLogFeed logs={auditLogs} />}
-      {activeTab === "suggestions" && <AdminSuggestions isAdmin={isCurrentUserAdmin} />}
+      {activeTab === "suggestions" && <AdminSuggestions isAdmin={isCurrentUserAdmin} initialSuggestions={suggestions} />}
+      {activeTab === "badges" && <BadgeManager badges={badgeDefinitions} users={badgeUsers} />}
       {activeTab === "settings" && siteSettings && (
         <SiteSettingsPanel settings={siteSettings} />
       )}

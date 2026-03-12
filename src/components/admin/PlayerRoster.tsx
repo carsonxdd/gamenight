@@ -244,7 +244,7 @@ export default function PlayerRoster({ players, currentUserId, isCurrentUserAdmi
                               : "Muted"}
                           </Badge>
                         )}
-                        {player.willingToModerate && (
+                        {player.willingToModerate && !player.isAdmin && !player.isModerator && !player.isOwner && (
                           <Badge variant="warning">Willing to Mod</Badge>
                         )}
                       </div>

@@ -9,7 +9,7 @@ import HighlightCards from "@/components/home/HighlightCards";
 export const dynamic = "force-dynamic";
 
 export default async function Home() {
-  const [dbUsers, memberCount, eventsHosted] = await Promise.all([
+  const [dbUsers, memberCount, eventsHosted, attendanceStreaks] = await Promise.all([
     prisma.user.findMany({
       where: { games: { some: {} } },
       select: {
@@ -21,7 +21,13 @@ export default async function Home() {
     }),
     prisma.user.count(),
     prisma.gameNight.count(),
+    prisma.userStreak.findMany({
+      where: { type: "attendance", currentCount: { gt: 0 } },
+      select: { userId: true, currentCount: true },
+    }),
   ]);
+  const streakMap: Record<string, number> = {};
+  for (const s of attendanceStreaks) streakMap[s.userId] = s.currentCount;
 
   const members = dbUsers.map((user) => {
     let topRank: { gameName: string; rank: string; color: string } | null = null;
@@ -57,6 +63,7 @@ export default async function Home() {
       topRank,
       isModerator: user.isModerator,
       isOwner: user.isOwner,
+      streakCount: streakMap[user.id] || 0,
     };
   });
 

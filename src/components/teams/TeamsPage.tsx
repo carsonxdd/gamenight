@@ -56,7 +56,7 @@ export default function TeamsPage({ teams, myTeams, pendingInvites }: Props) {
         className="flex flex-col gap-8"
       >
         {/* Header */}
-        <motion.div variants={staggerItem} className="flex items-start justify-between">
+        <motion.div variants={staggerItem} className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <h1 className="mb-2 text-4xl font-extrabold tracking-tight text-neon text-glow-sm sm:text-5xl">
               Teams

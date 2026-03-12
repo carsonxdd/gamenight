@@ -8,6 +8,7 @@ import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { getSiteSettings } from "@/app/admin/settings-actions";
 import { hexToRgb, darkenHex } from "@/lib/settings-constants";
+import ToastProvider from "@/components/badges/ToastProvider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -54,11 +55,13 @@ export default async function RootLayout({
       >
         <SessionProvider>
           <SiteSettingsProvider settings={settings}>
-            <Navbar />
-            <main className="pt-16">
-              <PageTransition>{children}</PageTransition>
-            </main>
-            <Footer />
+            <ToastProvider>
+              <Navbar />
+              <main className="pt-16">
+                <PageTransition>{children}</PageTransition>
+              </main>
+              <Footer />
+            </ToastProvider>
           </SiteSettingsProvider>
         </SessionProvider>
       </body>
