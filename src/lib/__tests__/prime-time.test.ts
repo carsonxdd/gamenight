@@ -77,6 +77,42 @@ describe("computeTimeSlotsForViewer", () => {
     expect(hasPostMidnight || hasPreMidnight).toBe(true);
   });
 
+  it("handles extendedEndHour < extendedStartHour (wrap past midnight)", () => {
+    // extendedStart=17, extendedEnd=1 means 5 PM to 1 AM (wrapping)
+    const { primeSlots, extendedSlots } = computeTimeSlotsForViewer(
+      "America/Phoenix",
+      "America/Phoenix",
+      17, 23, 17, 1
+    );
+
+    // Should have slots, not empty arrays
+    expect(extendedSlots.length).toBeGreaterThan(0);
+    expect(primeSlots.length).toBeGreaterThan(0);
+
+    // Extended should span 8 hours (17-01) = 17 :00/:30 slots
+    // 17:00, 17:30, 18:00, ..., 00:00, 00:30, 01:00
+    expect(extendedSlots[0]).toBe("17:00");
+    expect(extendedSlots[extendedSlots.length - 1]).toBe("01:00");
+
+    // Prime should be 17:00 to 23:00
+    expect(primeSlots[0]).toBe("17:00");
+    expect(primeSlots[primeSlots.length - 1]).toBe("23:00");
+  });
+
+  it("handles both end hours wrapping past midnight", () => {
+    // prime 22-2, extended 20-4 (all wrapping)
+    const { primeSlots, extendedSlots } = computeTimeSlotsForViewer(
+      "America/Phoenix",
+      "America/Phoenix",
+      22, 2, 20, 4
+    );
+
+    expect(extendedSlots.length).toBeGreaterThan(0);
+    expect(primeSlots.length).toBeGreaterThan(0);
+    expect(extendedSlots[0]).toBe("20:00");
+    expect(primeSlots[0]).toBe("22:00");
+  });
+
   it("prime slots are a subset of extended slots", () => {
     const { primeSlots, extendedSlots } = computeTimeSlotsForViewer(
       "America/New_York",

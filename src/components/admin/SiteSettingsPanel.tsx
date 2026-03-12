@@ -136,9 +136,10 @@ export default function SiteSettingsPanel({ settings }: Props) {
         <div className="mt-4">
           <p className="mb-2 text-xs text-foreground/40">Preview (anchor timezone):</p>
           <div className="flex items-center gap-0.5 overflow-x-auto">
-            {Array.from({ length: form.extendedEndHour - form.extendedStartHour + 1 }, (_, i) => {
+            {Array.from({ length: (form.extendedEndHour <= form.extendedStartHour ? form.extendedEndHour + 24 : form.extendedEndHour) - form.extendedStartHour + 1 }, (_, i) => {
               const hour = form.extendedStartHour + i;
-              const isPrime = hour >= form.primeStartHour && hour < form.primeEndHour;
+              const normPrimeEnd = form.primeEndHour <= form.primeStartHour ? form.primeEndHour + 24 : form.primeEndHour;
+              const isPrime = hour >= form.primeStartHour && hour < normPrimeEnd;
               const displayHour = hour % 24;
               return (
                 <div

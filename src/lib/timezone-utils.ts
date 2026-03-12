@@ -346,12 +346,20 @@ export function computeTimeSlotsForViewer(
     return viewerHour;
   }
 
-  // Simpler: just shift all hours and generate slots
+  // Normalize end hours so they're always > start (handle wrap past midnight)
+  // e.g. extendedStart=17, extendedEnd=1 → treat as extendedEnd=25
+  const normExtEnd = extendedEndHour <= extendedStartHour
+    ? extendedEndHour + 24
+    : extendedEndHour;
+  const normPrimeEnd = primeEndHour <= primeStartHour
+    ? primeEndHour + 24
+    : primeEndHour;
+
   const primeSlots: string[] = [];
   const extendedSlots: string[] = [];
 
   // Generate all extended slots
-  const totalExtHours = extendedEndHour - extendedStartHour;
+  const totalExtHours = normExtEnd - extendedStartHour;
   for (let i = 0; i <= totalExtHours; i++) {
     const anchorH = extendedStartHour + i;
     const viewerH = anchorHourToViewer(anchorH % 24);
@@ -363,10 +371,9 @@ export function computeTimeSlotsForViewer(
     }
 
     // Check if this hour falls in prime range
-    if (anchorH >= primeStartHour && anchorH <= primeEndHour) {
+    if (anchorH >= primeStartHour && anchorH <= normPrimeEnd) {
       primeSlots.push(slotFull);
-      // Only add :30 slot if we haven't reached the prime end hour
-      if (anchorH < primeEndHour && i < totalExtHours) {
+      if (anchorH < normPrimeEnd && i < totalExtHours) {
         primeSlots.push(`${displayH.toString().padStart(2, "0")}:30`);
       }
     }
