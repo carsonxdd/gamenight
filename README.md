@@ -46,7 +46,7 @@ A fully customizable web app for organizing gaming communities. Sign up with Dis
 
 ### Extended Profile (profile page only)
 - **Favorite games** — pick up to 3 games to feature on your member card in the landing page carousel. Falls back to first 3 games if none selected.
-- **Visual rank selector** — colored tier grid for each competitive game (CS2, Valorant, LoL, Dota 2, Rocket League, Overwatch 2, Marvel Rivals, Chess.com, Halo, Brawlhalla, World of Warcraft). Each tier rendered as a colored card matching in-game rank colors. Click a tier to expand subdivisions (e.g., Gold 1/2/3). Single-rank tiers select directly. Per-game accordion with animated expand/collapse. Rank selectors are reactive to game selection — only games currently selected in the profile show rank options; adding or removing a game instantly updates the rank list without saving first.
+- **Visual rank selector** — colored tier grid for each competitive game (CS2, Valorant, LoL, Dota 2, Rocket League, Overwatch 2, Marvel Rivals, Chess.com, Halo, Brawlhalla, World of Warcraft). Each tier rendered as a colored card matching in-game rank colors. Click a tier to expand subdivisions (e.g., Gold 1/2/3). Single-rank tiers select directly. Per-game accordion with animated expand/collapse. Rank selectors are reactive to game selection — only games currently selected in the profile show rank options; adding or removing a game instantly updates the rank list without saving first. **Admin rank lock** — admins can lock a player's rank editing, preventing them from changing their own ranks. Locked players see a notice and disabled rank selectors on their profile page. Other profile fields (social links, etc.) still save normally.
 - **Social links** — optional Twitter/X, Twitch, YouTube, and custom link fields. Shown as icon buttons on the member card. Discord username is always displayed (copies to clipboard on click).
 - Interest in pot / buy-in tournaments, moderating, and LAN events (Arizona) — grouped under "Tournaments & Events"
 - "Finish setting up your profile" dismissible banner on the schedule page (persists dismissal to DB, only shows if extended profile is incomplete)
@@ -169,7 +169,7 @@ Custom games can be added via text input.
 - **Game Popularity** — ranked by player count with expandable player lists
 - **Availability Heatmap** — aggregated grid showing player overlap with click-to-reveal names; filterable by game to see who's available for a specific title. **Prime/extended visual distinction** — prime time rows use neon intensity gradients, extended rows use muted foreground intensity. Cross-timezone availability entries that span midnight are automatically split into correct day segments. **Timezone-aware legend** — Arizona viewers see "Prime time 5 PM–11 PM"; other timezone viewers see the converted range with the anchor timezone noted (e.g. "Prime time 7 PM–1 AM your time (5 PM–11 PM Arizona)").
 - **RSVP Overview** — game night cards with status badge counts
-- **Player Roster** — searchable table with role ladder promote/demote (Member → Moderator → Admin), owner/admin/mod badges, and remove with confirmation. Admins see full management actions (promote, demote, remove, mute, unmute). Moderators see mute/temp-mute buttons for regular members only (cannot target admins, other mods, or owner). "Willing to Mod" badge shown next to players who opted in (hidden if the player is already a mod, admin, or owner), with a filter toggle button and count pill to quickly find moderation candidates.
+- **Player Roster** — searchable table with role ladder promote/demote (Member → Moderator → Admin), owner/admin/mod badges, and remove with confirmation. Admins see full management actions (promote, demote, remove, mute, unmute, lock/unlock ranks, set ranks). Moderators see mute/temp-mute buttons for regular members only (cannot target admins, other mods, or owner). "Willing to Mod" badge shown next to players who opted in (hidden if the player is already a mod, admin, or owner), with a filter toggle button and count pill to quickly find moderation candidates. **Rank management** — admins can lock a player's rank editing ("Ranks Locked" badge), override their ranks via a modal with the same visual rank selector used in profiles, and unlock when trusted again. All rank actions are audit-logged (RANKS_LOCKED, RANKS_UNLOCKED, RANKS_OVERRIDDEN).
 - **Insights** — interactive analytics tab with 8 on-demand queries. Click a card to run it, click again to collapse. Game-based insights (Best Time, Squad Finder) have a game dropdown and Run button. All results are expandable with player name tags.
   - **Best Time for Game** — top 10 time slots where the most players of a selected game overlap
   - **Peak Availability** — busiest time slots across all players regardless of game
@@ -487,6 +487,15 @@ Custom profile picture upload for non-Discord users
 Admin toggle under Access & Privacy: Discord Only / Discord + Email / Email Only
 
 ## Version History
+
+### v1.0.1 — 2026-03-13
+
+#### Admin Rank Management
+- **Rank lock** — admins can lock a player's rank editing from the Player Roster, preventing self-reported rank changes. "Ranks Locked" badge shown on the roster.
+- **Rank override** — admins can set a player's ranks via a modal with the same visual rank selector used in profiles. Overrides the player's existing ranks.
+- **Rank unlock** — admins can restore a player's ability to edit their own ranks.
+- **Profile guard** — locked players see a notice and disabled rank selectors on their profile. Other profile fields (social links, interests, etc.) still save normally.
+- **Audit trail** — all rank actions logged (RANKS_LOCKED, RANKS_UNLOCKED, RANKS_OVERRIDDEN) with actor and target metadata.
 
 ### v1.0 — 2026-03-12
 

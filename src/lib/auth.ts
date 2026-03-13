@@ -84,6 +84,7 @@ export const authOptions: NextAuthOptions = {
           token.approvalStatus = dbUser.approvalStatus;
           token.isMuted = dbUser.isMuted;
           token.mutedUntil = dbUser.mutedUntil?.toISOString() ?? null;
+          token.ranksLocked = dbUser.ranksLocked;
 
           // Throttled lastSeenAt update + weekly streak evaluation
           const now = Date.now();
@@ -118,6 +119,7 @@ export const authOptions: NextAuthOptions = {
       session.user.approvalStatus = (token.approvalStatus as string | null) ?? null;
       session.user.isMuted = (token.isMuted as boolean) || false;
       session.user.mutedUntil = (token.mutedUntil as string | null) ?? null;
+      session.user.ranksLocked = (token.ranksLocked as boolean) || false;
       return session;
     },
   },

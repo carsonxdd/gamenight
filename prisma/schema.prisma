@@ -20,6 +20,7 @@ model User {
   isOwner                Boolean             @default(false)
   isMuted                Boolean             @default(false)
   mutedUntil             DateTime?
+  ranksLocked            Boolean             @default(false)
   willingToModerate      Boolean             @default(false)
   interestedInBuyIn      Boolean             @default(false)
   interestedInLAN        Boolean             @default(false)

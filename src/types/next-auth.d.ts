@@ -16,6 +16,7 @@ declare module "next-auth" {
       approvalStatus: string | null;
       isMuted: boolean;
       mutedUntil: string | null;
+      ranksLocked: boolean;
     };
   }
 }
@@ -33,5 +34,6 @@ declare module "next-auth/jwt" {
     approvalStatus?: string | null;
     isMuted?: boolean;
     mutedUntil?: string | null;
+    ranksLocked?: boolean;
   }
 }

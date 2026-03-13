@@ -131,6 +131,13 @@ export async function updateExtendedProfile(data: ExtendedProfileData) {
   }
 
   try {
+    // Check if ranks are locked by admin
+    const currentUser = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { ranksLocked: true },
+    });
+    const ranksLocked = currentUser?.ranksLocked ?? false;
+
     await prisma.$transaction(async (tx) => {
       await tx.user.update({
         where: { id: session.user.id },
@@ -148,17 +155,20 @@ export async function updateExtendedProfile(data: ExtendedProfileData) {
         },
       });
 
-      await tx.userGameRank.deleteMany({ where: { userId: session.user.id } });
+      // Skip rank changes if locked
+      if (!ranksLocked) {
+        await tx.userGameRank.deleteMany({ where: { userId: session.user.id } });
 
-      const ranksToCreate = data.ranks.filter((r) => r.rank);
-      if (ranksToCreate.length > 0) {
-        await tx.userGameRank.createMany({
-          data: ranksToCreate.map((r) => ({
-            userId: session.user.id,
-            gameName: r.gameName,
-            rank: r.rank,
-          })),
-        });
+        const ranksToCreate = data.ranks.filter((r) => r.rank);
+        if (ranksToCreate.length > 0) {
+          await tx.userGameRank.createMany({
+            data: ranksToCreate.map((r) => ({
+              userId: session.user.id,
+              gameName: r.gameName,
+              rank: r.rank,
+            })),
+          });
+        }
       }
     });
 
@@ -166,7 +176,7 @@ export async function updateExtendedProfile(data: ExtendedProfileData) {
     revalidatePath("/profile");
     revalidatePath("/members");
 
-    return { success: true };
+    return { success: true, ranksLocked };
   } catch {
     return { error: "Failed to save extended profile" };
   }

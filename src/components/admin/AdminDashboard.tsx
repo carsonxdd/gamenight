@@ -56,8 +56,11 @@ interface PlayerData {
   isOwner: boolean;
   isMuted: boolean;
   mutedUntil: string | null;
+  ranksLocked: boolean;
   willingToModerate: boolean;
   games: string[];
+  rawGames: string[];
+  ranks: { gameName: string; rank: string }[];
   availabilityDays: number[];
   lastSeenAt: string | null;
 }

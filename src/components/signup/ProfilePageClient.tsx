@@ -36,6 +36,7 @@ interface ProfilePageClientProps {
   initialTwitch?: string;
   initialYoutube?: string;
   initialCustomLink?: string;
+  ranksLocked?: boolean;
   groups?: { id: string; name: string; memberIds: string[] }[];
   members?: InvitableMember[];
   primeStartHour?: number;
@@ -62,6 +63,7 @@ export default function ProfilePageClient({
   initialTwitch,
   initialYoutube,
   initialCustomLink,
+  ranksLocked,
   groups = [],
   members = [],
   primeStartHour,
@@ -222,6 +224,7 @@ export default function ProfilePageClient({
               initialYoutube={initialYoutube}
               initialCustomLink={initialCustomLink}
               onDirty={setExtendedDirty}
+              ranksLocked={ranksLocked}
               hideSubmit
             />
           </Card>

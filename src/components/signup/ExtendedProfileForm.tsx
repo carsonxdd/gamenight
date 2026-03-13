@@ -42,6 +42,7 @@ interface ExtendedProfileFormProps {
   initialCustomLink?: string;
   hideSubmit?: boolean;
   onDirty?: (dirty: boolean) => void;
+  ranksLocked?: boolean;
 }
 
 const ExtendedProfileForm = forwardRef<ExtendedProfileFormHandle, ExtendedProfileFormProps>(function ExtendedProfileForm({
@@ -57,6 +58,7 @@ const ExtendedProfileForm = forwardRef<ExtendedProfileFormHandle, ExtendedProfil
   initialCustomLink,
   hideSubmit,
   onDirty,
+  ranksLocked,
 }, ref) {
   const rankedUserGames = useMemo(
     () => userGames.filter((g) => g in GAME_RANK_TIERS),
@@ -254,11 +256,19 @@ const ExtendedProfileForm = forwardRef<ExtendedProfileFormHandle, ExtendedProfil
           <h3 className="mb-1 text-sm font-medium text-foreground">
             Your Ranks
           </h3>
-          <p className="mb-4 text-xs text-foreground/40">
-            Optional — helps us balance teams and set up fair matches. Click a
-            game to pick your rank.
-          </p>
-          <div className="space-y-2">
+          {ranksLocked ? (
+            <div className="mb-4 rounded-lg border border-danger/30 bg-danger/5 px-4 py-3">
+              <p className="text-sm text-danger">
+                Your ranks have been locked by an admin. Contact an admin if you believe this is an error.
+              </p>
+            </div>
+          ) : (
+            <p className="mb-4 text-xs text-foreground/40">
+              Optional — helps us balance teams and set up fair matches. Click a
+              game to pick your rank.
+            </p>
+          )}
+          <div className={`space-y-2 ${ranksLocked ? "pointer-events-none opacity-50" : ""}`}>
             {rankedUserGames.map((gameName) => {
               const isExpanded = expandedGame === gameName;
               const currentRank = ranks[gameName];
@@ -275,6 +285,7 @@ const ExtendedProfileForm = forwardRef<ExtendedProfileFormHandle, ExtendedProfil
                 >
                   <button
                     type="button"
+                    disabled={ranksLocked}
                     onClick={() =>
                       setExpandedGame(isExpanded ? null : gameName)
                     }

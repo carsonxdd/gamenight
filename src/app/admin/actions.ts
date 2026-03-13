@@ -132,6 +132,102 @@ export async function tempMuteUser(userId: string, minutes: number) {
   }
 }
 
+export async function lockRanks(userId: string) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.isAdmin) {
+    return { error: "Admin only" };
+  }
+  if (session.user.id === userId) {
+    return { error: "Cannot lock your own ranks" };
+  }
+
+  try {
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user) return { error: "User not found" };
+    if (user.isOwner) return { error: "Cannot lock owner ranks" };
+
+    await prisma.user.update({
+      where: { id: userId },
+      data: { ranksLocked: true },
+    });
+    revalidatePath("/admin");
+    logAudit({ action: "RANKS_LOCKED", entityType: "User", entityId: userId, actorId: session.user.id, metadata: { targetName: user.gamertag || user.name } });
+    return { success: true };
+  } catch {
+    return { error: "Failed to lock ranks" };
+  }
+}
+
+export async function unlockRanks(userId: string) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.isAdmin) {
+    return { error: "Admin only" };
+  }
+
+  try {
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user) return { error: "User not found" };
+
+    await prisma.user.update({
+      where: { id: userId },
+      data: { ranksLocked: false },
+    });
+    revalidatePath("/admin");
+    logAudit({ action: "RANKS_UNLOCKED", entityType: "User", entityId: userId, actorId: session.user.id, metadata: { targetName: user.gamertag || user.name } });
+    return { success: true };
+  } catch {
+    return { error: "Failed to unlock ranks" };
+  }
+}
+
+interface RankInput {
+  gameName: string;
+  rank: string;
+}
+
+export async function setUserRanks(userId: string, ranks: RankInput[]) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.isAdmin) {
+    return { error: "Admin only" };
+  }
+  if (session.user.id === userId) {
+    return { error: "Cannot override your own ranks" };
+  }
+
+  try {
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user) return { error: "User not found" };
+    if (user.isOwner) return { error: "Cannot override owner ranks" };
+
+    await prisma.$transaction(async (tx) => {
+      await tx.userGameRank.deleteMany({ where: { userId } });
+      const ranksToCreate = ranks.filter((r) => r.rank);
+      if (ranksToCreate.length > 0) {
+        await tx.userGameRank.createMany({
+          data: ranksToCreate.map((r) => ({
+            userId,
+            gameName: r.gameName,
+            rank: r.rank,
+          })),
+        });
+      }
+    });
+
+    revalidatePath("/admin");
+    revalidatePath("/members");
+    logAudit({
+      action: "RANKS_OVERRIDDEN",
+      entityType: "User",
+      entityId: userId,
+      actorId: session.user.id,
+      metadata: { targetName: user.gamertag || user.name, ranks: ranks.filter((r) => r.rank) },
+    });
+    return { success: true };
+  } catch {
+    return { error: "Failed to set ranks" };
+  }
+}
+
 export async function removeUser(userId: string) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.isAdmin) {

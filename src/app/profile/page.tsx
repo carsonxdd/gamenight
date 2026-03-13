@@ -90,6 +90,7 @@ export default async function ProfilePage() {
       initialTwitch={user.twitch || undefined}
       initialYoutube={user.youtube || undefined}
       initialCustomLink={user.customLink || undefined}
+      ranksLocked={user.ranksLocked}
       groups={groups}
       members={allMembers}
       primeStartHour={settings.primeStartHour}

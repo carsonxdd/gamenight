@@ -18,6 +18,7 @@ export default async function AdminPage() {
     prisma.user.findMany({
       include: {
         games: true,
+        ranks: true,
         availability: true,
         attendances: true,
       },
@@ -182,12 +183,15 @@ export default async function AdminPage() {
     isOwner: u.isOwner,
     isMuted: u.isMuted,
     mutedUntil: u.mutedUntil?.toISOString() ?? null,
+    ranksLocked: u.ranksLocked,
     games: u.games.map((g) => {
       const modes = g.modes ? (JSON.parse(g.modes) as string[]) : undefined;
       return modes && modes.length > 0
         ? `${g.gameName} (${modes.join(", ")})`
         : g.gameName;
     }),
+    rawGames: u.games.map((g) => g.gameName),
+    ranks: u.ranks.map((r) => ({ gameName: r.gameName, rank: r.rank })),
     availabilityDays: [...new Set(u.availability.map((a) => a.dayOfWeek))],
     willingToModerate: u.willingToModerate,
     lastSeenAt: u.lastSeenAt?.toISOString() ?? null,

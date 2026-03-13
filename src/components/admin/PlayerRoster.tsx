@@ -7,8 +7,9 @@ import Card from "@/components/ui/Card";
 import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
 import Modal from "@/components/ui/Modal";
-import { cycleRole, removeUser, muteUser, unmuteUser, tempMuteUser } from "@/app/admin/actions";
+import { cycleRole, removeUser, muteUser, unmuteUser, tempMuteUser, lockRanks, unlockRanks } from "@/app/admin/actions";
 import { isUserMuted, formatMuteRemaining } from "@/lib/mute-utils";
+import RankOverrideModal from "./RankOverrideModal";
 
 interface PlayerData {
   id: string;
@@ -21,7 +22,10 @@ interface PlayerData {
   willingToModerate: boolean;
   isMuted: boolean;
   mutedUntil: string | null;
+  ranksLocked: boolean;
   games: string[];
+  rawGames: string[];
+  ranks: { gameName: string; rank: string }[];
   availabilityDays: number[];
   lastSeenAt: string | null;
 }
@@ -55,6 +59,7 @@ export default function PlayerRoster({ players, currentUserId, isCurrentUserAdmi
   const [confirmRemove, setConfirmRemove] = useState<PlayerData | null>(null);
   const [tempMuteTarget, setTempMuteTarget] = useState<string | null>(null);
   const [tempMuteMinutes, setTempMuteMinutes] = useState("30");
+  const [rankOverridePlayer, setRankOverridePlayer] = useState<PlayerData | null>(null);
   const [isPending, startTransition] = useTransition();
 
   const willingCount = players.filter((p) => p.willingToModerate).length;
@@ -110,6 +115,20 @@ export default function PlayerRoster({ players, currentUserId, isCurrentUserAdmi
       if (result.error) alert(result.error);
       setTempMuteTarget(null);
       setTempMuteMinutes("30");
+    });
+  }
+
+  function handleLockRanks(userId: string) {
+    startTransition(async () => {
+      const result = await lockRanks(userId);
+      if (result.error) alert(result.error);
+    });
+  }
+
+  function handleUnlockRanks(userId: string) {
+    startTransition(async () => {
+      const result = await unlockRanks(userId);
+      if (result.error) alert(result.error);
     });
   }
 
@@ -273,6 +292,9 @@ export default function PlayerRoster({ players, currentUserId, isCurrentUserAdmi
                               : "Muted"}
                           </Badge>
                         )}
+                        {player.ranksLocked && (
+                          <Badge variant="danger">Ranks Locked</Badge>
+                        )}
                         {player.willingToModerate && !player.isAdmin && !player.isModerator && !player.isOwner && (
                           <Badge variant="warning">Willing to Mod</Badge>
                         )}
@@ -341,6 +363,33 @@ export default function PlayerRoster({ players, currentUserId, isCurrentUserAdmi
                                 </Button>
                               </>
                             )}
+                            {player.ranksLocked ? (
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                disabled={isPending}
+                                onClick={() => handleUnlockRanks(player.id)}
+                              >
+                                Unlock Ranks
+                              </Button>
+                            ) : (
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                disabled={isPending}
+                                onClick={() => handleLockRanks(player.id)}
+                              >
+                                Lock Ranks
+                              </Button>
+                            )}
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              disabled={isPending}
+                              onClick={() => setRankOverridePlayer(player)}
+                            >
+                              Set Ranks
+                            </Button>
                           </div>
                           {tempMuteTarget === player.id && (
                             <div className="mt-1 flex items-center gap-2">
@@ -464,6 +513,12 @@ export default function PlayerRoster({ players, currentUserId, isCurrentUserAdmi
           </Button>
         </div>
       </Modal>
+
+      {/* Rank Override Modal */}
+      <RankOverrideModal
+        player={rankOverridePlayer}
+        onClose={() => setRankOverridePlayer(null)}
+      />
     </motion.div>
   );
 }
