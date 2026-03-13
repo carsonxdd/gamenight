@@ -24,8 +24,8 @@ interface Props {
   settings: SiteSettingsData;
 }
 
-// Hours from 0-25 (25 = 1 AM next day)
-const HOUR_OPTIONS = Array.from({ length: 26 }, (_, i) => {
+// Hours from 0-26 (24 = 12 AM, 25 = 1 AM, 26 = 2 AM next day)
+const HOUR_OPTIONS = Array.from({ length: 27 }, (_, i) => {
   const h = i % 24;
   const label = formatTime(`${h.toString().padStart(2, "0")}:00`);
   return {

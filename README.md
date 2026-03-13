@@ -489,7 +489,9 @@ Admin toggle under Access & Privacy: Discord Only / Discord + Email / Email Only
 ## Version History
 
 ### v0.11.0-dev — Discord Notifications & Bugfixes
-- **Fix 11:30 PM availability not showing on heatmaps** — `parseSlot()` generated invalid `"24:00"` endTime for the 23:30 slot, and the midnight day-split logic in the members and admin heatmaps produced zero-length ranges that `slotCovered` never matched. Fixed slot parsing to wrap hours correctly with proper day tracking, and fixed split endTime to `"24:00"` so the slot is covered.
+- **Fix 11:30 PM availability not showing on heatmaps** — Three layered bugs: (1) `parseSlot()` generated invalid `"24:00"` endTime for the 23:30 slot — fixed to wrap hours with proper day tracking. (2) Midnight day-split logic in members and admin heatmaps produced zero-length ranges that `slotCovered` never matched — fixed split endTime to `"24:00"`. (3) `computeTimeSlotsForViewer()`, `generateTimeSlots()`, and `TIME_SLOTS` all dropped the `:30` slot of the final hour in the range, so the heatmap had no cell for 23:30 to appear in — fixed to always include both `:00` and `:30` for every hour.
+- **Fix members page not updating after profile save** — `updateProfile` and `updateExtendedProfile` were missing `revalidatePath` calls. In production, Next.js served cached members/admin pages with stale availability data. Added revalidation for `/profile`, `/members`, and `/admin`.
+- **Extended hours up to 2 AM** — admin settings time window dropdown now supports extending to 2 AM next day (value 26).
 
 #### Discord Notifications
 - **Dual-channel webhook system** — separate webhooks for automatic updates and manual announcements, configured in admin settings. No env vars or Discord Developer Portal setup needed — just paste webhook URLs from Discord channel settings.
