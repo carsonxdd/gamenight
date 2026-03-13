@@ -22,6 +22,8 @@ interface Props {
 export default function EventList({ gameNights, userId, isAdmin, onViewEvent, onMarkAttendance, teamTagMap = {}, userTimezone = "America/Phoenix" }: Props) {
   const settings = useSiteSettings();
   const maxAttendees = settings.maxAttendeesDefault;
+  const pendingEvents = isAdmin ? gameNights.filter((gn) => gn.status === "pending") : [];
+
   if (gameNights.length === 0) {
     return (
       <div className="py-20 text-center text-foreground/40">
@@ -32,6 +34,30 @@ export default function EventList({ gameNights, userId, isAdmin, onViewEvent, on
 
   return (
     <div className="space-y-4">
+      {pendingEvents.length > 0 && (
+        <div className="rounded-lg border border-warning/30 bg-warning/5 px-4 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="text-warning text-lg">⏳</span>
+            <span className="text-sm font-medium text-warning">
+              {pendingEvents.length} event{pendingEvents.length !== 1 ? "s" : ""} pending approval
+            </span>
+          </div>
+          <div className="flex gap-2 items-center">
+            {pendingEvents.slice(0, 3).map((gn) => (
+              <button
+                key={gn.id}
+                onClick={() => onViewEvent?.(gn)}
+                className="rounded-lg bg-warning/10 px-3 py-1 text-xs font-medium text-warning transition hover:bg-warning/20 truncate max-w-[150px]"
+              >
+                {gn.title || gn.game}
+              </button>
+            ))}
+            {pendingEvents.length > 3 && (
+              <span className="text-xs text-warning/60">+{pendingEvents.length - 3} more</span>
+            )}
+          </div>
+        </div>
+      )}
       {gameNights.map((gn) => {
         const myRsvp = userId
           ? gn.attendees.find((a) => a.userId === userId)?.status

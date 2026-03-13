@@ -286,6 +286,16 @@ model SiteSettings {
   enableHighlights       Boolean @default(true)
   enableStats            Boolean @default(true)
   enableBadges           Boolean @default(true)
+
+  // Discord Webhooks
+  discordUpdatesWebhookUrl       String?
+  discordAnnouncementsWebhookUrl String?
+  notifyEventApproved            Boolean @default(true)
+  notifyEventCancelled           Boolean @default(true)
+  notifyEventEdited              Boolean @default(true)
+  notifyTournamentCreated        Boolean @default(true)
+  notifyPollCreated              Boolean @default(true)
+  notifyMemberJoined             Boolean @default(true)
 }
 
 // ─── Tournament System ───────────────────────────────────────────────

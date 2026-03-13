@@ -7,6 +7,7 @@ import { revalidatePath } from "next/cache";
 import { TOURNAMENT_LIMITS } from "@/lib/tournament-constants";
 import { getSiteSettings } from "@/app/admin/settings-actions";
 import { logAudit } from "@/lib/audit";
+import { notifyTournamentCreated } from "@/lib/discord-webhook";
 import {
   seedEntrants,
   generateSingleElimMatches,
@@ -183,6 +184,7 @@ export async function createTournament(data: {
 
     revalidatePath("/schedule");
     logAudit({ action: "TOURNAMENT_CREATED", entityType: "Tournament", entityId: tournament.id, actorId: session.user.id, metadata: { title, game: data.game } });
+    notifyTournamentCreated({ title, game: data.game, bracketType: data.bracketType, maxSlots: data.maxSlots });
     return { success: true, tournamentId: tournament.id };
   } catch {
     return { error: "Failed to create tournament" };

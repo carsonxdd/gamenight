@@ -5,7 +5,10 @@ import { motion, AnimatePresence } from "framer-motion";
 import { fadeIn } from "@/lib/animations";
 import Card from "@/components/ui/Card";
 import { US_TIMEZONES, formatTime } from "@/lib/constants";
-import { updateSiteSettings } from "@/app/admin/settings-actions";
+import {
+  updateSiteSettings,
+  testDiscordWebhook,
+} from "@/app/admin/settings-actions";
 import {
   ACCENT_PRESETS,
   SETTINGS_SECTIONS,
@@ -138,6 +141,159 @@ function TextField({
         />
       )}
     </div>
+  );
+}
+
+const NOTIFICATION_TOGGLES = [
+  { key: "notifyEventApproved" as const, label: "Event Approved", description: "Post when an event is approved (@here ping)" },
+  { key: "notifyEventCancelled" as const, label: "Event Cancelled", description: "Post when an event is cancelled or deleted" },
+  { key: "notifyEventEdited" as const, label: "Event Edited", description: "Post when an event's date, time, or game changes" },
+  { key: "notifyTournamentCreated" as const, label: "Tournament Created", description: "Post when a new tournament is created" },
+  { key: "notifyPollCreated" as const, label: "Poll Created", description: "Post when a new poll is created" },
+  { key: "notifyMemberJoined" as const, label: "Member Joined", description: "Post when a new member completes signup" },
+];
+
+function WebhookUrlField({
+  label,
+  hint,
+  value,
+  onChange,
+  onTest,
+  testing,
+  testResult,
+}: {
+  label: string;
+  hint: string;
+  value: string;
+  onChange: (v: string) => void;
+  onTest: () => void;
+  testing: boolean;
+  testResult: { type: "success" | "error"; text: string } | null;
+}) {
+  const hasUrl = !!value.trim();
+  return (
+    <div className="space-y-2">
+      <TextField
+        label={label}
+        value={value}
+        onChange={onChange}
+        placeholder="https://discord.com/api/webhooks/..."
+      />
+      <p className="text-xs text-foreground/30">{hint}</p>
+      <div className="flex items-center gap-3">
+        <button
+          onClick={onTest}
+          disabled={testing || !hasUrl}
+          className="rounded-lg border border-border bg-surface px-3 py-1.5 text-xs font-medium text-foreground transition hover:border-border-light disabled:opacity-40 disabled:cursor-not-allowed"
+        >
+          {testing ? "Sending..." : "Test"}
+        </button>
+        {testResult && (
+          <p className={`text-xs ${testResult.type === "error" ? "text-red-400" : "text-neon"}`}>
+            {testResult.text}
+          </p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function NotificationsSection({
+  form,
+  update,
+}: {
+  form: SiteSettingsData;
+  update: <K extends keyof SiteSettingsData>(key: K, value: SiteSettingsData[K]) => void;
+}) {
+  const [testingUpdates, setTestingUpdates] = useState(false);
+  const [updatesTestResult, setUpdatesTestResult] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [testingAnnouncements, setTestingAnnouncements] = useState(false);
+  const [announcementsTestResult, setAnnouncementsTestResult] = useState<{ type: "success" | "error"; text: string } | null>(null);
+
+  const handleTestUpdates = async () => {
+    setTestingUpdates(true);
+    setUpdatesTestResult(null);
+    const result = await testDiscordWebhook("updates");
+    setTestingUpdates(false);
+    setUpdatesTestResult(
+      result.success
+        ? { type: "success", text: "Test sent!" }
+        : { type: "error", text: result.error || "Failed" }
+    );
+  };
+
+  const handleTestAnnouncements = async () => {
+    setTestingAnnouncements(true);
+    setAnnouncementsTestResult(null);
+    const result = await testDiscordWebhook("announcements");
+    setTestingAnnouncements(false);
+    setAnnouncementsTestResult(
+      result.success
+        ? { type: "success", text: "Test sent!" }
+        : { type: "error", text: result.error || "Failed" }
+    );
+  };
+
+  return (
+    <>
+      {/* Updates Channel */}
+      <Card>
+        <h3 className="mb-1 text-sm font-semibold text-foreground">Updates Channel</h3>
+        <p className="mb-4 text-xs text-foreground/40">
+          Automatic posts for events, tournaments, polls, and new members. Connect this to your #GameNightUpdates channel.
+        </p>
+
+        <div className="space-y-5">
+          <WebhookUrlField
+            label="Updates Webhook URL"
+            hint="Channel Settings → Integrations → Webhooks → New Webhook"
+            value={form.discordUpdatesWebhookUrl || ""}
+            onChange={(v) => update("discordUpdatesWebhookUrl", v || null)}
+            onTest={handleTestUpdates}
+            testing={testingUpdates}
+            testResult={updatesTestResult}
+          />
+
+          <div>
+            <label className="mb-2 block text-xs text-foreground/50">Auto-Post Types</label>
+            <div className="space-y-2">
+              {NOTIFICATION_TOGGLES.map((toggle) => (
+                <Toggle
+                  key={toggle.key}
+                  checked={form[toggle.key] as boolean}
+                  onChange={(v) => update(toggle.key as keyof SiteSettingsData, v as never)}
+                  label={toggle.label}
+                  description={toggle.description}
+                />
+              ))}
+            </div>
+          </div>
+        </div>
+      </Card>
+
+      {/* Announcements Channel */}
+      <Card className="mt-4">
+        <h3 className="mb-1 text-sm font-semibold text-foreground">Announcements Channel</h3>
+        <p className="mb-4 text-xs text-foreground/40">
+          Manual announcements for big events and tournaments. Connect this to your #Announcements channel.
+        </p>
+
+        <div className="space-y-5">
+          <WebhookUrlField
+            label="Announcements Webhook URL"
+            hint="Use a different webhook for your announcements channel"
+            value={form.discordAnnouncementsWebhookUrl || ""}
+            onChange={(v) => update("discordAnnouncementsWebhookUrl", v || null)}
+            onTest={handleTestAnnouncements}
+            testing={testingAnnouncements}
+            testResult={announcementsTestResult}
+          />
+          <p className="text-xs text-foreground/30">
+            To send announcements, open any event on the Schedule page and click &quot;Announce to Discord&quot;.
+          </p>
+        </div>
+      </Card>
+    </>
   );
 }
 
@@ -665,6 +821,11 @@ export default function SiteSettingsPanel({ settings }: Props) {
               </div>
             </div>
           </Card>
+        )}
+
+        {/* Notifications */}
+        {section === "notifications" && (
+          <NotificationsSection form={form} update={update} />
         )}
 
         {/* Feature Toggles */}

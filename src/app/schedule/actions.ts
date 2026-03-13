@@ -8,6 +8,7 @@ import { INVITE_LIMITS } from "@/lib/constants";
 import { localDateTimeToUtc, DEFAULT_TIMEZONE } from "@/lib/timezone-utils";
 import { getSiteSettings } from "@/app/admin/settings-actions";
 import { logAudit } from "@/lib/audit";
+import { notifyEventApproved, notifyEventCancelled, notifyEventEdited } from "@/lib/discord-webhook";
 
 function parseLocalDate(dateStr: string): Date {
   const [year, month, day] = dateStr.split("-").map(Number);
@@ -244,7 +245,7 @@ export async function updateGameNight(
   // Fetch the event to check ownership and visibility
   const existing = await prisma.gameNight.findUnique({
     where: { id },
-    select: { createdById: true, hostId: true, visibility: true, timezone: true },
+    select: { createdById: true, hostId: true, visibility: true, timezone: true, title: true, game: true, date: true, startTime: true, endTime: true },
   });
   if (!existing) {
     return { error: "Event not found" };
@@ -335,6 +336,23 @@ export async function updateGameNight(
     }
 
     revalidatePath("/schedule");
+
+    // Build change summary for notification
+    const changes: string[] = [];
+    if (data.game !== existing.game) changes.push(`Game: ${existing.game} → ${data.game}`);
+    if (data.date !== existing.date.toISOString().split("T")[0]) changes.push(`Date changed`);
+    if (data.startTime !== existing.startTime || data.endTime !== existing.endTime) changes.push(`Time changed`);
+    if ((data.title || "") !== (existing.title || "")) changes.push(`Title updated`);
+
+    if (changes.length > 0) {
+      notifyEventEdited({
+        title: data.title || data.game,
+        game: data.game,
+        date: data.date,
+        changes: changes.join(", "),
+      });
+    }
+
     return { success: true };
   } catch {
     return { error: "Failed to update game night" };
@@ -361,12 +379,18 @@ export async function cancelGameNight(id: string) {
   }
 
   try {
-    await prisma.gameNight.update({
+    const event = await prisma.gameNight.update({
       where: { id },
       data: { status: "cancelled" },
+      select: { title: true, game: true, date: true },
     });
     revalidatePath("/schedule");
     logAudit({ action: "EVENT_CANCELLED", entityType: "GameNight", entityId: id, actorId: session.user.id });
+    notifyEventCancelled({
+      title: event.title || event.game,
+      game: event.game,
+      date: event.date.toISOString().split("T")[0],
+    });
     return { success: true };
   } catch {
     return { error: "Failed to cancel game night" };
@@ -380,11 +404,17 @@ export async function approveGameNight(id: string) {
   }
 
   try {
-    await prisma.gameNight.update({
+    const event = await prisma.gameNight.update({
       where: { id },
       data: { status: "scheduled" },
+      select: { title: true, game: true, date: true },
     });
     revalidatePath("/schedule");
+    notifyEventApproved({
+      title: event.title || event.game,
+      game: event.game,
+      date: event.date.toISOString().split("T")[0],
+    });
     return { success: true };
   } catch {
     return { error: "Failed to approve game night" };
@@ -429,9 +459,20 @@ export async function deleteGameNight(id: string) {
   }
 
   try {
+    const event = await prisma.gameNight.findUnique({
+      where: { id },
+      select: { title: true, game: true, date: true },
+    });
     await prisma.gameNight.delete({ where: { id } });
     revalidatePath("/schedule");
     logAudit({ action: "EVENT_DELETED", entityType: "GameNight", entityId: id, actorId: session.user.id });
+    if (event) {
+      notifyEventCancelled({
+        title: event.title || event.game,
+        game: event.game,
+        date: event.date.toISOString().split("T")[0],
+      });
+    }
     return { success: true };
   } catch {
     return { error: "Failed to delete game night" };

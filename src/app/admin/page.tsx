@@ -93,7 +93,7 @@ export default async function AdminPage() {
           {
             dayOfWeek: localStart.localDayOfWeek,
             startTime: localStart.localTime,
-            endTime: "23:30", // run to end of display range on start day
+            endTime: "24:00", // run to end of display range on start day
             userName: user.gamertag || user.name,
             games: userGames,
           },

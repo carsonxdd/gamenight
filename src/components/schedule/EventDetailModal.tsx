@@ -22,6 +22,7 @@ interface Props {
   isOwner?: boolean;
   onEditSettings: () => void;
   onMarkAttendance: () => void;
+  onAnnounce?: () => void;
   teamTagMap?: TeamTagMap;
   userTimezone?: string;
 }
@@ -36,6 +37,7 @@ export default function EventDetailModal({
   isOwner,
   onEditSettings,
   onMarkAttendance,
+  onAnnounce,
   teamTagMap = {},
   userTimezone = "America/Phoenix",
 }: Props) {
@@ -236,6 +238,16 @@ export default function EventDetailModal({
             }`}
           >
             {gn.attendanceConfirmed ? "Attendance Confirmed" : "Mark Attendance"}
+          </button>
+        )}
+
+        {/* Announce to Discord */}
+        {isAdmin && onAnnounce && gn.status === "scheduled" && (
+          <button
+            onClick={onAnnounce}
+            className="w-full rounded-lg border border-[#5865f2]/30 bg-[#5865f2]/10 px-4 py-2 text-sm font-medium text-[#5865f2] transition hover:bg-[#5865f2]/20"
+          >
+            📢 Announce to Discord
           </button>
         )}
 

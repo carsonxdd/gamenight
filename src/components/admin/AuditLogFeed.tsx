@@ -72,6 +72,10 @@ function getMetadataDetail(log: AuditLogEntry): string | null {
   if (!log.metadata) return null;
   try {
     const meta = JSON.parse(log.metadata);
+    // Role changes: "ajamo6 — Member → Moderator"
+    if (meta.targetName && meta.fromRole && meta.toRole) {
+      return `${meta.targetName} — ${meta.fromRole} → ${meta.toRole}`;
+    }
     if (meta.title) return `"${meta.title}"`;
     if (meta.name) return meta.name;
     if (meta.status) return `to ${meta.status}`;

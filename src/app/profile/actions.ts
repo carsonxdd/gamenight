@@ -40,16 +40,17 @@ function parseSlot(key: string) {
   const dayOfWeek = parseInt(dayStr, 10);
   const [h, m] = startTime.split(":").map(Number);
   const endM = m === 0 ? "30" : "00";
-  const endH = m === 0 ? h : h + 1;
+  const endH = m === 0 ? h : (h + 1) % 24;
+  const endDayOfWeek = m !== 0 && h === 23 ? (dayOfWeek + 1) % 7 : dayOfWeek;
   const endTime = `${endH.toString().padStart(2, "0")}:${endM}`;
-  return { dayOfWeek, startTime, endTime };
+  return { dayOfWeek, startTime, endTime, endDayOfWeek };
 }
 
 /** Convert a parsed local slot to UTC using the user's timezone */
 function parseSlotUtc(key: string, timezone: string) {
   const local = parseSlot(key);
   const utcStart = localTimeToUtc(local.startTime, local.dayOfWeek, timezone);
-  const utcEnd = localTimeToUtc(local.endTime, local.dayOfWeek, timezone);
+  const utcEnd = localTimeToUtc(local.endTime, local.endDayOfWeek, timezone);
   return {
     dayOfWeek: utcStart.utcDayOfWeek,
     startTime: utcStart.utcTime,

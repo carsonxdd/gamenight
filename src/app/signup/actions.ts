@@ -4,6 +4,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { localTimeToUtc, DEFAULT_TIMEZONE } from "@/lib/timezone-utils";
+import { notifyMemberJoined } from "@/lib/discord-webhook";
 
 interface GameInput {
   name: string;
@@ -116,6 +117,7 @@ export async function completeProfile(data: ProfileData) {
       });
     });
 
+    notifyMemberJoined({ gamertag: data.gamertag.trim() });
     return { success: true };
   } catch {
     return { error: "Failed to save profile" };

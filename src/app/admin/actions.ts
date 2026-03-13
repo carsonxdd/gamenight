@@ -38,9 +38,11 @@ export async function cycleRole(userId: string, direction: "promote" | "demote")
       }
     }
 
+    const fromRole = user.isAdmin ? "Admin" : user.isModerator ? "Moderator" : "Member";
     await prisma.user.update({ where: { id: userId }, data });
+    const toRole = data.isAdmin ? "Admin" : data.isModerator ? "Moderator" : "Member";
     revalidatePath("/admin");
-    logAudit({ action: "ROLE_CHANGED", entityType: "User", entityId: userId, actorId: session.user.id, metadata: { targetName: user.gamertag || user.name, direction } });
+    logAudit({ action: "ROLE_CHANGED", entityType: "User", entityId: userId, actorId: session.user.id, metadata: { targetName: user.gamertag || user.name, fromRole, toRole } });
     return { success: true };
   } catch {
     return { error: "Failed to update role" };

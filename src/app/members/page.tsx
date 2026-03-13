@@ -150,7 +150,7 @@ export default async function MembersPage() {
           {
             dayOfWeek: localStart.localDayOfWeek,
             startTime: localStart.localTime,
-            endTime: "23:30",
+            endTime: "24:00",
             userName: user.gamertag || user.name,
             games: userGames,
           },

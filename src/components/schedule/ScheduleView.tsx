@@ -8,6 +8,7 @@ import CreateGameNightModal from "./CreateGameNightModal";
 import EditGameNightModal from "./EditGameNightModal";
 import EventDetailModal from "./EventDetailModal";
 import AttendanceModal from "./AttendanceModal";
+import AnnouncementModal from "./AnnouncementModal";
 import TournamentList, { TournamentData } from "./TournamentList";
 import Modal from "@/components/ui/Modal";
 import Button from "@/components/ui/Button";
@@ -92,6 +93,7 @@ export default function ScheduleView({
   const [viewingEvent, setViewingEvent] = useState<GameNightWithAttendees | null>(null);
   const [editingEvent, setEditingEvent] = useState<GameNightWithAttendees | null>(null);
   const [attendanceEvent, setAttendanceEvent] = useState<GameNightWithAttendees | null>(null);
+  const [announcingEvent, setAnnouncingEvent] = useState<GameNightWithAttendees | null>(null);
   const [showSignIn, setShowSignIn] = useState(false);
 
   // Default to list on mobile, calendar on desktop
@@ -135,6 +137,14 @@ export default function ScheduleView({
       const event = viewingEvent;
       setViewingEvent(null);
       setTimeout(() => setAttendanceEvent(event), 250);
+    }
+  };
+
+  const handleAnnounceFromDetail = () => {
+    if (viewingEvent) {
+      const event = viewingEvent;
+      setViewingEvent(null);
+      setTimeout(() => setAnnouncingEvent(event), 250);
     }
   };
 
@@ -252,6 +262,7 @@ export default function ScheduleView({
           isOwner={isOwner}
           onEditSettings={handleEditFromDetail}
           onMarkAttendance={handleAttendanceFromDetail}
+          onAnnounce={handleAnnounceFromDetail}
           teamTagMap={teamTagMap}
           userTimezone={userTimezone}
         />
@@ -276,6 +287,15 @@ export default function ScheduleView({
           onClose={() => setAttendanceEvent(null)}
           gameNight={attendanceEvent}
           teamTagMap={teamTagMap}
+        />
+      )}
+
+      {announcingEvent && (
+        <AnnouncementModal
+          open
+          onClose={() => setAnnouncingEvent(null)}
+          gameNight={announcingEvent}
+          userTimezone={userTimezone}
         />
       )}
 

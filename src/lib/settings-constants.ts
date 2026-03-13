@@ -37,6 +37,7 @@ export const SETTINGS_SECTIONS = [
   { key: "polls", label: "Polls" },
   { key: "tournaments", label: "Tournaments" },
   { key: "teams", label: "Teams" },
+  { key: "notifications", label: "Notifications" },
   { key: "toggles", label: "Feature Toggles" },
 ] as const;
 
@@ -105,4 +106,13 @@ export interface SiteSettingsData {
   enableHighlights: boolean;
   enableStats: boolean;
   enableBadges: boolean;
+  // Discord Webhooks
+  discordUpdatesWebhookUrl: string | null;
+  discordAnnouncementsWebhookUrl: string | null;
+  notifyEventApproved: boolean;
+  notifyEventCancelled: boolean;
+  notifyEventEdited: boolean;
+  notifyTournamentCreated: boolean;
+  notifyPollCreated: boolean;
+  notifyMemberJoined: boolean;
 }

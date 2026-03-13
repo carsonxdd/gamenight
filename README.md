@@ -1,6 +1,6 @@
 # Caplan's Game Night
 
-**v0.10.1**
+**v0.11.0-dev**
 
 A fully customizable web app for organizing gaming communities. Sign up with Discord, pick your games, set your availability, RSVP to game nights, build persistent teams, and run full tournament brackets. Admin-configurable branding, access controls, and feature toggles make it ready for any community.
 
@@ -148,6 +148,16 @@ Custom games can be added via text input.
 - **Feature toggle** — `enableBadges` in site settings hides all badge UI and disables the engine when off.
 - **Backfill script** — `prisma/backfill-badges.ts` retroactively awards badges and computes attendance streaks for all existing users. Auto-showcases top 3 highest-tier badges per user. Idempotent and safe to re-run.
 
+### Discord Notifications
+- **Dual-channel webhook system** — two separate Discord webhooks: one for automatic updates (#GameNightUpdates) and one for manual announcements (#Announcements). Configured per-environment via admin settings (no env vars needed).
+- **Auto-notifications** — fire-and-forget posts to the updates channel when key actions happen: event approved (@here ping), event cancelled, event edited (date/time/game changes), tournament created, poll created, new member joined. Each type individually toggleable. Rich embeds with color-coded borders (blue for events, green for approvals, red for cancellations, gold for tournaments, purple for polls, teal for new members), emoji icons, and CTA footers. Event creation does not auto-post — the approval is the "it's official" moment.
+- **Event-linked announcements** — admins can open any scheduled event and click "Announce to Discord" to send a rich announcement to the announcements channel. Announcement modal auto-fills event data (game, day, time, host, RSVP count, description) into templates.
+- **5 announcement templates** — Game Night, Tournament, Big Event, Reminder, Hype Up, plus Custom. Templates interpolate event data into natural-sounding messages. Quick Edit fields let admins tweak game/day/time/host without rewriting the message. Editing the title or body directly auto-switches to Custom.
+- **Ping selector** — choose No ping, @everyone, or @here per announcement.
+- **Live Discord preview** — announcement modal shows a styled preview of the embed as it will appear in Discord, including mention, title, body, and accent-colored left border.
+- **Test webhook buttons** — test each channel independently from admin settings with inline success/error feedback.
+- **Audit trail** — announcements logged to the audit system with actor and title.
+
 ### Roles & Permissions
 - **Owner** (CarsonXD) — full access, cannot be muted/demoted/removed. Gold glowing border on member cards
 - **Admin** — full access including user management (promote/demote roles, remove users, unmute), site settings, and suggestion management
@@ -170,9 +180,9 @@ Custom games can be added via text input.
   - **RSVP Stats** — per-player breakdown of confirmed / maybe / declined counts, plus attended and no-show totals from post-event attendance confirmation
   - **Game Night History** — most-scheduled games with event counts, total RSVPs, and average attendance
 - **Active Now** — stat card showing users seen in the last 15 minutes, based on throttled `lastSeenAt` tracking (updated at most once per 5 minutes per user via JWT callback).
-- **Activity** — chronological audit log feed showing the last 50 high-impact actions, visible to admins and moderators. Each entry displays an icon by entity type, human-readable action label, actor name, optional metadata detail, and relative timestamp. Tracks: event create/cancel/delete, tournament create/status change/delete, team create/disband, poll create/close/delete, role changes, user mute/unmute/remove, settings updates, and new user joins.
+- **Activity** — chronological audit log feed showing the last 50 high-impact actions, visible to admins and moderators. Each entry displays an icon by entity type, human-readable action label, actor name, optional metadata detail, and relative timestamp. Role changes show the full transition (e.g. "ajamo6 — Member → Moderator"). Tracks: event create/cancel/delete, tournament create/status change/delete, team create/disband, poll create/close/delete, role changes, user mute/unmute/remove, settings updates, and new user joins.
 - **Attendance nudge** — banner at the top of the admin panel listing past events that still need attendance confirmation, with links to the schedule page. Shows host name and RSVP count for each event.
-- **Badges** (admin-only) — badge management tab with stats row (total badges, total awarded, most common), filterable table of all badge definitions showing icon, name, category, tier, earned count, and enable/disable toggle. "Create Custom Badge" modal for manual or threshold-triggered badges. "Award Badge" modal with user search and badge picker, showing current award status with award/revoke buttons. System badges cannot be deleted; custom badges can be hard-deleted.
+- **Badges** (admin-only) — badge management tab with stats row (total badges, total awarded, most common), filterable table of all badge definitions showing icon, name, category, tier, earned count, and enable/disable toggle. "Create Custom Badge" modal for manual or threshold-triggered badges. "Award Badge" modal with user search, badge picker, and **multi-select user list** — Ctrl+click to select multiple users, Select All/Deselect All toggle, bulk award/revoke with count feedback. Single-user selection still shows status check. System badges cannot be deleted; custom badges can be hard-deleted.
 - **Responsive tab navigation** — admin panel tabs (Games, Availability, RSVPs, Roster, Insights, Activity, Suggestions, Badges, Settings) display as a **2-column grid** on small phones, **4-column grid** on larger mobile, and a single flex row on desktop.
 - **Site Settings** (admin-only) — comprehensive settings panel with a **left sidebar** (desktop) / **4×2 grid tabs** (mobile) layout. 8 configurable sections:
   - **Branding** — accent color (12 presets + custom hex with live preview), community tagline (hero subtitle), logo URL, favicon URL
@@ -183,6 +193,7 @@ Custom games can be added via text input.
   - **Tournaments** — allow member-created tournaments, max tournament size (caps slot selection in wizard), enable buy-ins (hides buy-in field when disabled)
   - **Teams** — allow team creation, max teams per user, max team size
   - **Suggestions & Bugs** — dedicated tab showing all member-submitted suggestions and bug reports with type badge, author info, sort options, and open count badge on the tab. Admins see the full management UI with status dropdown (Open/Noted/Planned/Done/Declined) and delete with confirmation. Moderators see the same list read-only (status badges displayed but no controls).
+  - **Notifications** — dual Discord webhook configuration. Updates webhook URL (for auto-posts) and Announcements webhook URL (for manual sends), each with an independent test button. Auto-post toggles for event approved, event cancelled, event edited, tournament created, poll created, and member joined. Hint text directs admins to the event detail flow for sending announcements.
   - **Feature Toggles** — master switches for Tournaments, Teams, Polls, Highlights, Stats tab, and Badges & Streaks. Disabled features are hidden from navigation and redirect on direct URL access.
   - **Limits** — default event duration, max events per week, max polls per week
   - **Community** — community name (used in page title, hero, signup), message of the day (MOTD)
@@ -422,8 +433,9 @@ src/
 
 Discord Bot
 
-Event announcements and RSVP pings
-Admin controls to trigger announcements from the site
+~~Event announcements and RSVP pings~~ *(shipped in v0.11.0 — dual-channel webhook system with auto-notifications and event-linked announcements)*
+~~Admin controls to trigger announcements from the site~~ *(shipped in v0.11.0 — "Announce to Discord" button on events with templates, ping selector, and live preview)*
+Full interactive bot (slash commands, RSVP from Discord)
 
 Moderation & Admin
 
@@ -458,7 +470,7 @@ Calendar sync (Google Calendar / iCal)
 Engagement
 
 Weekly digest via email or Discord DM
-Badges and streaks
+~~Badges and streaks~~ *(shipped in v0.10.0 — full achievement system with 18 badges, attendance/weekly streaks, and admin management)*
 ~~In-app polls and quick votes~~ *(shipped in v1.6.0 — polls with voting, comments, and pinning)*
 
 Quality of Life
@@ -476,12 +488,28 @@ Admin toggle under Access & Privacy: Discord Only / Discord + Email / Email Only
 
 ## Version History
 
-### v0.10.1 — Profile Page Tabs
+### v0.11.0-dev — Discord Notifications & Bugfixes
+- **Fix 11:30 PM availability not showing on heatmaps** — `parseSlot()` generated invalid `"24:00"` endTime for the 23:30 slot, and the midnight day-split logic in the members and admin heatmaps produced zero-length ranges that `slotCovered` never matched. Fixed slot parsing to wrap hours correctly with proper day tracking, and fixed split endTime to `"24:00"` so the slot is covered.
+
+#### Discord Notifications
+- **Dual-channel webhook system** — separate webhooks for automatic updates and manual announcements, configured in admin settings. No env vars or Discord Developer Portal setup needed — just paste webhook URLs from Discord channel settings.
+- **Auto-notifications** — fire-and-forget posts to the updates channel on event approved (@here ping), event cancelled, event edited, tournament created, poll created, and new member joined. Each type individually toggleable. Rich color-coded embeds with CTA footers. No auto-post on event creation — approval is the trigger.
+- **Event-linked announcements** — "Announce to Discord" button on scheduled events (admin only). Opens a modal pre-filled with event data (game, day, time, host, RSVP count).
+- **5 announcement templates** — Game Night, Tournament, Big Event, Reminder, Hype Up, plus Custom. Templates interpolate event context into natural messages. Quick Edit fields for on-the-fly tweaks without rewriting.
+- **Ping selector** — No ping, @everyone, or @here per announcement.
+- **Live Discord preview** — styled embed preview in the announcement modal.
+- **Test buttons** — test each webhook independently from admin settings.
+- **Schema** — `discordUpdatesWebhookUrl`, `discordAnnouncementsWebhookUrl`, and 6 `notify*` toggles on SiteSettings.
+- **Pending approval banner** — admins/mods see a yellow banner at the top of the Events list showing how many events are pending approval, with quick-click buttons (up to 3) to jump straight to each event's detail modal for approve/reject.
+
+### v0.10.1 — Profile Page Tabs, Audit & Badge UX
 - **Tabbed profile layout** — Profile, Preferences, Groups, and Achievements organized into tabs with animated Framer Motion underline indicator and smooth fade/slide content transitions.
 - Profile and Preferences tabs stay mounted via CSS `hidden` to preserve form refs, dirty state, and `currentGames` flow across tab switches.
 - Groups and Achievements tabs conditionally render with `AnimatePresence` enter/exit animations.
 - Sticky save bar remains visible on all tabs when dirty — reminds users of unsaved changes regardless of active tab.
 - Achievements tab auto-hidden when `enableBadges` site setting is off.
+- **Audit log role details** — role changes now display the full transition (e.g. "ajamo6 — Member → Moderator") instead of just the target name.
+- **Multi-select badge award** — award/revoke badges to multiple users at once with Ctrl+click selection, Select All toggle, and bulk action count feedback.
 
 ### v0.10.0 — Badges & Streaks
 - **Achievement system** — 18 system badges across 7 categories (attendance, competition, community, engagement, profile, special, custom) with 5 tiers (standard, bronze, silver, gold, diamond). Badges rendered as Lucide vector icons with tier-colored ring borders.

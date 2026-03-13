@@ -6,6 +6,8 @@ import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import type { SiteSettingsData } from "@/lib/settings-constants";
 import { logAudit } from "@/lib/audit";
+import { sendWebhookDirect } from "@/lib/discord-webhook";
+import { hexToRgb } from "@/lib/settings-constants";
 
 export async function getSiteSettings(): Promise<SiteSettingsData> {
   let settings = await prisma.siteSettings.findUnique({
@@ -97,4 +99,95 @@ export async function updateSiteSettings(data: Partial<SiteSettingsData>) {
   } catch {
     return { error: "Failed to update settings" };
   }
+}
+
+// ─── Discord Webhook Actions ─────────────────────────────────────────
+
+function hexToDecimal(hex: string): number {
+  const [r, g, b] = hexToRgb(hex);
+  return (r << 16) + (g << 8) + b;
+}
+
+export async function testDiscordWebhook(channel: "updates" | "announcements"): Promise<{ success: boolean; error?: string }> {
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.isAdmin) {
+    return { success: false, error: "Admin only" };
+  }
+
+  const settings = await prisma.siteSettings.findUnique({
+    where: { id: "singleton" },
+  });
+  const url = channel === "updates"
+    ? settings?.discordUpdatesWebhookUrl
+    : settings?.discordAnnouncementsWebhookUrl;
+  if (!url) {
+    return { success: false, error: "No webhook URL configured for this channel" };
+  }
+
+  const color = hexToDecimal(settings?.accentColor || "#00ff41");
+  const label = channel === "updates" ? "Updates Channel" : "Announcements Channel";
+  return sendWebhookDirect({
+    webhookUrl: url,
+    embeds: [
+      {
+        title: `🔔 Webhook Test — ${label}`,
+        description: `This is a test message from **${settings?.communityName || "Game Night"}**.`,
+        color,
+        timestamp: new Date().toISOString(),
+      },
+    ],
+  });
+}
+
+export async function sendAnnouncementAction(data: {
+  title: string;
+  message: string;
+  mention?: string;
+}): Promise<{ success: boolean; error?: string }> {
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.isAdmin) {
+    return { success: false, error: "Admin only" };
+  }
+
+  const title = data.title?.trim();
+  const message = data.message?.trim();
+  if (!title || title.length > 100) {
+    return { success: false, error: "Title is required (max 100 characters)" };
+  }
+  if (!message || message.length > 2000) {
+    return { success: false, error: "Message is required (max 2000 characters)" };
+  }
+
+  const settings = await prisma.siteSettings.findUnique({
+    where: { id: "singleton" },
+  });
+  if (!settings?.discordAnnouncementsWebhookUrl) {
+    return { success: false, error: "No announcements webhook URL configured" };
+  }
+
+  const color = hexToDecimal(settings.accentColor || "#00ff41");
+  const result = await sendWebhookDirect({
+    webhookUrl: settings.discordAnnouncementsWebhookUrl,
+    embeds: [
+      {
+        title: `📢  ${title}`,
+        description: message,
+        color,
+        footer: { text: `Sent by ${session.user.gamertag || session.user.name || "Admin"}` },
+        timestamp: new Date().toISOString(),
+      },
+    ],
+    content: data.mention || undefined,
+  });
+
+  if (result.success) {
+    logAudit({
+      action: "ANNOUNCEMENT_SENT",
+      entityType: "Discord",
+      actorId: session.user.id,
+      metadata: { title },
+    });
+  }
+
+  return result;
 }

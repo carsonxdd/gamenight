@@ -7,6 +7,7 @@ import { revalidatePath } from "next/cache";
 import { POLL_LIMITS } from "@/lib/constants";
 import { getSiteSettings } from "@/app/admin/settings-actions";
 import { logAudit } from "@/lib/audit";
+import { notifyPollCreated } from "@/lib/discord-webhook";
 
 export async function createPoll(data: {
   title: string;
@@ -82,6 +83,7 @@ export async function createPoll(data: {
     });
     revalidatePath("/polls");
     logAudit({ action: "POLL_CREATED", entityType: "Poll", entityId: poll.id, actorId: session.user.id, metadata: { title } });
+    notifyPollCreated({ title, optionCount: options.length, creatorName: session.user.gamertag || session.user.name || "Unknown" });
     // Badge: polls_created
     import("@/lib/badges/engine").then(({ evaluateBadges }) =>
       evaluateBadges(session.user.id, "polls_created").catch(() => {})
