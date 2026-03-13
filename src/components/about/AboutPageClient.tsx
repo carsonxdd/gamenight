@@ -338,8 +338,7 @@ const FUTURE_IDEAS = [
   {
     category: "Discord Bot",
     items: [
-      "Event announcements and RSVP pings",
-      "Admin controls to trigger announcements from the site",
+      "Full Discord bot — RSVP pings, event reminders, and DM notifications",
     ],
   },
   {
@@ -370,14 +369,12 @@ const FUTURE_IDEAS = [
     category: "Engagement",
     items: [
       "Weekly digest via email or Discord DM",
-      "Badges and streaks",
     ],
   },
   {
     category: "Quality of Life",
     items: [
       "Dark/light theme toggle",
-      "Event templates for recurring game nights",
       "Spectator RSVP option",
     ],
   },
