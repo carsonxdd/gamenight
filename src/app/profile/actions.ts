@@ -113,6 +113,11 @@ export async function updateProfile(data: ProfileData) {
       await evaluateBadges(session.user.id, "games_added").catch(() => {});
     });
 
+    const { revalidatePath } = await import("next/cache");
+    revalidatePath("/profile");
+    revalidatePath("/members");
+    revalidatePath("/admin");
+
     return { success: true };
   } catch {
     return { error: "Failed to save profile" };
@@ -156,6 +161,10 @@ export async function updateExtendedProfile(data: ExtendedProfileData) {
         });
       }
     });
+
+    const { revalidatePath } = await import("next/cache");
+    revalidatePath("/profile");
+    revalidatePath("/members");
 
     return { success: true };
   } catch {
