@@ -1,6 +1,6 @@
 # Caplan's Game Night
 
-**v0.11.0-dev**
+**v1.0**
 
 A fully customizable web app for organizing gaming communities. Sign up with Discord, pick your games, set your availability, RSVP to game nights, build persistent teams, and run full tournament brackets. Admin-configurable branding, access controls, and feature toggles make it ready for any community.
 
@@ -488,48 +488,46 @@ Admin toggle under Access & Privacy: Discord Only / Discord + Email / Email Only
 
 ## Version History
 
-### v0.11.0-dev — Discord Notifications & Bugfixes
-- **Fix 11:30 PM availability not showing on heatmaps** — Three layered bugs: (1) `parseSlot()` generated invalid `"24:00"` endTime for the 23:30 slot — fixed to wrap hours with proper day tracking. (2) Midnight day-split logic in members and admin heatmaps produced zero-length ranges that `slotCovered` never matched — fixed split endTime to `"24:00"`. (3) `computeTimeSlotsForViewer()`, `generateTimeSlots()`, and `TIME_SLOTS` all dropped the `:30` slot of the final hour in the range, so the heatmap had no cell for 23:30 to appear in — fixed to always include both `:00` and `:30` for every hour.
-- **Fix members page not updating after profile save** — `updateProfile` and `updateExtendedProfile` were missing `revalidatePath` calls. In production, Next.js served cached members/admin pages with stale availability data. Added revalidation for `/profile`, `/members`, and `/admin`.
-- **Extended hours up to 2 AM** — admin settings time window dropdown now supports extending to 2 AM next day (value 26).
+### v1.0 — 2026-03-12
+
+#### Badges & Streaks
+- **Achievement system** — 18 system badges across 7 categories (attendance, competition, community, engagement, profile, special, custom) with 5 tiers (standard, bronze, silver, gold, diamond). Lucide vector icons with tier-colored ring borders.
+- **Badge engine** — automatic evaluation after qualifying actions (attendance, poll votes, comments, tournament joins/wins, team joins, profile updates).
+- **Attendance streaks** — consecutive attended events per user, resets on confirmed no-shows. Flame icon inline next to player names on member cards and home carousel.
+- **Weekly activity streaks** — piggybacks on lastSeenAt throttle, evaluates once per hour.
+- **Showcased badges** — up to 3 user-pinned badges on member cards with hover tooltips. Click to toggle showcase from the profile Achievements tab.
+- **Profile Achievements tab** — streak counters, full badge grid grouped by category, earned/unearned states, tier-colored tooltips.
+- **Admin Badges tab** — stats, filterable table, enable/disable toggles, custom badge creation, multi-select award/revoke with Ctrl+click and Select All.
+- **Toast notifications** — "Achievement Unlocked!" slide-in toasts with tier-colored border and progress countdown.
+- **Backfill script** — `prisma/backfill-badges.ts` retroactively awards badges and computes streaks for existing users.
+- **Feature toggle** — `enableBadges` setting hides all badge UI and disables engine when off.
 
 #### Discord Notifications
-- **Dual-channel webhook system** — separate webhooks for automatic updates and manual announcements, configured in admin settings. No env vars or Discord Developer Portal setup needed — just paste webhook URLs from Discord channel settings.
-- **Auto-notifications** — fire-and-forget posts to the updates channel on event approved (@here ping), event cancelled, event edited, tournament created, poll created, and new member joined. Each type individually toggleable. Rich color-coded embeds with CTA footers. No auto-post on event creation — approval is the trigger.
-- **Event-linked announcements** — "Announce to Discord" button on scheduled events (admin only). Opens a modal pre-filled with event data (game, day, time, host, RSVP count).
-- **5 announcement templates** — Game Night, Tournament, Big Event, Reminder, Hype Up, plus Custom. Templates interpolate event context into natural messages. Quick Edit fields for on-the-fly tweaks without rewriting.
+- **Dual-channel webhook system** — separate webhooks for automatic updates and manual announcements, configured in admin settings. Just paste webhook URLs from Discord channel settings.
+- **Auto-notifications** — fire-and-forget posts on event approved, event cancelled, event edited, tournament created, poll created, and new member joined. Each type individually toggleable. Rich color-coded embeds with CTA footers.
+- **Event-linked announcements** — "Announce to Discord" button on scheduled events (admin only). Modal pre-filled with event context.
+- **5 announcement templates** — Game Night, Tournament, Big Event, Reminder, Hype Up, plus Custom. Templates interpolate event context. Quick Edit fields for on-the-fly tweaks.
 - **Ping selector** — No ping, @everyone, or @here per announcement.
 - **Live Discord preview** — styled embed preview in the announcement modal.
 - **Test buttons** — test each webhook independently from admin settings.
-- **Schema** — `discordUpdatesWebhookUrl`, `discordAnnouncementsWebhookUrl`, and 6 `notify*` toggles on SiteSettings.
-- **Pending approval banner** — admins/mods see a yellow banner at the top of the Events list showing how many events are pending approval, with quick-click buttons (up to 3) to jump straight to each event's detail modal for approve/reject.
+- **Pending approval banner** — admins/mods see a yellow banner showing pending events with quick-click buttons to jump to approve/reject.
 
-### v0.10.1 — Profile Page Tabs, Audit & Badge UX
-- **Tabbed profile layout** — Profile, Preferences, Groups, and Achievements organized into tabs with animated Framer Motion underline indicator and smooth fade/slide content transitions.
-- Profile and Preferences tabs stay mounted via CSS `hidden` to preserve form refs, dirty state, and `currentGames` flow across tab switches.
-- Groups and Achievements tabs conditionally render with `AnimatePresence` enter/exit animations.
-- Sticky save bar remains visible on all tabs when dirty — reminds users of unsaved changes regardless of active tab.
-- Achievements tab auto-hidden when `enableBadges` site setting is off.
-- **Audit log role details** — role changes now display the full transition (e.g. "ajamo6 — Member → Moderator") instead of just the target name.
-- **Multi-select badge award** — award/revoke badges to multiple users at once with Ctrl+click selection, Select All toggle, and bulk action count feedback.
+#### Profile & UX
+- **Tabbed profile layout** — Profile, Preferences, Groups, and Achievements tabs with animated Framer Motion underline indicator and fade/slide content transitions. Sticky save bar visible across all tabs.
+- **Expandable changelog** — About page version entries as collapsible accordions. Latest 3 open by default, preferences persisted in localStorage.
+- **Admin feedback tab** — renamed from "Suggestions" for consistency, server-side prefetch eliminates loading flash.
+- **Last Seen column** — admin roster now shows relative last-seen time per user with neon highlight for active users.
+- **Role change details** — audit entries now show the full transition (e.g. "ajamo6 — Member → Moderator").
+- **Footer nav links** — now matches Navbar order (Schedule, Polls, Members, Teams, Highlights, About) with feature-toggle gating.
 
-### v0.10.0 — Badges & Streaks
-- **Achievement system** — 18 system badges across 7 categories (attendance, competition, community, engagement, profile, special, custom) with 5 tiers (standard, bronze, silver, gold, diamond). Badges rendered as Lucide vector icons with tier-colored ring borders.
-- **Badge engine** — automatic evaluation after qualifying actions (attendance, poll votes, comments, tournament joins/wins, team joins, profile updates). Optimized LIKE queries on triggerConfig to find matching badges without loading all definitions.
-- **Attendance streaks** — tracks consecutive attended events per user. Resets on confirmed no-shows. Flame icon displayed inline next to player names on member cards and home carousel.
-- **Weekly activity streaks** — piggybacks on lastSeenAt throttle, evaluates once per hour. Increments when any qualifying action occurred in the current ISO week.
-- **Showcased badges on member cards** — up to 3 user-pinned badges shown right-aligned on the social links row with hover tooltips. Badges are never auto-showcased on earn — users opt in by clicking.
-- **Profile Achievements section** — streak counters, full badge grid grouped by category with earned/unearned states. Expanded hover tooltips show tier-colored name, description, earned date, and showcase hint. Click earned badges to toggle showcase directly — no popup or confirmation dialog.
-- **Admin Badges tab** — stats, filterable table, enable/disable toggles, custom badge creation (manual or threshold), manual award/revoke with user search and soft-delete revocation.
-- **Toast notifications** — layout-level provider shows "Achievement Unlocked!" slide-in toasts with tier-colored border and progress countdown.
-- **Backfill script** — `prisma/backfill-badges.ts` retroactively awards badges and computes streaks for existing users, auto-showcases top 3 per user.
-- **Feature toggle** — `enableBadges` setting hides all badge UI and disables engine when off.
-- **Schema** — 3 new models: BadgeDefinition, UserBadge (with suppressAutoAward soft-delete), UserStreak.
+#### Bugfixes
+- **Fix 11:30 PM availability not showing on heatmaps** — three layered bugs in `parseSlot()`, midnight day-split logic, and `computeTimeSlotsForViewer()` all dropping the `:30` slot of the final hour.
+- **Fix members page not updating after profile save** — added missing `revalidatePath` calls for `/profile`, `/members`, and `/admin`.
+- **Extended time window to 2 AM** — admin settings dropdown now supports extending to 2 AM next day.
 
-### v0.9.1-dev
-- **Admin feedback tab rename** — "Suggestions" tab in admin panel renamed to "Feedback" for consistency with the About page tab. Header and empty state text updated.
-- **Server-side feedback prefetch** — feedback data now fetched server-side alongside other admin data, eliminating the loading flash when switching to the Feedback tab. Removed client-side `useEffect` fetch.
-- **Expandable changelog** — version entries on the About page are now collapsible accordions with summary titles. All open on first visit; subsequent visits default to latest 3 open. User preferences persisted in localStorage.
+#### Schema additions
+- `BadgeDefinition`, `UserBadge` (with suppressAutoAward soft-delete), `UserStreak`
+- `discordUpdatesWebhookUrl`, `discordAnnouncementsWebhookUrl`, and 6 `notify*` toggles on SiteSettings
 
 ### v0.9.0 — 2026-03-12
 - **Last Seen tracking** — `lastSeenAt` timestamp on User model, updated on sign-in and throttled to once per 5 minutes via JWT callback. New "Active Now" stat card on the admin dashboard shows users seen in the last 15 minutes.

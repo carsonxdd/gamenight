@@ -59,6 +59,7 @@ interface PlayerData {
   willingToModerate: boolean;
   games: string[];
   availabilityDays: number[];
+  lastSeenAt: string | null;
 }
 
 interface PendingAttendanceEvent {

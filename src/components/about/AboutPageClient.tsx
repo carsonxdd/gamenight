@@ -150,7 +150,7 @@ function AboutContent() {
         <h2 className="mb-4 text-xl font-bold text-foreground">Links</h2>
         <div className="flex flex-wrap items-center gap-4">
           <a
-            href="https://discord.gg/PLACEHOLDER"
+            href="https://discord.gg/3fyMmcSf4C"
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-2 rounded-lg bg-discord px-5 py-2.5 font-semibold text-white transition hover:bg-discord-hover"
@@ -178,6 +178,22 @@ function AboutContent() {
 }
 
 const VERSION_HISTORY = [
+  {
+    version: "v1.0",
+    title: "Badges, Discord Notifications & Polish",
+    date: "2026-03-12",
+    changes: [
+      "Badges & Streaks — 18 system badges, 7 categories, 5 tiers, attendance/weekly streaks, showcased badges on member cards, profile Achievements tab, admin badge management",
+      "Discord Notifications — dual-channel webhooks for auto-updates and manual announcements, 5 templates, ping selector, live preview, per-type toggles",
+      "Tabbed profile layout — Profile, Preferences, Groups, Achievements with animated transitions",
+      "Last Seen column on admin roster with relative time and active user highlighting",
+      "Pending approval banner for admins/mods on Events list",
+      "Footer nav links match Navbar order with feature-toggle gating",
+      "Fix 11:30 PM availability not showing on heatmaps",
+      "Fix members page not updating after profile save",
+      "Extended admin time window dropdown to 2 AM",
+    ],
+  },
   {
     version: "v0.9.0",
     title: "Audit Log & Admin Polish",

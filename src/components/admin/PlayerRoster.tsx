@@ -23,6 +23,7 @@ interface PlayerData {
   mutedUntil: string | null;
   games: string[];
   availabilityDays: number[];
+  lastSeenAt: string | null;
 }
 
 interface Props {
@@ -33,6 +34,20 @@ interface Props {
 }
 
 const dayAbbrevs = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
+
+function formatLastSeen(iso: string | null): string {
+  if (!iso) return "Never";
+  const diff = Date.now() - new Date(iso).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return "Just now";
+  if (mins < 60) return `${mins}m ago`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  if (days < 7) return `${days}d ago`;
+  const weeks = Math.floor(days / 7);
+  return `${weeks}w ago`;
+}
 
 export default function PlayerRoster({ players, currentUserId, isCurrentUserAdmin, isCurrentUserModerator = false }: Props) {
   const [search, setSearch] = useState("");
@@ -145,6 +160,9 @@ export default function PlayerRoster({ players, currentUserId, isCurrentUserAdmi
                 <th className="hidden pb-3 text-xs font-medium text-foreground/50 lg:table-cell">
                   Availability
                 </th>
+                <th className="hidden pb-3 text-xs font-medium text-foreground/50 sm:table-cell">
+                  Last Seen
+                </th>
                 <th className="pb-3 text-xs font-medium text-foreground/50">
                   Role
                 </th>
@@ -220,6 +238,17 @@ export default function PlayerRoster({ players, currentUserId, isCurrentUserAdmi
                           </span>
                         ))}
                       </div>
+                    </td>
+
+                    {/* Last Seen */}
+                    <td className="hidden py-3 pr-3 sm:table-cell">
+                      <span className={`text-xs ${
+                        !player.lastSeenAt ? "text-foreground/30" :
+                        Date.now() - new Date(player.lastSeenAt).getTime() < 900000 ? "text-neon" :
+                        "text-foreground/50"
+                      }`}>
+                        {formatLastSeen(player.lastSeenAt)}
+                      </span>
                     </td>
 
                     {/* Role */}
@@ -391,7 +420,7 @@ export default function PlayerRoster({ players, currentUserId, isCurrentUserAdmi
               {filtered.length === 0 && (
                 <tr>
                   <td
-                    colSpan={6}
+                    colSpan={7}
                     className="py-8 text-center text-sm text-foreground/40"
                   >
                     No players found

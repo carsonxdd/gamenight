@@ -2,16 +2,18 @@
 
 import Link from "next/link";
 import { useSession } from "next-auth/react";
+import { useSiteSettings } from "@/components/providers/SiteSettingsProvider";
 
 export default function Footer() {
   const { data: session } = useSession();
+  const settings = useSiteSettings();
 
   return (
     <footer className="border-t border-border bg-surface/50 py-10">
       <div className="mx-auto flex max-w-6xl flex-col items-center gap-6 px-4">
         {/* Discord invite */}
         <a
-          href="https://discord.gg/PLACEHOLDER"
+          href="https://discord.gg/3fyMmcSf4C"
           target="_blank"
           rel="noopener noreferrer"
           className="inline-flex items-center gap-2 rounded-lg bg-discord px-5 py-2.5 font-semibold text-white transition hover:bg-discord-hover"
@@ -26,24 +28,36 @@ export default function Footer() {
           Join the Discord
         </a>
 
-        {/* Nav links */}
+        {/* Nav links — same order as Navbar (minus Home) */}
         <div className="flex flex-wrap items-center justify-center gap-6 text-sm text-foreground/50">
           <Link href="/schedule" className="transition hover:text-neon">
             Schedule
           </Link>
-          <Link href="/highlights" className="transition hover:text-neon">
-            Highlights
-          </Link>
           {session && (
             <>
+              {settings.enablePolls && (
+                <Link href="/polls" className="transition hover:text-neon">
+                  Polls
+                </Link>
+              )}
               <Link href="/members" className="transition hover:text-neon">
                 Members
               </Link>
-              <Link href="/about" className="transition hover:text-neon">
-                About
-              </Link>
+              {settings.enableTeams && (
+                <Link href="/teams" className="transition hover:text-neon">
+                  Teams
+                </Link>
+              )}
             </>
           )}
+          {settings.enableHighlights && (
+            <Link href="/highlights" className="transition hover:text-neon">
+              Highlights
+            </Link>
+          )}
+          <Link href="/about" className="transition hover:text-neon">
+            About
+          </Link>
         </div>
 
         {/* GitHub + carsoncaplan.com */}

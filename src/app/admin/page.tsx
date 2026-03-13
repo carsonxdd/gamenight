@@ -190,6 +190,7 @@ export default async function AdminPage() {
     }),
     availabilityDays: [...new Set(u.availability.map((a) => a.dayOfWeek))],
     willingToModerate: u.willingToModerate,
+    lastSeenAt: u.lastSeenAt?.toISOString() ?? null,
   }));
 
   // Serialize audit logs for client
