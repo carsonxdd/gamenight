@@ -248,9 +248,7 @@ export const DEFAULT_ANCHOR_TIMEZONE = "America/Phoenix";
 export const TIME_SLOTS: string[] = [];
 for (let hour = DEFAULT_PRIME_START; hour <= DEFAULT_PRIME_END; hour++) {
   TIME_SLOTS.push(`${hour.toString().padStart(2, "0")}:00`);
-  if (hour < DEFAULT_PRIME_END) {
-    TIME_SLOTS.push(`${hour.toString().padStart(2, "0")}:30`);
-  }
+  TIME_SLOTS.push(`${hour.toString().padStart(2, "0")}:30`);
 }
 
 /**
@@ -262,9 +260,7 @@ export function generateTimeSlots(startHour: number, endHour: number): string[] 
   for (let hour = startHour; hour <= endHour; hour++) {
     const displayHour = hour % 24;
     slots.push(`${displayHour.toString().padStart(2, "0")}:00`);
-    if (hour < endHour) {
-      slots.push(`${displayHour.toString().padStart(2, "0")}:30`);
-    }
+    slots.push(`${displayHour.toString().padStart(2, "0")}:30`);
   }
   return slots;
 }

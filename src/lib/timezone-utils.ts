@@ -366,14 +366,12 @@ export function computeTimeSlotsForViewer(
     const displayH = ((viewerH % 24) + 24) % 24;
     const slotFull = `${displayH.toString().padStart(2, "0")}:00`;
     extendedSlots.push(slotFull);
-    if (i < totalExtHours) {
-      extendedSlots.push(`${displayH.toString().padStart(2, "0")}:30`);
-    }
+    extendedSlots.push(`${displayH.toString().padStart(2, "0")}:30`);
 
     // Check if this hour falls in prime range
     if (anchorH >= primeStartHour && anchorH <= normPrimeEnd) {
       primeSlots.push(slotFull);
-      if (anchorH < normPrimeEnd && i < totalExtHours) {
+      if (anchorH <= normPrimeEnd) {
         primeSlots.push(`${displayH.toString().padStart(2, "0")}:30`);
       }
     }
