@@ -167,7 +167,7 @@ export default function PlayerRoster({ players, currentUserId, isCurrentUserAdmi
           <table className="w-full">
             <thead>
               <tr className="border-b border-border text-left">
-                <th className="pb-3 text-xs font-medium text-foreground/50">
+                <th className="min-w-[140px] pb-3 text-xs font-medium text-foreground/50">
                   Player
                 </th>
                 <th className="pb-3 text-xs font-medium text-foreground/50">
@@ -179,7 +179,7 @@ export default function PlayerRoster({ players, currentUserId, isCurrentUserAdmi
                 <th className="hidden pb-3 text-xs font-medium text-foreground/50 lg:table-cell">
                   Availability
                 </th>
-                <th className="hidden pb-3 text-xs font-medium text-foreground/50 sm:table-cell">
+                <th className="hidden min-w-[80px] pb-3 text-xs font-medium text-foreground/50 sm:table-cell">
                   Last Seen
                 </th>
                 <th className="pb-3 text-xs font-medium text-foreground/50">
@@ -199,20 +199,20 @@ export default function PlayerRoster({ players, currentUserId, isCurrentUserAdmi
                     className="group border-b border-border/50 last:border-0"
                   >
                     {/* Player */}
-                    <td className="py-3 pr-3">
+                    <td className="max-w-[180px] py-3 pr-3">
                       <div className="flex items-center gap-2">
                         {player.avatar ? (
                           <img
                             src={player.avatar}
                             alt=""
-                            className="h-7 w-7 rounded-full"
+                            className="h-7 w-7 shrink-0 rounded-full"
                           />
                         ) : (
-                          <div className="flex h-7 w-7 items-center justify-center rounded-full bg-surface-light text-xs text-foreground/50">
+                          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-surface-light text-xs text-foreground/50">
                             {player.name.charAt(0)}
                           </div>
                         )}
-                        <span className="text-sm text-foreground">
+                        <span className="truncate text-sm text-foreground" title={player.name}>
                           {player.name}
                         </span>
                       </div>

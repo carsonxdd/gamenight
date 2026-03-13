@@ -117,7 +117,7 @@ export default function PollCard({ poll, userId, isAdmin }: Props) {
             <p className="mt-1 text-sm text-foreground/60">{poll.description}</p>
           )}
           <p className="mt-1 text-xs text-foreground/40">
-            by {poll.createdBy.gamertag || poll.createdBy.name} &middot; {createdDate} &middot; {poll.totalVotes} {poll.totalVotes === 1 ? "voter" : "voters"}
+            by {poll.createdBy?.gamertag || poll.createdBy?.name || "Unknown"} &middot; {createdDate} &middot; {poll.totalVotes} {poll.totalVotes === 1 ? "voter" : "voters"}
           </p>
         </div>
       </div>

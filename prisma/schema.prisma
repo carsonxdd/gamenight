@@ -78,7 +78,7 @@ model InviteCode {
   expiresAt   DateTime?
   isActive    Boolean   @default(true)
   createdById String
-  createdBy   User      @relation("InviteCodeCreator", fields: [createdById], references: [id])
+  createdBy   User      @relation("InviteCodeCreator", fields: [createdById], references: [id], onDelete: Cascade)
   usedBy      User[]    @relation("UsedInviteCode")
   createdAt   DateTime  @default(now())
 }
@@ -129,10 +129,10 @@ model GameNight {
   recurGroupId String?             // shared ID linking recurring event instances
   timezone    String              @default("America/Phoenix") // IANA timezone of the event host
   attendanceConfirmed Boolean     @default(false)       // true once host has confirmed who showed up
-  createdById String
-  createdBy   User                @relation("CreatedBy", fields: [createdById], references: [id])
+  createdById String?
+  createdBy   User?               @relation("CreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
   hostId      String?
-  host        User?               @relation("HostedBy", fields: [hostId], references: [id])
+  host        User?               @relation("HostedBy", fields: [hostId], references: [id], onDelete: SetNull)
   attendees   GameNightAttendee[]
   invites     GameNightInvite[]
   tournamentSessions TournamentSession[]
@@ -319,8 +319,8 @@ model Tournament {
   currentPickIndex Int?  // which pick we're on in the draft
   buyIn         Float?
   isMultiSession Boolean @default(false)
-  createdById   String
-  createdBy     User     @relation("TournamentCreator", fields: [createdById], references: [id])
+  createdById   String?
+  createdBy     User?    @relation("TournamentCreator", fields: [createdById], references: [id], onDelete: SetNull)
   sessions      TournamentSession[]
   entrants      TournamentEntrant[]
   teams         TournamentTeam[]
@@ -347,8 +347,8 @@ model TournamentTeam {
   tournamentId     String
   tournament       Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
   name             String
-  captainId        String
-  captain          User      @relation("TeamCaptain", fields: [captainId], references: [id])
+  captainId        String?
+  captain          User?     @relation("TeamCaptain", fields: [captainId], references: [id], onDelete: SetNull)
   persistentTeamId String?
   persistentTeam   Team?     @relation("TournamentTeamLink", fields: [persistentTeamId], references: [id])
   members          TournamentTeamMember[]
@@ -360,7 +360,7 @@ model TournamentTeamMember {
   teamId String
   team   TournamentTeam  @relation(fields: [teamId], references: [id], onDelete: Cascade)
   userId String
-  user   User            @relation("TeamMembership", fields: [userId], references: [id])
+  user   User            @relation("TeamMembership", fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([teamId, userId])
 }
@@ -371,7 +371,7 @@ model TournamentEntrant {
   tournament   Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
   type         String    // "solo" or "team"
   userId       String?
-  user         User?     @relation("TournamentPlayer", fields: [userId], references: [id])
+  user         User?     @relation("TournamentPlayer", fields: [userId], references: [id], onDelete: SetNull)
   teamId       String?   @unique
   team         TournamentTeam? @relation(fields: [teamId], references: [id])
   displayName  String
@@ -413,7 +413,7 @@ model TournamentPrediction {
   tournamentId      String
   tournament        Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
   userId            String
-  user              User      @relation("TournamentPredictor", fields: [userId], references: [id])
+  user              User      @relation("TournamentPredictor", fields: [userId], references: [id], onDelete: Cascade)
   matchId           String
   match             TournamentMatch @relation(fields: [matchId], references: [id], onDelete: Cascade)
   predictedWinnerId String
@@ -428,7 +428,7 @@ model TournamentComment {
   tournamentId String
   tournament   Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
   userId       String
-  user         User      @relation("TournamentCommenter", fields: [userId], references: [id])
+  user         User      @relation("TournamentCommenter", fields: [userId], references: [id], onDelete: Cascade)
   text         String
   createdAt    DateTime  @default(now())
 }
@@ -443,7 +443,7 @@ model TournamentTemplate {
   seedingMode String @default("random")
   captainMode String?
   createdById String
-  createdBy   User   @relation("TemplateCreator", fields: [createdById], references: [id])
+  createdBy   User   @relation("TemplateCreator", fields: [createdById], references: [id], onDelete: Cascade)
   createdAt   DateTime @default(now())
 }
 
@@ -455,7 +455,7 @@ model Team {
   tag         String    @unique // 3–5 chars, e.g. "NOVA"
   game        String
   captainId   String
-  captain     User      @relation("PersistentTeamCaptain", fields: [captainId], references: [id])
+  captain     User      @relation("PersistentTeamCaptain", fields: [captainId], references: [id], onDelete: Cascade)
   bio         String?
   avatarUrl   String?
   isActive    Boolean   @default(true)
@@ -560,8 +560,8 @@ model AuditLog {
   action     String   // e.g. "EVENT_CREATED", "TOURNAMENT_DELETED"
   entityType String   // e.g. "GameNight", "Tournament", "Team", "Poll"
   entityId   String?  // ID of the affected entity (nullable for settings)
-  actorId    String   // userId who performed the action
-  actor      User     @relation("AuditActor", fields: [actorId], references: [id])
+  actorId    String?  // userId who performed the action
+  actor      User?    @relation("AuditActor", fields: [actorId], references: [id], onDelete: SetNull)
   metadata   String?  // JSON string with extra details
   createdAt  DateTime @default(now())
 }

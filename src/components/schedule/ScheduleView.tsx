@@ -29,8 +29,8 @@ export interface GameNightWithAttendees {
   recurGroupId: string | null;
   attendanceConfirmed: boolean;
   timezone: string;
-  createdById: string;
-  createdBy?: { name: string; gamertag: string | null };
+  createdById: string | null;
+  createdBy?: { name: string; gamertag: string | null } | null;
   hostId: string | null;
   host?: { name: string; gamertag: string | null } | null;
   attendees: {

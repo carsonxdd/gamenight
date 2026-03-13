@@ -242,7 +242,8 @@ export async function removeUser(userId: string) {
     revalidatePath("/admin");
     logAudit({ action: "USER_REMOVED", entityType: "User", entityId: userId, actorId: session.user.id });
     return { success: true };
-  } catch {
+  } catch (err) {
+    console.error("Failed to remove user:", err);
     return { error: "Failed to remove user" };
   }
 }

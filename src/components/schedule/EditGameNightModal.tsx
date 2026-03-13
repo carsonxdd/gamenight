@@ -76,7 +76,7 @@ export default function EditGameNightModal({ open, onClose, gameNight, userId, i
       isRecurring,
       recurDay: isRecurring ? recurDay : undefined,
       inviteeIds: isInviteOnly ? inviteeIds : undefined,
-      hostId,
+      hostId: hostId ?? undefined,
     });
     setLoading(false);
     if (result?.error) {
@@ -207,11 +207,11 @@ export default function EditGameNightModal({ open, onClose, gameNight, userId, i
           <div>
             <label className="mb-1 block text-sm text-foreground/70">Host</label>
             <select
-              value={hostId}
+              value={hostId ?? ""}
               onChange={(e) => setHostId(e.target.value)}
               className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-foreground focus:border-neon focus:outline-none"
             >
-              <option value={gameNight.createdById}>
+              <option value={gameNight.createdById ?? ""}>
                 {gameNight.createdBy?.gamertag || gameNight.createdBy?.name || "Creator"}
               </option>
               {members

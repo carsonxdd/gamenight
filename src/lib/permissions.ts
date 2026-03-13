@@ -4,7 +4,7 @@ export function canEditEvent(params: {
   isModerator?: boolean;
   isOwner?: boolean;
   hostId?: string | null;
-  createdById: string;
+  createdById: string | null;
   visibility: string;
 }): boolean {
   if (!params.userId) return false;

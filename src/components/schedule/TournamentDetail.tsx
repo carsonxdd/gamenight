@@ -117,7 +117,7 @@ export default function TournamentDetail({
           )}
 
           <div className="mt-2 text-xs text-foreground/30">
-            Created by {t.createdBy.gamertag || t.createdBy.name}
+            Created by {t.createdBy?.gamertag || t.createdBy?.name || "Unknown"}
           </div>
         </div>
 
@@ -276,7 +276,7 @@ export default function TournamentDetail({
                       <div className="flex items-center justify-between mb-1">
                         <span className="text-sm font-medium text-foreground">{team.name}</span>
                         <span className="text-xs text-foreground/30">
-                          Captain: {team.captain.gamertag || team.captain.name}
+                          Captain: {team.captain?.gamertag || team.captain?.name || "Unknown"}
                         </span>
                       </div>
                       <div className="flex flex-wrap gap-1">
@@ -377,7 +377,7 @@ export default function TournamentDetail({
                 }}
                 userId={userId}
                 isAdmin={isAdminOrMod}
-                tournamentCreatorId={t.createdById}
+                tournamentCreatorId={t.createdById ?? ""}
               />
             )}
 
@@ -444,7 +444,7 @@ export default function TournamentDetail({
           teamSize={t.teamSize || 5}
           maxSlots={t.maxSlots}
           captainMode={t.captainMode}
-          createdById={t.createdById}
+          createdById={t.createdById ?? ""}
           userId={userId}
           isAdmin={isAdminOrMod}
           members={members}

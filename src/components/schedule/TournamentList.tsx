@@ -12,8 +12,8 @@ import { useSiteSettings } from "@/components/providers/SiteSettingsProvider";
 export interface TournamentTeamData {
   id: string;
   name: string;
-  captainId: string;
-  captain: { name: string; gamertag: string | null };
+  captainId: string | null;
+  captain: { name: string; gamertag: string | null } | null;
   members: {
     userId: string;
     user: { name: string; gamertag: string | null };
@@ -36,8 +36,8 @@ export interface TournamentData {
   buyIn: number | null;
   isMultiSession: boolean;
   draftStatus: string | null;
-  createdById: string;
-  createdBy: { name: string; gamertag: string | null };
+  createdById: string | null;
+  createdBy: { name: string; gamertag: string | null } | null;
   entrants: {
     id: string;
     type: string;
@@ -272,7 +272,7 @@ function TournamentCard({
             </span>
           )}
           <span className="text-xs text-foreground/30">
-            by {t.createdBy.gamertag || t.createdBy.name}
+            by {t.createdBy?.gamertag || t.createdBy?.name || "Unknown"}
           </span>
         </div>
       </div>

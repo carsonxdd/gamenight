@@ -198,7 +198,7 @@ export default function TeamDraftModal({
 
   // For captain selection, get entrant user ids
   const entrantUsers = draftState?.availablePlayers
-    ? [...(draftState.teams.flatMap((t) => [{ userId: t.captainId, name: t.captain.name, gamertag: t.captain.gamertag, avatar: null as string | null }])),
+    ? [...(draftState.teams.flatMap((t) => [{ userId: t.captainId, name: t.captain?.name || "Unknown", gamertag: t.captain?.gamertag || null, avatar: null as string | null }])),
        ...draftState.availablePlayers]
     : [];
 
@@ -367,8 +367,8 @@ export default function TeamDraftModal({
                         <>
                           Waiting for{" "}
                           <span className="text-neon">
-                            {draftState.teams.find((t) => t.captainId === draftState.currentCaptainId)?.captain.gamertag ||
-                              draftState.teams.find((t) => t.captainId === draftState.currentCaptainId)?.captain.name ||
+                            {draftState.teams.find((t) => t.captainId === draftState.currentCaptainId)?.captain?.gamertag ||
+                              draftState.teams.find((t) => t.captainId === draftState.currentCaptainId)?.captain?.name ||
                               "captain"}
                           </span>
                           {" "}to pick...

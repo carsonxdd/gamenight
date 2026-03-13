@@ -142,7 +142,7 @@ export default function EventDetailModal({
         {/* Submitted by (pending events) */}
         {isPending && gn.createdBy && (
           <p className="text-xs text-warning/70">
-            Submitted by {gn.createdBy.gamertag || gn.createdBy.name}
+            Submitted by {gn.createdBy?.gamertag || gn.createdBy?.name || "Unknown"}
           </p>
         )}
 

@@ -203,8 +203,8 @@ export default async function AdminPage() {
     action: log.action,
     entityType: log.entityType,
     entityId: log.entityId,
-    actorName: log.actor.gamertag || log.actor.name,
-    actorAvatar: log.actor.avatar,
+    actorName: log.actor?.gamertag || log.actor?.name || "Deleted User",
+    actorAvatar: log.actor?.avatar ?? null,
     metadata: log.metadata,
     createdAt: log.createdAt.toISOString(),
   }));

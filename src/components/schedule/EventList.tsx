@@ -131,7 +131,7 @@ export default function EventList({ gameNights, userId, isAdmin, onViewEvent, on
               )}
               {isPending && gn.createdBy && (
                 <p className="mt-1 text-xs text-warning/70">
-                  Submitted by {gn.createdBy.gamertag || gn.createdBy.name}
+                  Submitted by {gn.createdBy?.gamertag || gn.createdBy?.name || "Unknown"}
                 </p>
               )}
               {confirmed.length > 0 && (

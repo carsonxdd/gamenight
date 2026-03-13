@@ -56,7 +56,7 @@ export default function TeamCard({ team }: { team: TeamData }) {
 
         <div className="flex items-center justify-between text-xs text-foreground/40">
           <span>
-            Captain: <span className="text-foreground/60">{team.captain.gamertag || team.captain.name}</span>
+            Captain: <span className="text-foreground/60">{team.captain?.gamertag || team.captain?.name || "Unknown"}</span>
           </span>
           <span>
             {team.memberCount}/{team.maxSize} members
