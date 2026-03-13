@@ -86,7 +86,7 @@ export default function Footer() {
 
         {/* Copyright */}
         <p className="text-xs text-foreground/30">
-          &copy; {new Date().getFullYear()} Caplan&apos;s Game Night
+          &copy; {new Date().getFullYear()} Game Night
         </p>
       </div>
     </footer>
