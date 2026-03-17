@@ -179,6 +179,18 @@ function AboutContent() {
 
 const VERSION_HISTORY = [
   {
+    version: "v1.0.1",
+    title: "Community Feedback Fixes",
+    date: "2026-03-16",
+    changes: [
+      "Thanks to everyone who submitted bug reports and suggestions — your feedback directly shaped these fixes and helps the platform grow!",
+      "Discord approval notifications now include a clickable link to the schedule page so you can RSVP right from Discord",
+      "Event approval modal now properly closes after approving or rejecting, with loading state to prevent double-clicks",
+      "Profile completion badge now awards correctly when filling out the extended profile (favorite games, social links, etc.)",
+      "Event creators can now edit, delete, and cancel their own events — not just invite-only ones",
+    ],
+  },
+  {
     version: "v1.0",
     title: "Badges, Discord Notifications & Polish",
     date: "2026-03-12",
