@@ -64,7 +64,9 @@ export function notifyEventApproved(event: {
   title: string;
   game: string;
   date: string;
+  siteUrl?: string;
 }): void {
+  const scheduleUrl = event.siteUrl ? `${event.siteUrl}/schedule` : undefined;
   sendUpdateNotification({
     type: "notifyEventApproved",
     content: "@here",
@@ -73,6 +75,7 @@ export function notifyEventApproved(event: {
         title: `✅  Event Approved`,
         description: `**${event.title}** has been approved and is now live!`,
         color: EMBED_COLORS.approved,
+        url: scheduleUrl,
         fields: [
           { name: "🎮 Game", value: event.game, inline: true },
           { name: "📆 Date", value: event.date, inline: true },

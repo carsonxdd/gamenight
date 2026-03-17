@@ -72,6 +72,8 @@ export default function EventDetailModal({
     visibility: gn.visibility,
   });
 
+  const [approveLoading, setApproveLoading] = useState(false);
+
   const serverRsvp = userId ? gn.attendees.find((a) => a.userId === userId)?.status : undefined;
   const [optimisticRsvp, setOptimisticRsvp] = useState<string | undefined>(undefined);
   const myRsvp = optimisticRsvp ?? serverRsvp;
@@ -213,14 +215,26 @@ export default function EventDetailModal({
         {canApprove && (
           <div className="flex gap-2 pt-2 border-t border-border">
             <button
-              onClick={() => approveGameNight(gn.id)}
-              className="rounded-lg bg-neon/10 px-4 py-2 text-sm font-medium text-neon transition hover:bg-neon/20"
+              disabled={approveLoading}
+              onClick={async () => {
+                setApproveLoading(true);
+                const result = await approveGameNight(gn.id);
+                if (!result.error) onClose();
+                else setApproveLoading(false);
+              }}
+              className="rounded-lg bg-neon/10 px-4 py-2 text-sm font-medium text-neon transition hover:bg-neon/20 disabled:opacity-50"
             >
-              Approve
+              {approveLoading ? "Approving…" : "Approve"}
             </button>
             <button
-              onClick={() => rejectGameNight(gn.id)}
-              className="rounded-lg bg-danger/10 px-4 py-2 text-sm font-medium text-danger transition hover:bg-danger/20"
+              disabled={approveLoading}
+              onClick={async () => {
+                setApproveLoading(true);
+                const result = await rejectGameNight(gn.id);
+                if (!result.error) onClose();
+                else setApproveLoading(false);
+              }}
+              className="rounded-lg bg-danger/10 px-4 py-2 text-sm font-medium text-danger transition hover:bg-danger/20 disabled:opacity-50"
             >
               Reject
             </button>

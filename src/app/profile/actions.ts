@@ -172,6 +172,11 @@ export async function updateExtendedProfile(data: ExtendedProfileData) {
       }
     });
 
+    // Badge: profile_complete (extended fields may complete the profile)
+    import("@/lib/badges/engine").then(async ({ checkProfileComplete }) => {
+      await checkProfileComplete(session.user.id).catch(() => {});
+    });
+
     const { revalidatePath } = await import("next/cache");
     revalidatePath("/profile");
     revalidatePath("/members");

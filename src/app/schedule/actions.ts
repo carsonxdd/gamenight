@@ -255,8 +255,8 @@ export async function updateGameNight(
   const isHost = existing.hostId === session.user.id;
   const isInviteOnly = existing.visibility === "invite_only";
 
-  // Authorization: admin/mod/owner can edit anything, host can edit, creator can edit own invite-only
-  if (!isAdminOrMod && !isHost && !(isCreator && isInviteOnly)) {
+  // Authorization: admin/mod/owner can edit anything, host can edit, creator can edit own events
+  if (!isAdminOrMod && !isHost && !isCreator) {
     return { error: "Not authorized to edit this event" };
   }
 
@@ -367,13 +367,13 @@ export async function cancelGameNight(id: string) {
 
   const isAdminOrMod = session.user.isAdmin || session.user.isModerator || session.user.isOwner;
 
-  // Allow host or creator of invite-only events to cancel
+  // Allow host or creator to cancel their own events
   if (!isAdminOrMod) {
     const existing = await prisma.gameNight.findUnique({ where: { id } });
     if (!existing) return { error: "Event not found" };
     const isHost = existing.hostId === session.user.id;
     const isCreator = existing.createdById === session.user.id;
-    if (!isHost && !(isCreator && existing.visibility === "invite_only")) {
+    if (!isHost && !isCreator) {
       return { error: "Not authorized to cancel this event" };
     }
   }
@@ -414,6 +414,7 @@ export async function approveGameNight(id: string) {
       title: event.title || event.game,
       game: event.game,
       date: event.date.toISOString().split("T")[0],
+      siteUrl: process.env.NEXTAUTH_URL,
     });
     return { success: true };
   } catch {
@@ -447,13 +448,13 @@ export async function deleteGameNight(id: string) {
 
   const isAdminOrMod = session.user.isAdmin || session.user.isModerator || session.user.isOwner;
 
-  // Allow host or creator of invite-only events to delete
+  // Allow host or creator to delete their own events
   if (!isAdminOrMod) {
     const existing = await prisma.gameNight.findUnique({ where: { id } });
     if (!existing) return { error: "Event not found" };
     const isHost = existing.hostId === session.user.id;
     const isCreator = existing.createdById === session.user.id;
-    if (!isHost && !(isCreator && existing.visibility === "invite_only")) {
+    if (!isHost && !isCreator) {
       return { error: "Not authorized to delete this event" };
     }
   }

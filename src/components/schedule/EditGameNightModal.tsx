@@ -30,7 +30,8 @@ export default function EditGameNightModal({ open, onClose, gameNight, userId, i
 
   const isInviteOnly = gameNight.visibility === "invite_only";
   const isCreator = userId === gameNight.createdById;
-  const canEdit = isAdmin || (isCreator && isInviteOnly);
+  const canEdit = isAdmin || isCreator;
+  const canDelete = isAdmin || isCreator;
 
   const [title, setTitle] = useState(gameNight.title || "");
   const [description, setDescription] = useState(gameNight.description || "");
@@ -347,7 +348,7 @@ export default function EditGameNightModal({ open, onClose, gameNight, userId, i
           <Button type="submit" disabled={loading} className="flex-1">
             {loading ? "Saving..." : "Save Changes"}
           </Button>
-          {canEdit && (
+          {canDelete && (
             <button
               type="button"
               onClick={handleDelete}
