@@ -49,6 +49,7 @@ export default function TournamentDetail({
   const [copied, setCopied] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
   const [showDraft, setShowDraft] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
 
   const isAdminOrMod = isAdmin || isModerator || isOwner;
   const isCreator = t.createdById === userId;
@@ -244,15 +245,31 @@ export default function TournamentDetail({
           )}
 
           {/* Delete */}
-          {canManage && (t.status === "draft" || t.status === "archived") && (
-            <Button
-              size="sm"
-              variant="danger"
-              onClick={() => handleAction(() => deleteTournament(t.id), "delete")}
-              disabled={loading === "delete"}
-            >
-              {loading === "delete" ? "Deleting..." : "Delete"}
-            </Button>
+          {canManage && (t.status === "draft" || t.status === "open" || t.status === "archived") && (
+            <>
+              {confirmDelete ? (
+                <span className="flex items-center gap-2">
+                  <span className="text-xs text-foreground/50">
+                    Delete tournament{t.entrants.length > 0 ? ` with ${t.entrants.length} entrant${t.entrants.length !== 1 ? "s" : ""}` : ""}?
+                  </span>
+                  <Button
+                    size="sm"
+                    variant="danger"
+                    onClick={() => handleAction(() => deleteTournament(t.id), "delete")}
+                    disabled={loading === "delete"}
+                  >
+                    {loading === "delete" ? "Deleting..." : "Confirm"}
+                  </Button>
+                  <Button size="sm" variant="ghost" onClick={() => setConfirmDelete(false)}>
+                    Cancel
+                  </Button>
+                </span>
+              ) : (
+                <Button size="sm" variant="danger" onClick={() => setConfirmDelete(true)}>
+                  Delete
+                </Button>
+              )}
+            </>
           )}
         </div>
 

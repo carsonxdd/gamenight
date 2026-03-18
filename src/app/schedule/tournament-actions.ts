@@ -676,7 +676,7 @@ export async function deleteTournament(tournamentId: string) {
 
   const tournament = await prisma.tournament.findUnique({
     where: { id: tournamentId },
-    select: { createdById: true },
+    select: { createdById: true, title: true },
   });
   if (!tournament) return { error: "Tournament not found" };
 
@@ -689,7 +689,7 @@ export async function deleteTournament(tournamentId: string) {
   try {
     await prisma.tournament.delete({ where: { id: tournamentId } });
     revalidatePath("/schedule");
-    logAudit({ action: "TOURNAMENT_DELETED", entityType: "Tournament", entityId: tournamentId, actorId: session.user.id });
+    logAudit({ action: "TOURNAMENT_DELETED", entityType: "Tournament", entityId: tournamentId, actorId: session.user.id, metadata: { title: tournament.title } });
     return { success: true };
   } catch {
     return { error: "Failed to delete tournament" };
