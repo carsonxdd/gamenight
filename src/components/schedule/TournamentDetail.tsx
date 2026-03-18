@@ -103,7 +103,7 @@ export default function TournamentDetail({
               </div>
             </div>
             {prizePool && (
-              <div className="text-right">
+              <div className="text-right pr-6">
                 <div className="text-sm text-foreground/40">Prize Pool</div>
                 <div className="text-lg font-bold text-neon">${prizePool.toFixed(2)}</div>
                 {t.buyIn && (
