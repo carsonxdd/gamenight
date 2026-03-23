@@ -488,6 +488,11 @@ Admin toggle under Access & Privacy: Discord Only / Discord + Email / Email Only
 
 ## Version History
 
+### v1.0.2 — 2026-03-22
+
+#### Bug Fix
+- **Roster availability timezone fix** — admin panel Player Roster was displaying availability days in raw UTC instead of converting to the viewer's local timezone. This caused days to appear shifted (e.g., Monday availability showing as Sunday). Now uses the same UTC→local conversion as the Availability Heatmap.
+
 ### v1.0.1 — 2026-03-13
 
 #### Admin Rank Management

@@ -192,7 +192,9 @@ export default async function AdminPage() {
     }),
     rawGames: u.games.map((g) => g.gameName),
     ranks: u.ranks.map((r) => ({ gameName: r.gameName, rank: r.rank })),
-    availabilityDays: [...new Set(u.availability.map((a) => a.dayOfWeek))],
+    availabilityDays: [...new Set(u.availability.map((a) => {
+      return utcToLocalTime(a.startTime, a.dayOfWeek, viewerTimezone).localDayOfWeek;
+    }))],
     willingToModerate: u.willingToModerate,
     lastSeenAt: u.lastSeenAt?.toISOString() ?? null,
   }));
