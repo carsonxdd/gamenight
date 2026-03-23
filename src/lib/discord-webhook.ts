@@ -34,6 +34,8 @@ const EMBED_COLORS = {
   announcement: 0xff2d55, // hot pink
 } as const;
 
+const SCHEDULE_URL = "https://pvpers.us/schedule";
+
 /** Fire-and-forget: sends to the updates webhook. Never throws. */
 function sendUpdateNotification(params: {
   type: NotifyToggle;
@@ -64,18 +66,16 @@ export function notifyEventApproved(event: {
   title: string;
   game: string;
   date: string;
-  siteUrl?: string;
 }): void {
-  const scheduleUrl = event.siteUrl ? `${event.siteUrl}/schedule` : undefined;
   sendUpdateNotification({
     type: "notifyEventApproved",
     content: "@here",
     embeds: [
       {
         title: `✅  Event Approved`,
-        description: `**${event.title}** has been approved and is now live!`,
+        description: `**${event.title}** has been approved and is now live!\n\n📅 Check out the schedule at **pvpers.us/schedule**`,
         color: EMBED_COLORS.approved,
-        url: scheduleUrl,
+        url: SCHEDULE_URL,
         fields: [
           { name: "🎮 Game", value: event.game, inline: true },
           { name: "📆 Date", value: event.date, inline: true },
@@ -97,8 +97,9 @@ export function notifyEventCancelled(event: {
     embeds: [
       {
         title: `❌  Event Cancelled`,
-        description: `**${event.title}** has been cancelled.`,
+        description: `**${event.title}** has been cancelled.\n\n📅 Check out the schedule at **pvpers.us/schedule**`,
         color: 0xff3b30,
+        url: SCHEDULE_URL,
         fields: [
           { name: "🎮 Game", value: event.game, inline: true },
           { name: "📆 Date", value: event.date, inline: true },
@@ -120,8 +121,9 @@ export function notifyEventEdited(event: {
     embeds: [
       {
         title: `✏️  Event Updated`,
-        description: `**${event.title}** has been updated.`,
+        description: `**${event.title}** has been updated.\n\n📅 Check out the schedule at **pvpers.us/schedule**`,
         color: EMBED_COLORS.event,
+        url: SCHEDULE_URL,
         fields: [
           { name: "🎮 Game", value: event.game, inline: true },
           { name: "📆 Date", value: event.date, inline: true },
@@ -153,8 +155,9 @@ export function notifyTournamentCreated(tournament: {
     embeds: [
       {
         title: `🏆  New Tournament Created`,
-        description: `**${tournament.title}**\nSign up before spots fill!`,
+        description: `**${tournament.title}**\nSign up before spots fill!\n\n📅 Check out the schedule at **pvpers.us/schedule**`,
         color: EMBED_COLORS.tournament,
+        url: SCHEDULE_URL,
         fields: [
           { name: "🎮 Game", value: tournament.game, inline: true },
           { name: "🗡️ Format", value: bracketLabels[tournament.bracketType] || tournament.bracketType, inline: true },
@@ -177,8 +180,9 @@ export function notifyPollCreated(poll: {
     embeds: [
       {
         title: `📊  New Poll`,
-        description: `**${poll.title}**`,
+        description: `**${poll.title}**\n\n🗳️ Cast your vote at **pvpers.us/polls**`,
         color: EMBED_COLORS.poll,
+        url: "https://pvpers.us/polls",
         fields: [
           { name: "Options", value: `${poll.optionCount}`, inline: true },
           { name: "Created by", value: poll.creatorName, inline: true },
@@ -198,8 +202,9 @@ export function notifyMemberJoined(member: {
     embeds: [
       {
         title: `👋  Welcome!`,
-        description: `**${member.gamertag}** just joined the community!`,
+        description: `**${member.gamertag}** just joined the community!\n\n📅 Check out upcoming events at **pvpers.us/schedule**`,
         color: EMBED_COLORS.member,
+        url: SCHEDULE_URL,
         timestamp: new Date().toISOString(),
       },
     ],

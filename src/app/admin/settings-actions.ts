@@ -173,6 +173,7 @@ export async function sendAnnouncementAction(data: {
         title: `📢  ${title}`,
         description: message,
         color,
+        url: "https://pvpers.us/schedule",
         footer: { text: `Sent by ${session.user.gamertag || session.user.name || "Admin"}` },
         timestamp: new Date().toISOString(),
       },

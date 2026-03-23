@@ -414,7 +414,6 @@ export async function approveGameNight(id: string) {
       title: event.title || event.game,
       game: event.game,
       date: event.date.toISOString().split("T")[0],
-      siteUrl: process.env.NEXTAUTH_URL,
     });
     return { success: true };
   } catch {
