@@ -172,6 +172,17 @@ export async function createGameNight(data: {
 
     revalidatePath("/schedule");
     logAudit({ action: "EVENT_CREATED", entityType: "GameNight", actorId: session.user.id, metadata: { title: data.title || data.game, game: data.game } });
+
+    // Admin/mod public events are auto-approved — fire the notification that
+    // approveGameNight() would normally send so it still shows in Discord.
+    if (status === "scheduled" && !isInviteOnly) {
+      notifyEventApproved({
+        title: data.title?.trim() || data.game,
+        game: data.game,
+        date: baseDate.toISOString().split("T")[0],
+      });
+    }
+
     return { success: true };
   } catch {
     return { error: "Failed to create game night" };

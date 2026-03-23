@@ -41,9 +41,11 @@ export default function EventDetailModal({
   teamTagMap = {},
   userTimezone = "America/Phoenix",
 }: Props) {
-  const isPending = gn.status === "pending";
-  const isRejected = gn.status === "rejected";
-  const isCancelled = gn.status === "cancelled";
+  const [optimisticStatus, setOptimisticStatus] = useState<string | null>(null);
+  const effectiveStatus = optimisticStatus ?? gn.status;
+  const isPending = effectiveStatus === "pending";
+  const isRejected = effectiveStatus === "rejected";
+  const isCancelled = effectiveStatus === "cancelled";
   const isInviteOnly = gn.visibility === "invite_only";
   const isCreator = userId === gn.createdById;
   const isHost = userId === gn.hostId;
@@ -59,9 +61,9 @@ export default function EventDetailModal({
   const confirmedCount = gn.attendees.filter((a) => a.status === "confirmed").length;
   const isFull = maxAttendees > 0 && confirmedCount >= maxAttendees;
   const myCurrentRsvp = gn.attendees.find((a) => a.userId === userId)?.status;
-  const canRSVP = userId && gn.status === "scheduled" && !isPast && !(isFull && myCurrentRsvp !== "confirmed");
+  const canRSVP = userId && effectiveStatus === "scheduled" && !isPast && !(isFull && myCurrentRsvp !== "confirmed");
   const canApprove = isPending && (isAdmin || isModerator || isOwner);
-  const canAttendance = isPast && gn.status === "scheduled" && (isAdmin || isModerator || isOwner || isHost || isCreator);
+  const canAttendance = isPast && effectiveStatus === "scheduled" && (isAdmin || isModerator || isOwner || isHost || isCreator);
   const canEdit = canEditEvent({
     userId,
     isAdmin,
@@ -219,8 +221,10 @@ export default function EventDetailModal({
               onClick={async () => {
                 setApproveLoading(true);
                 const result = await approveGameNight(gn.id);
-                if (!result.error) onClose();
-                else setApproveLoading(false);
+                if (!result.error) {
+                  setOptimisticStatus("scheduled");
+                  onClose();
+                } else setApproveLoading(false);
               }}
               className="rounded-lg bg-neon/10 px-4 py-2 text-sm font-medium text-neon transition hover:bg-neon/20 disabled:opacity-50"
             >
@@ -231,8 +235,10 @@ export default function EventDetailModal({
               onClick={async () => {
                 setApproveLoading(true);
                 const result = await rejectGameNight(gn.id);
-                if (!result.error) onClose();
-                else setApproveLoading(false);
+                if (!result.error) {
+                  setOptimisticStatus("rejected");
+                  onClose();
+                } else setApproveLoading(false);
               }}
               className="rounded-lg bg-danger/10 px-4 py-2 text-sm font-medium text-danger transition hover:bg-danger/20 disabled:opacity-50"
             >
@@ -256,7 +262,7 @@ export default function EventDetailModal({
         )}
 
         {/* Announce to Discord */}
-        {isAdmin && onAnnounce && gn.status === "scheduled" && (
+        {isAdmin && onAnnounce && effectiveStatus === "scheduled" && (
           <button
             onClick={onAnnounce}
             className="w-full rounded-lg border border-[#5865f2]/30 bg-[#5865f2]/10 px-4 py-2 text-sm font-medium text-[#5865f2] transition hover:bg-[#5865f2]/20"

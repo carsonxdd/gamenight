@@ -99,7 +99,7 @@ export async function checkProfileComplete(userId: string): Promise<string[]> {
   if (!user) return [];
 
   const hasGamertag = !!user.gamertag;
-  const hasTimezone = user.timezone !== "America/Phoenix"; // changed from default
+  const hasTimezone = !!user.timezone;
   const hasGames = user.games.length > 0;
   const hasAvailability = user.availability.length > 0;
   const hasFavoriteGames = !!user.favoriteGames;
