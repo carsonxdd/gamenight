@@ -68,7 +68,7 @@ const TEMPLATES: TemplateOption[] = [
     buildTitle: (ctx) => `Game Night: ${ctx.game}`,
     buildBody: (ctx) =>
       `We're playing **${ctx.game}** this **${ctx.day}** at **${ctx.time}**!\n\n` +
-      `Hosted by **${ctx.host}**. Head to the site to RSVP — let's get a full lobby!\n\n📅 **pvpers.us/schedule**`,
+      `Hosted by **${ctx.host}**. Head to [pvpers.us/schedule](https://pvpers.us/schedule) to RSVP — let's get a full lobby!`,
     mention: "@everyone",
   },
   {
@@ -78,7 +78,7 @@ const TEMPLATES: TemplateOption[] = [
     buildTitle: (ctx) => `Tournament: ${ctx.title}`,
     buildBody: (ctx) =>
       `A **${ctx.game}** tournament is happening on **${ctx.day}** at **${ctx.time}**!\n\n` +
-      `Sign up on the site before spots fill up. Don't miss your chance to compete!\n\n📅 **pvpers.us/schedule**`,
+      `Sign up at [pvpers.us/schedule](https://pvpers.us/schedule) before spots fill up. Don't miss your chance to compete!`,
     mention: "@everyone",
   },
   {
@@ -89,7 +89,7 @@ const TEMPLATES: TemplateOption[] = [
     buildBody: (ctx) =>
       `Something special is happening! **${ctx.title}** — **${ctx.day}** at **${ctx.time}**.\n\n` +
       (ctx.description ? `> ${ctx.description}\n\n` : "") +
-      `Hosted by **${ctx.host}**. RSVP on the site — you won't want to miss this!\n\n📅 **pvpers.us/schedule**`,
+      `Hosted by **${ctx.host}**. RSVP at [pvpers.us/schedule](https://pvpers.us/schedule) — you won't want to miss this!`,
     mention: "@everyone",
   },
   {
@@ -100,7 +100,7 @@ const TEMPLATES: TemplateOption[] = [
     buildBody: (ctx) =>
       `Just a reminder — **${ctx.title}** is happening **tonight at ${ctx.time}**!\n\n` +
       (ctx.rsvpCount > 0 ? `${ctx.rsvpCount} people are already confirmed. ` : "") +
-      `Make sure you've RSVP'd on the site. See you there!\n\n📅 **pvpers.us/schedule**`,
+      `Make sure you've RSVP'd at [pvpers.us/schedule](https://pvpers.us/schedule). See you there!`,
     mention: "@here",
   },
   {
@@ -113,7 +113,7 @@ const TEMPLATES: TemplateOption[] = [
       (ctx.rsvpCount > 0
         ? `We've already got **${ctx.rsvpCount}** confirmed — the more the merrier. `
         : `We need people to show up! `) +
-      `Hit up the site and RSVP if you haven't yet. Let's go!\n\n📅 **pvpers.us/schedule**`,
+      `Hit up [pvpers.us/schedule](https://pvpers.us/schedule) and RSVP if you haven't yet. Let's go!`,
     mention: "@everyone",
   },
   {

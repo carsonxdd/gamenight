@@ -73,14 +73,13 @@ export function notifyEventApproved(event: {
     embeds: [
       {
         title: `✅  Event Approved`,
-        description: `**${event.title}** has been approved and is now live!\n\n📅 Check out the schedule at **pvpers.us/schedule**`,
+        description: `**${event.title}** has been approved and is now live!\n\n📅 Head to [pvpers.us/schedule](https://pvpers.us/schedule) to RSVP!`,
         color: EMBED_COLORS.approved,
         url: SCHEDULE_URL,
         fields: [
           { name: "🎮 Game", value: event.game, inline: true },
           { name: "📆 Date", value: event.date, inline: true },
         ],
-        footer: { text: "Head to the site to RSVP!" },
         timestamp: new Date().toISOString(),
       },
     ],
@@ -97,7 +96,7 @@ export function notifyEventCancelled(event: {
     embeds: [
       {
         title: `❌  Event Cancelled`,
-        description: `**${event.title}** has been cancelled.\n\n📅 Check out the schedule at **pvpers.us/schedule**`,
+        description: `**${event.title}** has been cancelled.\n\n📅 Check out the schedule at [pvpers.us/schedule](https://pvpers.us/schedule)`,
         color: 0xff3b30,
         url: SCHEDULE_URL,
         fields: [
@@ -121,7 +120,7 @@ export function notifyEventEdited(event: {
     embeds: [
       {
         title: `✏️  Event Updated`,
-        description: `**${event.title}** has been updated.\n\n📅 Check out the schedule at **pvpers.us/schedule**`,
+        description: `**${event.title}** has been updated.\n\n📅 Check [pvpers.us/schedule](https://pvpers.us/schedule) for details.`,
         color: EMBED_COLORS.event,
         url: SCHEDULE_URL,
         fields: [
@@ -129,7 +128,6 @@ export function notifyEventEdited(event: {
           { name: "📆 Date", value: event.date, inline: true },
           { name: "📝 Changes", value: event.changes },
         ],
-        footer: { text: "Check the site for details" },
         timestamp: new Date().toISOString(),
       },
     ],
@@ -155,7 +153,7 @@ export function notifyTournamentCreated(tournament: {
     embeds: [
       {
         title: `🏆  New Tournament Created`,
-        description: `**${tournament.title}**\nSign up before spots fill!\n\n📅 Check out the schedule at **pvpers.us/schedule**`,
+        description: `**${tournament.title}**\nSign up before spots fill!\n\n📅 Register at [pvpers.us/schedule](https://pvpers.us/schedule)!`,
         color: EMBED_COLORS.tournament,
         url: SCHEDULE_URL,
         fields: [
@@ -163,7 +161,6 @@ export function notifyTournamentCreated(tournament: {
           { name: "🗡️ Format", value: bracketLabels[tournament.bracketType] || tournament.bracketType, inline: true },
           { name: "👥 Slots", value: `${tournament.maxSlots}`, inline: true },
         ],
-        footer: { text: "Register on the site!" },
         timestamp: new Date().toISOString(),
       },
     ],
@@ -180,14 +177,13 @@ export function notifyPollCreated(poll: {
     embeds: [
       {
         title: `📊  New Poll`,
-        description: `**${poll.title}**\n\n🗳️ Cast your vote at **pvpers.us/polls**`,
+        description: `**${poll.title}**\n\n🗳️ Cast your vote at [pvpers.us/polls](https://pvpers.us/polls)!`,
         color: EMBED_COLORS.poll,
         url: "https://pvpers.us/polls",
         fields: [
           { name: "Options", value: `${poll.optionCount}`, inline: true },
           { name: "Created by", value: poll.creatorName, inline: true },
         ],
-        footer: { text: "Cast your vote on the site!" },
         timestamp: new Date().toISOString(),
       },
     ],
@@ -202,7 +198,7 @@ export function notifyMemberJoined(member: {
     embeds: [
       {
         title: `👋  Welcome!`,
-        description: `**${member.gamertag}** just joined the community!\n\n📅 Check out upcoming events at **pvpers.us/schedule**`,
+        description: `**${member.gamertag}** just joined the community!\n\n📅 Check out upcoming events at [pvpers.us/schedule](https://pvpers.us/schedule)`,
         color: EMBED_COLORS.member,
         url: SCHEDULE_URL,
         timestamp: new Date().toISOString(),
