@@ -5,7 +5,7 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { INVITE_LIMITS } from "@/lib/constants";
-import { localDateTimeToUtc, DEFAULT_TIMEZONE } from "@/lib/timezone-utils";
+import { localDateTimeToUtc, utcToLocalDateTime, DEFAULT_TIMEZONE } from "@/lib/timezone-utils";
 import { getSiteSettings } from "@/app/admin/settings-actions";
 import { logAudit } from "@/lib/audit";
 import { notifyEventApproved, notifyEventCancelled, notifyEventEdited } from "@/lib/discord-webhook";
@@ -18,6 +18,12 @@ function parseLocalDate(dateStr: string): Date {
 function parseUtcDate(dateStr: string): Date {
   const [year, month, day] = dateStr.split("-").map(Number);
   return new Date(Date.UTC(year, month - 1, day));
+}
+
+/** Convert a UTC Date + UTC time back to the local date string for display */
+function eventLocalDate(utcDate: Date, utcTime: string, timezone: string): string {
+  const utcDateStr = utcDate.toISOString().split("T")[0];
+  return utcToLocalDateTime(utcDateStr, utcTime, timezone).localDate;
 }
 
 export async function createGameNight(data: {
@@ -179,7 +185,7 @@ export async function createGameNight(data: {
       notifyEventApproved({
         title: data.title?.trim() || data.game,
         game: data.game,
-        date: baseDate.toISOString().split("T")[0],
+        date: data.date,
       });
     }
 
@@ -351,7 +357,7 @@ export async function updateGameNight(
     // Build change summary for notification
     const changes: string[] = [];
     if (data.game !== existing.game) changes.push(`Game: ${existing.game} → ${data.game}`);
-    if (data.date !== existing.date.toISOString().split("T")[0]) changes.push(`Date changed`);
+    if (data.date !== eventLocalDate(existing.date, existing.startTime, eventTimezone)) changes.push(`Date changed`);
     if (data.startTime !== existing.startTime || data.endTime !== existing.endTime) changes.push(`Time changed`);
     if ((data.title || "") !== (existing.title || "")) changes.push(`Title updated`);
 
@@ -393,14 +399,14 @@ export async function cancelGameNight(id: string) {
     const event = await prisma.gameNight.update({
       where: { id },
       data: { status: "cancelled" },
-      select: { title: true, game: true, date: true },
+      select: { title: true, game: true, date: true, startTime: true, timezone: true },
     });
     revalidatePath("/schedule");
     logAudit({ action: "EVENT_CANCELLED", entityType: "GameNight", entityId: id, actorId: session.user.id });
     notifyEventCancelled({
       title: event.title || event.game,
       game: event.game,
-      date: event.date.toISOString().split("T")[0],
+      date: eventLocalDate(event.date, event.startTime, event.timezone),
     });
     return { success: true };
   } catch {
@@ -418,13 +424,13 @@ export async function approveGameNight(id: string) {
     const event = await prisma.gameNight.update({
       where: { id },
       data: { status: "scheduled" },
-      select: { title: true, game: true, date: true },
+      select: { title: true, game: true, date: true, startTime: true, timezone: true },
     });
     revalidatePath("/schedule");
     notifyEventApproved({
       title: event.title || event.game,
       game: event.game,
-      date: event.date.toISOString().split("T")[0],
+      date: eventLocalDate(event.date, event.startTime, event.timezone),
     });
     return { success: true };
   } catch {
@@ -472,7 +478,7 @@ export async function deleteGameNight(id: string) {
   try {
     const event = await prisma.gameNight.findUnique({
       where: { id },
-      select: { title: true, game: true, date: true },
+      select: { title: true, game: true, date: true, startTime: true, timezone: true },
     });
     await prisma.gameNight.delete({ where: { id } });
     revalidatePath("/schedule");
@@ -481,7 +487,7 @@ export async function deleteGameNight(id: string) {
       notifyEventCancelled({
         title: event.title || event.game,
         game: event.game,
-        date: event.date.toISOString().split("T")[0],
+        date: eventLocalDate(event.date, event.startTime, event.timezone),
       });
     }
     return { success: true };
