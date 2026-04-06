@@ -2,13 +2,45 @@ import { prisma } from "@/lib/prisma";
 import { evaluateBadges } from "./engine";
 
 /**
- * Update the attendance streak for a user after they attended an event.
- * Call this when markAttendance sets attended=true.
+ * Compute the current attendance streak from DB history.
+ * Walks confirmed events (most recent first) and counts consecutive
+ * attended events, breaking on the first no-show.
  *
- * - Increments currentCount
- * - Updates longestCount if new high
- * - Stores lastEventId to prevent double-counting
- * - Then evaluates attendance_streak badges
+ * Events the user didn't RSVP "confirmed" to are skipped (don't affect streak).
+ */
+async function computeStreakFromHistory(userId: string): Promise<number> {
+  const confirmedEvents = await prisma.gameNight.findMany({
+    where: { attendanceConfirmed: true },
+    orderBy: { date: "desc" },
+    take: 100,
+    select: {
+      id: true,
+      attendees: {
+        where: { userId },
+        select: { status: true, attended: true },
+      },
+    },
+  });
+
+  let streak = 0;
+  for (const event of confirmedEvents) {
+    const attendee = event.attendees[0];
+    if (!attendee || attendee.status !== "confirmed") {
+      continue; // User wasn't confirmed for this event, skip
+    }
+    if (attendee.attended) {
+      streak++;
+    } else {
+      break; // No-show: streak breaks here
+    }
+  }
+  return streak;
+}
+
+/**
+ * Recalculate the attendance streak for a user after attendance is marked.
+ * Uses history-based calculation so streaks are always accurate regardless
+ * of marking order. Call this for ALL confirmed RSVPs (attended or not).
  */
 export async function updateAttendanceStreak(
   userId: string,
@@ -19,11 +51,11 @@ export async function updateAttendanceStreak(
   });
 
   if (existing?.lastEventId === eventId) {
-    // Already counted this event
+    // Already processed this event
     return [];
   }
 
-  const newCount = (existing?.currentCount ?? 0) + 1;
+  const newCount = await computeStreakFromHistory(userId);
   const newLongest = Math.max(newCount, existing?.longestCount ?? 0);
 
   await prisma.userStreak.upsert({
@@ -43,24 +75,6 @@ export async function updateAttendanceStreak(
   });
 
   return evaluateBadges(userId, "attendance_streak");
-}
-
-/**
- * Reset attendance streak when a user no-shows (RSVP'd confirmed but didn't attend).
- */
-export async function resetAttendanceStreak(userId: string): Promise<void> {
-  await prisma.userStreak.upsert({
-    where: { userId_type: { userId, type: "attendance" } },
-    create: {
-      userId,
-      type: "attendance",
-      currentCount: 0,
-      longestCount: 0,
-    },
-    update: {
-      currentCount: 0,
-    },
-  });
 }
 
 /**

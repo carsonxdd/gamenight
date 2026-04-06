@@ -109,6 +109,9 @@ Join the Discord: [discord.gg/3fyMmcSf4C](https://discord.gg/3fyMmcSf4C)
 
 ## Version History
 
+### v1.0.3 — 2026-04-05
+- Fix attendance streak: use history-based calculation so streaks correctly break on no-shows
+
 ### v1.0.2 — 2026-03-22
 - Fix roster availability timezone display (was showing raw UTC days)
 

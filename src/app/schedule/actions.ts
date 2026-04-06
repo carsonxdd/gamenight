@@ -597,17 +597,13 @@ export async function markAttendance(gameNightId: string, attendedUserIds: strin
 
     // Badge evaluation: attendance streaks + events_attended (fire-and-forget)
     const { evaluateBadges } = await import("@/lib/badges/engine");
-    const { updateAttendanceStreak, resetAttendanceStreak } = await import("@/lib/badges/streaks");
-    const confirmedUserIds = new Set(allConfirmedRsvps.map((r) => r.userId));
+    const { updateAttendanceStreak } = await import("@/lib/badges/streaks");
+    // Recalculate streak for ALL confirmed RSVPs (history-based calc handles both attended and no-shows)
+    for (const rsvp of allConfirmedRsvps) {
+      updateAttendanceStreak(rsvp.userId, gameNightId).catch(() => {});
+    }
     for (const uid of attendedUserIds) {
       evaluateBadges(uid, "events_attended").catch(() => {});
-      updateAttendanceStreak(uid, gameNightId).catch(() => {});
-    }
-    // Reset streak for no-shows (confirmed RSVP but not in attendedUserIds)
-    for (const uid of confirmedUserIds) {
-      if (!attendedUserIds.includes(uid)) {
-        resetAttendanceStreak(uid).catch(() => {});
-      }
     }
 
     revalidatePath("/schedule");
