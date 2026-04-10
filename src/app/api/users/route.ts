@@ -1,7 +1,11 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { checkRateLimit } from "@/lib/rate-limit";
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const limited = checkRateLimit(request, "api:users", { max: 30, windowMs: 60_000 });
+  if (limited) return limited;
+
   const users = await prisma.user.findMany({
     where: { gamertag: { not: null } },
     select: {
@@ -10,9 +14,6 @@ export async function GET() {
       gamertag: true,
       avatar: true,
       games: { select: { gameName: true } },
-      availability: {
-        select: { dayOfWeek: true, startTime: true, endTime: true },
-      },
     },
     orderBy: { gamertag: "asc" },
   });
