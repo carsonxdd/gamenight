@@ -1,11 +1,14 @@
 import { NextAuthOptions } from "next-auth";
 import DiscordProvider from "next-auth/providers/discord";
+import CredentialsProvider from "next-auth/providers/credentials";
 import { prisma } from "./prisma";
 import { logAudit } from "./audit";
 
 // Throttle lastSeenAt writes: max once per 5 minutes per user
 const lastSeenCache = new Map<string, number>();
 const LAST_SEEN_THROTTLE_MS = 5 * 60 * 1000;
+
+const isDev = process.env.NODE_ENV !== "production";
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -17,6 +20,30 @@ export const authOptions: NextAuthOptions = {
         params: { scope: "identify" },
       },
     }),
+    ...(isDev
+      ? [
+          CredentialsProvider({
+            id: "dev-login",
+            name: "Dev Login",
+            credentials: {
+              userId: { label: "User ID", type: "text" },
+            },
+            async authorize(credentials) {
+              if (process.env.NODE_ENV === "production") return null;
+              if (!credentials?.userId) return null;
+              const user = await prisma.user.findUnique({
+                where: { id: credentials.userId },
+              });
+              if (!user) return null;
+              return {
+                id: user.discordId,
+                name: user.name,
+                image: user.avatar,
+              };
+            },
+          }),
+        ]
+      : []),
   ],
   session: {
     strategy: "jwt",
