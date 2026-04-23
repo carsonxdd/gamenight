@@ -3,10 +3,12 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { getMyPendingInvites } from "@/app/teams/actions";
 import { useSiteSettings } from "@/components/providers/SiteSettingsProvider";
+
+const ADMIN_HOVER_DELAY_MS = 2000;
 
 export default function Navbar() {
   const { data: session } = useSession();
@@ -14,6 +16,8 @@ export default function Navbar() {
   const settings = useSiteSettings();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [inviteCount, setInviteCount] = useState(0);
+  const [adminRevealed, setAdminRevealed] = useState(false);
+  const adminHoverTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     if (session?.user?.id) {
@@ -22,6 +26,32 @@ export default function Navbar() {
       });
     }
   }, [session?.user?.id, pathname]);
+
+  useEffect(() => {
+    return () => {
+      if (adminHoverTimer.current) clearTimeout(adminHoverTimer.current);
+    };
+  }, []);
+
+  const canSeeAdmin = !!(session?.user?.isAdmin || session?.user?.isModerator);
+
+  const startAdminHoverTimer = () => {
+    if (!canSeeAdmin) return;
+    if (adminHoverTimer.current) clearTimeout(adminHoverTimer.current);
+    adminHoverTimer.current = setTimeout(() => setAdminRevealed(true), ADMIN_HOVER_DELAY_MS);
+  };
+
+  const cancelAdminHoverTimer = () => {
+    if (adminHoverTimer.current) {
+      clearTimeout(adminHoverTimer.current);
+      adminHoverTimer.current = null;
+    }
+  };
+
+  const hideAdmin = () => {
+    cancelAdminHoverTimer();
+    setAdminRevealed(false);
+  };
 
   const navLink = (href: string) => {
     const isActive = href === "/" ? pathname === "/" : pathname.startsWith(href);
@@ -34,7 +64,10 @@ export default function Navbar() {
   };
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 border-b border-border bg-background/80 backdrop-blur-md">
+    <nav
+      className="fixed top-0 left-0 right-0 z-50 border-b border-border bg-background/80 backdrop-blur-md"
+      onMouseLeave={hideAdmin}
+    >
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4">
         <Link href="/" className="flex items-center gap-2 text-xl font-bold text-neon text-glow-sm">
           {settings.logoUrl ? (
@@ -46,52 +79,84 @@ export default function Navbar() {
 
         {/* Desktop nav */}
         <div className="hidden items-center gap-6 md:flex">
-          <Link href="/" className={navLink("/")}>
-            Home
-          </Link>
-          <Link href="/schedule" className={navLink("/schedule")}>
-            Schedule
-          </Link>
+          <motion.div layout="position" transition={{ type: "spring", stiffness: 400, damping: 32 }}>
+            <Link href="/" className={navLink("/")}>
+              Home
+            </Link>
+          </motion.div>
+          <motion.div layout="position" transition={{ type: "spring", stiffness: 400, damping: 32 }}>
+            <Link href="/schedule" className={navLink("/schedule")}>
+              Schedule
+            </Link>
+          </motion.div>
           {session && (
             <>
               {settings.enablePolls && (
-                <Link href="/polls" className={navLink("/polls")}>
-                  Polls
-                </Link>
+                <motion.div layout="position" transition={{ type: "spring", stiffness: 400, damping: 32 }}>
+                  <Link href="/polls" className={navLink("/polls")}>
+                    Polls
+                  </Link>
+                </motion.div>
               )}
-              <Link href="/members" className={navLink("/members")}>
-                Members
-              </Link>
-              {settings.enableTeams && (
-                <Link href="/teams" className={`${navLink("/teams")} relative`}>
-                  Teams
-                  {inviteCount > 0 && (
-                    <span className="absolute -top-1.5 -right-3 flex h-4 w-4 items-center justify-center rounded-full bg-neon text-[10px] font-bold text-background">
-                      {inviteCount}
-                    </span>
-                  )}
+              <motion.div layout="position" transition={{ type: "spring", stiffness: 400, damping: 32 }}>
+                <Link href="/members" className={navLink("/members")}>
+                  Members
                 </Link>
+              </motion.div>
+              {settings.enableTeams && (
+                <motion.div layout="position" transition={{ type: "spring", stiffness: 400, damping: 32 }}>
+                  <Link href="/teams" className={`${navLink("/teams")} relative`}>
+                    Teams
+                    {inviteCount > 0 && (
+                      <span className="absolute -top-1.5 -right-3 flex h-4 w-4 items-center justify-center rounded-full bg-neon text-[10px] font-bold text-background">
+                        {inviteCount}
+                      </span>
+                    )}
+                  </Link>
+                </motion.div>
               )}
             </>
           )}
           {settings.enableHighlights && (
-            <Link href="/highlights" className={navLink("/highlights")}>
-              Highlights
-            </Link>
+            <motion.div layout="position" transition={{ type: "spring", stiffness: 400, damping: 32 }}>
+              <Link href="/highlights" className={navLink("/highlights")}>
+                Highlights
+              </Link>
+            </motion.div>
           )}
-          <Link href="/about" className={navLink("/about")}>
-            About
-          </Link>
-          {(session?.user?.isAdmin || session?.user?.isModerator) && (
-            <Link href="/admin" className={navLink("/admin")}>
-              Admin
+          <motion.div layout="position" transition={{ type: "spring", stiffness: 400, damping: 32 }}>
+            <Link href="/about" className={navLink("/about")}>
+              About
             </Link>
-          )}
+          </motion.div>
+
+          <AnimatePresence initial={false}>
+            {canSeeAdmin && adminRevealed && (
+              <motion.div
+                key="admin-link"
+                initial={{ width: 0, opacity: 0 }}
+                animate={{ width: "auto", opacity: 1 }}
+                exit={{ width: 0, opacity: 0 }}
+                transition={{ type: "spring", stiffness: 400, damping: 32 }}
+                style={{ overflow: "hidden" }}
+              >
+                <Link href="/admin" className={`${navLink("/admin")} whitespace-nowrap`}>
+                  Admin
+                </Link>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           {session ? (
-            <div className="flex items-center gap-3">
+            <motion.div
+              layout="position"
+              transition={{ type: "spring", stiffness: 400, damping: 32 }}
+              className="flex items-center gap-3"
+            >
               <Link
                 href="/profile"
+                onMouseEnter={startAdminHoverTimer}
+                onMouseLeave={cancelAdminHoverTimer}
                 className="text-sm font-bold text-neon transition hover:text-neon-dim"
               >
                 {session.user.gamertag || session.user.name}
@@ -102,7 +167,7 @@ export default function Navbar() {
               >
                 Sign Out
               </button>
-            </div>
+            </motion.div>
           ) : (
             <Link
               href="/signup"

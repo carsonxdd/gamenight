@@ -84,7 +84,11 @@ npx tsx prisma/seed-badges.ts        # 18 badge definitions
 npx tsx prisma/backfill-badges.ts    # Award badges + compute streaks for existing users
 ```
 
-The test users script **wipes existing data** — dev only. Badge scripts are idempotent and safe for production.
+The test users script uses `upsert` on seeded users and scoped cleanup (only deletes records tagged `[Seed]`) — re-running refreshes event dates without wiping your real data. Dev only; never run on production.
+
+### Dev-only: Fast User Switching
+
+Visit [http://localhost:3000/dev-login](http://localhost:3000/dev-login) to sign in as any seeded user without Discord OAuth. Useful for testing role-specific views (admin, mod, captain, member). The page returns 404 and the credentials provider is physically absent when `NODE_ENV === "production"`.
 
 ### Tests
 
@@ -108,6 +112,11 @@ npm run build
 Join the Discord: [discord.gg/3fyMmcSf4C](https://discord.gg/3fyMmcSf4C)
 
 ## Version History
+
+### v1.0.4 — 2026-04-23
+- Navbar: Admin link hidden by default; reveals via 2-second hover on your profile name (desktop only), with all nav items sliding to make room
+- Tournament drafts: skip route revalidation on mid-draft picks — near-instant picks in dev instead of 1-2 minute recompiles
+- Dev utility: `/dev-login` page for quick user switching without Discord OAuth (dev-only, gated on `NODE_ENV`)
 
 ### v1.0.3 — 2026-04-05
 - Fix attendance streak: use history-based calculation so streaks correctly break on no-shows

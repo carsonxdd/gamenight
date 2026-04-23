@@ -97,6 +97,7 @@ src/
 - `middleware.ts` protects routes: `/polls`, `/admin`, `/profile`, `/members`, `/teams`
 - Admin routes require `isAdmin || isModerator`
 - JWT carries: id, gamertag, isAdmin, isModerator, isOwner, timezone, approvalStatus
+- **Dev-only credentials provider:** `auth.ts` registers a `CredentialsProvider` (id `dev-login`) gated on `NODE_ENV !== "production"`. Paired with the `/dev-login` page, it lets devs sign in as any seeded user without Discord. Neither the provider nor the page exists in production builds.
 
 **Role Hierarchy:** Owner > Admin > Moderator > Member
 - Owner: cannot be modified by anyone
@@ -163,6 +164,10 @@ Key constraints:
 7. **Seed scripts:** `seed-test-users.ts` WIPES existing data. Badge seed/backfill scripts are idempotent and safe.
 
 8. **SQLite limitations:** No concurrent writes under heavy load. Fine for this community size.
+
+9. **`revalidatePath` in dev mode:** Turbopack recompiles the affected route on every revalidation. For complex pages like `/schedule`, this can cost 30s-2min per call. Don't call `revalidatePath` inside tight mutation loops (e.g. draft picks) — only call it when something the page actually renders has changed. Mid-draft picks skip revalidate; the final pick's `finalizeDraft` is what revalidates.
+
+10. **Navbar admin reveal:** On desktop, the Admin link is hidden by default even for admins/mods. Hovering the profile name for 2 seconds reveals it with a Framer Motion width animation; mouseleave on the nav collapses it. Lives in `src/components/layout/Navbar.tsx`. Mobile nav is unchanged (hamburger shows Admin normally).
 
 ## Current State (v1.0)
 
