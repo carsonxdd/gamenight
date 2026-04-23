@@ -1224,11 +1224,12 @@ export async function makeDraftPick(
 
     // If draft is complete, create team entrants for the bracket
     const newPickIndex = pickIndex + 1;
-    if (newPickIndex >= draftOrder.length) {
+    const isDraftComplete = newPickIndex >= draftOrder.length;
+    if (isDraftComplete) {
       await finalizeDraft(tournamentId);
+      revalidatePath("/schedule");
     }
 
-    revalidatePath("/schedule");
     return { success: true };
   } catch {
     return { error: "Failed to make pick" };
