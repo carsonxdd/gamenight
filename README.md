@@ -160,3 +160,7 @@ Join the Discord: [discord.gg/3fyMmcSf4C](https://discord.gg/3fyMmcSf4C)
 
 ### v0.1.0 — 2026-03-04
 - Initial scaffold
+
+## Credits
+
+Built by [Carson Caplan](https://carsoncaplan.com) — see carsoncaplan.com for more projects.
